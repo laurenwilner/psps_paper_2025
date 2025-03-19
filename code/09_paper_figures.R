@@ -17,10 +17,10 @@ copd_lag0 <- read.csv(paste0(results_dir, "results_PSPS_wflag05_nstemp_copd.csv"
 
 pal <- met.brewer(name = "Hokusai2", n=2)
 
-# make figure 1 -------------------------------------------
+# prep for figure 1 -------------------------------------------
 # 4 panel plot with one panel per cause, log transform the y axis
-# •	wf alone effect 
-# •	effect for each psps severity (add the main effect + interaction)
+# •	main effect alone
+# •	effect for severe psps (add the main effect + interaction)
 # •	do that for each disease category
 # •	main analysis: absolute
 # •	supplement: same plots for hybrid
@@ -53,61 +53,62 @@ copd_lag0 <- copd_lag0 %>%
 all_lag0 <- bind_rows(resp_lag0, cardio_lag0, psych_lag0, copd_lag0)
 
 # subset to terms of interest and rename 
+#  y = beta1*psps + beta2*wf + beta3*psps*wf + spline
+
+# no wf + psps = beta1 
+# psps + wf = beta3 + beta2
+# step 1: log odds and add them
+# step 2: calculate se
+
+# plot beta 1 and then the sum thing
+
+# first lets calcualte log odds, log se, log variance
 vars <- c("severity_customersSevere:mean_lag05_per10", "severity_customersSevere", "mean_lag05_per10")
-plot_df <- all_lag0 %>% 
-filter(Exposure %in% vars) %>%
-mutate(Exposure = ifelse(
-    Exposure == "severity_customersSevere:mean_lag05_per10", "Severe PSPS event * WF smoke", 
-    ifelse(Exposure=="severity_customersSevere", "Severe PSPS event", "WF smoke")),
-    log_odds = log(OR),
-    # calc the se
-        # upper bound is approximately: ln(OR) + 1.96×SE
-        # lower bound is approximately: ln(OR) - 1.96×SE
-    se = (log(CI_Upper) - log(CI_Lower)) / (2*1.96),
+plot_df_temp <- all_lag0 %>% 
+    filter(Exposure %in% vars) %>%
+    mutate(Exposure = ifelse(
+        Exposure == "severity_customersSevere:mean_lag05_per10", "Severe PSPS event * WF smoke", 
+        ifelse(Exposure=="severity_customersSevere", "Severe PSPS event", "WF smoke")),
+        log_odds = log(OR),
+        # calc the variance
+            # upper bound is approximately: ln(OR) + 1.96×SE
+            # lower bound is approximately: ln(OR) - 1.96×SE
+        se = (log(CI_Upper) - log(CI_Lower)) / (2*1.96),
+        variance = se^2
+        ) %>% 
+    select(Exposure, log_odds, variance, Cause) 
+
+# now lets calculate the combined term log odds, log se, log variance
+    # step 1: sum the log odds
+    # step 2: calculate the combined variance: var(x+y)=var(x) + var(y) + 2cov(x,y)
+    # step 3: new se = sqrt(var)
+    # step 4: calculate OR and CI (or = sum(log_odds1 + log_odds2), ci = β +/- 1.96*st err)
+    
+# for now, lets set covariance to .0065 so we can proceed:
+cov <- .00000065
+
+# combine interaction term and wf main effect to have a single OR and SE, but keep main effect separate
+plot_df <- plot_df_temp %>% 
+    mutate(group = ifelse(Exposure == "Severe PSPS event * WF smoke" | Exposure == "WF smoke", "interaction", "main")) %>%
+    group_by(Cause, group) %>%
+    reframe(
+        log_odds = sum(log_odds),
+        variance = ifelse(group == "interaction", sum(variance) + 2*cov, sum(variance)),
+        se = sqrt(variance)
+    ) %>%
+    distinct() %>% 
+    mutate(
+        odds_ratio = exp(log_odds),
+        lower_ci = exp(log_odds - 1.96 * se),
+        upper_ci = exp(log_odds + 1.96 * se)
     ) %>% 
-select(Exposure, log_odds, se, Cause)
+    mutate(group = ifelse(group == "interaction", "Interaction (Severe PSPS event x wildfire smoke)", "Severe PSPS event"))
 
-# combine interaction term and psps main effect to have a single OR and SE, but keep wf separate
-plot_df <- plot_df %>%
-  # group by cause to process each condition separately
-  group_by(Cause) %>%
-  # create a nested dataframe to work within each cause
-  summarize(
-    data = list(tibble(
-      Exposure = c(
-        "Severe PSPS event * WF smoke",
-        "WF smoke"
-      ),
-      log_odds = c(
-        # sum the log odds of main effect and interaction for each cause
-        sum(log_odds[Exposure == "Severe PSPS event" | 
-                     Exposure == "Severe PSPS event * WF smoke"]),
-        # leave wf alone, that i know is correct
-        log_odds[Exposure == "WF smoke"]
-      ),
-      # calc combined se using variance addition (but do we need a covariance term?)
-      se = c(
-        sqrt(sum(se[Exposure == "Severe PSPS event"]^2 + 
-                 se[Exposure == "Severe PSPS event * WF smoke"]^2)),
-        # leave wf alone
-        se[Exposure == "WF smoke"]
-      )
-    ))
-  ) %>%
-  unnest(data) %>%
-  # i guess now we can just exponentiate? why am i here?
-  mutate(
-    odds_ratio = exp(log_odds),
-    lower_ci = exp(log_odds - 1.96 * se),
-    upper_ci = exp(log_odds + 1.96 * se)
-  ) # i think im missing many elements, like covariance, but whats the pt of adding ors? 
-  # to do: is step 3-4 right? can we just report the main effect? can we ditch this proj? 
-
-  # i guess ill just plot for now 
-  # need to make a box plot with the point estimate and CI bars
-  fig1 <- ggplot(plot_df, aes(x = Exposure, y = odds_ratio, ymin = lower_ci, ymax = upper_ci)) +
-    geom_point(aes(color = Exposure), position = position_dodge(width = 0.5), size = 3) +
-    geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci, color = Exposure), width = 0.75, position = position_dodge(width = 0.5)) +
+# make figure 1 -------------------------------------------
+  # box plot 
+  fig1 <- ggplot(plot_df, aes(x = group, y = odds_ratio, ymin = lower_ci, ymax = upper_ci)) +
+    geom_point(aes(color = group), position = position_dodge(width = 0.5), size = 3) +
+    geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci, color = group), width = 0.75, position = position_dodge(width = 0.5)) +
     geom_hline(yintercept = 1, linetype = "dashed") + 
     facet_wrap(~Cause, nrow = 1, scales = "free_y") +
     scale_color_manual(values = pal) +
@@ -125,4 +126,6 @@ plot_df <- plot_df %>%
       axis.text = element_text(size = 12),
     )
 
+
+# save figs -------------------------------------------
 ggsave(paste0(out_dir, "fig1.png"), fig1, width = 10, height = 5, dpi = 100)
