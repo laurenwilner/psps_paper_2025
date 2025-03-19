@@ -1,5 +1,7 @@
 results/
 
+.lintr
+
 .ipynb_checkpoints
 
 # History files
