@@ -7,7 +7,7 @@
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
 pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown)
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_ca_analysis/results")
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 
 exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_byOOI.csv"))
@@ -62,7 +62,7 @@ pretty_table1 <- table1 %>%
     title = "Case-Control Counts by Cause and Exposure Level"
   ) %>%
   fmt_number(
-    columns = c(Control, Case),
+    columns = c(Case, Control),
     decimals = 0,
     use_seps = TRUE
   ) %>%
