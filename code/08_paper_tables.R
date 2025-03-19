@@ -47,13 +47,7 @@ table1 <- exposure_summary_abs_by_ooi %>%
 # Option 1: Reorder the data frame first
 table1 <- table1 %>%
   mutate(Cause = factor(Cause, levels = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD"))) %>%
-  arrange(Cause, Exposure)
-
-# Then create the table
-# Option 1: Reorder the data frame first
-table1 <- table1 %>%
-  mutate(Cause = factor(Cause, levels = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD"))) %>%
-  arrange(Cause, Exposure)
+  relocate(Case, .before = Control)
 
 # Then create the table
 pretty_table1 <- table1 %>%
