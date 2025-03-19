@@ -6,8 +6,6 @@
 
 \subsection{Health data description}
 
-This study examined the effects of PSPS events with and without co-occurring wildfire \PM on respiratory, cardiovascular, and psychiatric hospitalizations and emergency department encounters among adults . By allowing every case to serve as their own control in a time-stratified case-crossover design, we estimated the effect of a PSPS event alone as well as a PSPS event occurring at the same time as wildfire \PM on these four causes. The primary analysis examines the effects of PSPS event defined as mild, moderate, or severe based on the total count of customers impacted by the event. A secondary analysis examined the effects of PSPS event defined as mild, moderate, or severe based on the relative number of customers impacted by the event (explained further in supplement). 
-
 \begin{wrapfigure}{r}{0.5\textwidth}
   \centering
   \includegraphics[width=0.45\textwidth]{tables_figures/table1.png}
@@ -15,37 +13,30 @@ This study examined the effects of PSPS events with and without co-occurring wil
   \label{table1}
 \end{wrapfigure}
 
-Using the HCAI data and our count metric, we identified XXX cases and YYY controls across all cause-exposure level combinations (\ref{table1}). This study included XX adults $\geq$ 20 years old who had a hospital admission or emergency department visit between 2013 -- 2019 in California. Of the health endpoints included in this study, the most common was respiratory (n = 4,923,047 case-days). Using these case-days, we generated 16,676,351 control-days. We identified the greatest number of encounters associated with the severe exposure level, with 1,717 cardiovascular case-days during a severe outage and 817 respiratory case-days. We accordingly identified 6,159 and 2,892 control-days for cardiovascular and respiratory encounters, respectively (\ref{table1}). 
+NOTE: NEED TO SWITCH CASES AND CONTROLS IN TABLE! This study examined the effects of PSPS events with and without co-occurring wildfire \PM on respiratory, cardiovascular, and psychiatric hospitalizations and emergency department encounters among adults . By allowing every case to serve as their own control in a time-stratified case-crossover design, we estimated the effect of a PSPS event alone as well as a PSPS event occurring at the same time as wildfire \PM on these four causes. The primary analysis examines the effects of PSPS event defined as mild, moderate, or severe based on the total count of customers impacted by the event. A secondary analysis examined the effects of PSPS event defined as mild, moderate, or severe based on the relative number of customers impacted by the event (explained further in supplement). 
+
+Using the HCAI data and our count metric, we identified XXX cases and YYY controls across all cause-exposure level combinations (table \ref{table1}). This study included XX adults $\geq$ 20 years old who had a hospital admission or emergency department visit between 2013 -- 2019 in California. Of the health endpoints included in this study, the most common was respiratory (n = 4,923,047 case-days). Using these case-days, we generated 16,676,351 control-days. We identified the greatest number of encounters associated with the severe exposure level, with 1,717 cardiovascular case-days during a severe outage and 817 respiratory case-days. We accordingly identified 6,159 and 2,892 control-days for cardiovascular and respiratory encounters, respectively (table \ref{table1}). 
 
 \subsection{Respiratory morbidity}
-Of the encounters in this study, XX\% were for respiratory conditions (ICD codes in table \ref{tab:icd_codes}). The odds of respiratory encounter were XX times higher in those exposed to a severe PSPS event and wildfire (\ref{fig1}). 
+Of the encounters in this study, XX\% were for respiratory conditions (ICD codes in table \ref{tab:icd_codes}). The odds of respiratory encounter were XX times higher in those exposed to co-occurring wildfire \PM and severe PSPS events (figure \ref{fig1}). NOTE: THIS FIGURE IS WRONG, IT IS A PLACEHOLDER!!!!
 
-\subsection{Cardiovascular mobidity}
+When we examined chronic obstructive pulmonary disease (COPD) alone, the effects attenuated and were null. This is likely due to small sample size. 
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{tables_figures/fig1.png}
+    \caption{PSPS and Wildfire \PM effects, by cause.}
+    \label{fig1}
+\end{figure}
 
-\subsection{Psychiatric disorders}
-All findings for the association between PSPS events and psychiatric disorders were null. Additionally, results for the association between PSPS events that co-occur with wildfire \PM were also null. Though previous studies have found a relationship between wildfire \PM and psychiatric disorders such as dementia,\citep{elser2025wildfire} we did not have a large enough sample size to detect this relationship in isolation. 
+\subsection{Cardiovascular mobidity and Psychiatric disorders}
+All findings for the association between PSPS events and psychiatric disorders were null. Additionally, results for the association between PSPS events that co-occur with wildfire \PM were also null. Though previous studies have found a relationship between wildfire \PM and psychiatric disorders such as dementia,\citep{elser2025wildfire} we did not have a large enough sample size to detect this relationship in isolation (\ref{fig1}). 
 
+TODO: 
+- \textbf{fig 2}: add map showing psps + wf? 
+- \textbf{table 2}: descriptives of wf exp and psps exp overall and their co-occurrence (avg wf exposure during psps events and what is the range) 
 
-
-
-% \begin{itemize}
-
-%     \item overview (report main effects first, then co-occurrence, for each)
-%     \begin{itemize}
-%         \item description of study population (e.g., table 1).
-%         \item interactions of severe PSPS events and wildfire smoke for respiratory morbidity (1.26, 95\% CI 1.03 - 1.53)
-%         \item when analyzing copd alone, strong effects for just wf or just psps, stronger than resp overall. but dont detect an effect for co-occurrence of thse and its unclear whether we are underpowered or if the relationship doesnt exist here. 
-%         \item cardio para -- report null findings 
-%     \end{itemize}
-%     \item tables/figures
-%     \begin{itemize}
-%         \item \textbf{table 1}: Descriptive statistics of hospital admissions and ED visits by PSPS severity and wildfire smoke exposure.
-%         \item \textbf{table 2}: descriptives of wf exp and psps exp overall and their co-occurrence (avg wf exposure during psps events and what is the range) 
-%         \item \textbf{figure 1}: map of PSPS and avg wf smoke pm during psps events -- play with this, maybe only show psps  
-%         \item \textbf{figure 2}: plots showing effect estimates (box plots? could we do something more creative?) 
-%     \end{itemize}
-% \end{itemize}
-
+QUESTION
+- should we talk about hybrid metric here or later?
 
 \end{document}
