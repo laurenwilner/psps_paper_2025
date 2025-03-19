@@ -1,0 +1,71 @@
+\documentclass[../main.tex]{subfiles}
+\graphicspath{{\subfix{../images/}}}
+\usepackage[super, comma, sort&compress]{natbib}
+
+\begin{document}
+\section{Methods}
+% TODO: make a table of vars and a case crossover fig 
+% clean up stat analysis section
+
+\subsection{Study population}
+In this Zip Code-level study in California, we used electronic health record data of hospital admissions and emergency department visits among adults $\geq$ 20 years of age from California Department of Health Care Access and Information (HCAI) from 2013 -- 2019.\citep{hcai_datasets} HCAI oversees healthcare infrastructure and access in California, including collecting and publishing data. To this end, HCAI provides geographic and temporal data for the state. Our study included XXX patients aged XX-XX years were included in our study, living in XXX Zip Codes across California (Figure X: map of zips included). Previous studies have identified many of the health outcomes theorized to be associated with both power outages and wildfires. Accordingly, we studied respiratory, cardiovascular, and psychiatric health endpoints based on previous studies of the major adverse health effects of power outages and wildfires.\citep{casey2020power, casey2024measuring}
+
+\subsection{Exposures and covariates}
+
+\subsubsection{PSPS data}
+We measured exposure to PSPS events using data from PSE Healthy Energy, which compiled PSPS events from the three major energy providers in California, which are Pacific Gas and Electric (PG\&E), San Diego Gas and Electric (SDG\&E), and Southern California Edison (SCE).\citep{cpuc_psps_reports} These data only include information from these three major utilities in California because other utilities have different reporting requirements and were unavailable. However, these three utilities cover XX\% of California and we believe X\% of PSPS events. 
+
+This PSPS dataset, which contains information on every PSPS event in the time period that affected one of these three utilities, characterizes PSPS events at the circuit level. A circuit is defined as XXXX. A PSPS event may impact multiple circuits, so each circuit-event has a start time, end time, duration, and number of customers impacted. The number of customers impacted is broken down into commercial, residential, and medical baseline customers (customers dependent power for medical needs\citep{pse_med_baseline, pge_med_baseline}). In this study, we used the total number of customers impacted on a given circuit and assumed that customers were evenly distributed along all circuits.\citep{pse_healthy_energy} Despite circuits being energized and de-energized throughout events, in the absence of information on this we also assumed that all of the circuit was without power for the duration of a PSPS event on that circuit. The circuits were provided as geospatial polygons with a buffer around the circuit polyline that was approximated to include all customers served by that circuit. We overlaid these circuits with high-resolution gridded estimates of population from the 2020 census in California\citep{depsky2022high} to estimate the number of people affected by each outage along the circuit. We did another spatial overlay of these circuits with zip code tabulation areas (ZCTAs) to determine the area of each circuit that overlapped with each ZCTA. In the absence of more detailed information on customer distribution, we assumed an even distribution of customers across the circuit. Accordingly, we used the proportion of the area intersecting a given ZCTA as a weight and calculated the number of customers for every circuit-ZCTA combination. Finally, we summed to determine the number of customers impacted by ZCTA.
+
+We constructed two datasets: (1) hourly zip code-level PSPS events (which assumed that an event occurred during every hour between the start and end date-time, though we know that this may not always be true) and (2) daily zip code-level PSPS events. 
+
+We included two exposure metrics in these datasets. The first metric was the total number of customers impacted. To construct a relative metric, we then measured severity of an outage by multiplying the total number of customers out by the proportion of customers out. Exposure for both metrics was categorized mild, moderate, or severe using tertiles of each metric, respectively.
+
+For this analysis, we used the daily dataset of zip code-level PSPS exposure. As such, a zip code-day was considered exposed if there were 8 or more hours of PSPS outage on that day. We built models with both the absolute and relative metrics.  
+
+\subsubsection{Wildfire smoke data}
+We used daily wildfire \PM data at the zip code-level.\citep{aguilera2023novel} We averaged wildfire \PM exposure in the 5 days leading up to and including the day of interest (either a case or control day). Exposure was modeled as continuous wildfire \PM per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}.
+
+\subsubsection{Dual Exposure}
+We combined these two exposures by zip code-day to quantify the extent of dual exposure to wildfire \PM and power outages in our study population.
+
+\subsubsection{Temperature}
+We used daily temperature data from the Parameter-elevation Regressions on Independent Slopes Model (PRISM).\citep{prism2014} 
+
+\subsection{Outcomes}
+Using emergency department and hospital admissions data for California, 2013-2019, we used International Classification of Disease, Ninth Edition (ICD-9) and Tenth Edition (ICD-10) were used to classify outcomes of interest. ICD codes used in this analysis are in table \ref{tab:icd_codes}. 
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{0.15\textwidth}|p{0.38\textwidth}|p{0.38\textwidth}|}
+\hline
+\textbf{Health endpoint} & \textbf{ICD-9 Codes} & \textbf{ICD-10 Codes} \\
+\hline
+Respiratory & 460-466, 471, 472, 477, 478, 480-487, 490-496, 511, 513-519, 786 & J00-J06, J12-J18, J20-J22, J30, J31, J33, J34, J38, J39, J40-J47, J80-J86, J90-J92, J94, J96-J99, R04-R07, R09 \\
+\hline
+Cardiovascular & 390-398, 401-417, 420-429, 440-449 & I00-I02, I05-I16, I20-I28, I30-I5A, I70-I79 \\
+\hline
+Psychiatric & 290-293, 295, 296, 298 & F06, F10-F16, F18-F21, F23, F25, F28-F33 \\
+\hline
+\end{tabular}
+\caption{ICD-9 and ICD-10 Codes by Medical Condition}
+\label{tab:icd_codes}
+\end{table}
+
+
+Additionally, we isolated chronic obstructive pulmonary disease (COPD) and modeled it both as a component of respiratory outcomes and by itself, as it may rely on electronic medical equipment -- a particular concern during a power outage.\citep{casey2020power, mcbrien_wildfire_2023}
+
+We used individual-level hospital admission and emergency department visit data, which included date of admission, hospital Zip Code, and patient’s residential Zip Code. When a patient's Zip Code was missing, we used the zip code of the hospital. Each patient case-day was linked to exposure data using zip code and date.
+
+To generate a dataset of control-days, we used the day of the week for a case and control days were all other instances of that day of week in the month of the case. In other words, if a case occurred on a Monday in January, all other Mondays in January \textit{except} for the day of the hospital encounter, are considered control days for that individual.
+
+\subsection{Statistical analysis}
+To estimate the effect of PSPS events (with or without wildfire \PM) on these health endpoints, we used a time-stratified case-crossover design. This design is similar to a case-crossover design, characterized by individuals serving as their own controls.\citep{maclure1991case, schwarz2024effects} This approach is commonly used for epidemiologic studies of air pollution as it inherently controls for individual-level factors, such as demographics and comorbidities, and temporal variation, such as day of week effects and seasonality.\citep{bateson2004sensitive, carracedo2010case, janes2005case, schwarz2024effects} 
+
+We matched exposure data to hospital admissions and emergency department visits from California Department of Health Care Access and Information (HCAI) using zip code and date.\citep{hcai_datasets} Using a time-stratified case-crossover design, we examined the effects of a (1) PSPS event alone, (2) wildfire \PM alone, and (3) dual exposure to a PSPS event and wildfire \PM on hospital admissions and emergency department visits. The date of hospital admission was considered the case day, and control days were matched by day of week in the same month and year.
+
+We estimated effects using a conditional logistic regression model for each health endpoint. Each model included PSPS event exposure, cumulative lagged wildfire \PM exposure, and an interaction term between PSPS event and wildfire smoke exposure. Additionally, we used a natural spline with 4 knots on the average maximum temperature value to account for long-term variation that was not accounted for in our case-crossover design. 
+
+R version 4.4.2 and Python version 3.13.0 were used for all analyses.
+
+\end{document}
