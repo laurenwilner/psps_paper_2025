@@ -102,7 +102,7 @@ plot_df <- plot_df_temp %>%
         lower_ci = exp(log_odds - 1.96 * se),
         upper_ci = exp(log_odds + 1.96 * se)
     ) %>% 
-    mutate(group = ifelse(group == "interaction", "Interaction (Severe PSPS event x wildfire smoke)", "Severe PSPS event"))
+    mutate(group = ifelse(group == "interaction", "Interaction", "Severe PSPS event"))
 
 # make figure 1 -------------------------------------------
   # box plot 
