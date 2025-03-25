@@ -14,9 +14,9 @@ exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summarie
 exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_byOOI.csv"))
 exp_abs_sm <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary.csv"))
 
-# make table 1 -------------------------------------------
-# table 1: summary of exposure by OOI, severity_customers, and case_indicator
-table1 <- exposure_summary_abs_by_ooi %>% 
+# make table 2 -------------------------------------------
+# table 2: summary of exposure by OOI, severity_customers, and case_indicator
+table2 <- exposure_summary_abs_by_ooi %>% 
     select(c("OOI", "severity_customers", "case_indicator", "count")) %>%
     group_by(OOI, severity_customers, case_indicator) %>%
     summarize(
@@ -43,14 +43,14 @@ table1 <- exposure_summary_abs_by_ooi %>%
             Exposure == 0, "Unexposed", Exposure
         )) %>% ungroup() %>% distinct()
 
-# pretty table 1 
+# pretty table 2
 # Option 1: Reorder the data frame first
-table1 <- table1 %>%
+table2 <- table2 %>%
   mutate(Cause = factor(Cause, levels = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD"))) %>%
   relocate(Case, .before = Control)
 
 # Then create the table
-pretty_table1 <- table1 %>%
+pretty_table2 <- table2 %>%
   gt() %>%
   tab_header(
     title = "Case-Control Counts by Cause and Exposure Level"
@@ -89,15 +89,15 @@ pretty_table1 <- table1 %>%
   options(chromote.headless = "new")
 
   # save the table as html using cat 
-   pretty_table1 %>% 
+   pretty_table2 %>% 
     as_raw_html() %>% 
     cat(file = paste0(out_dir, "table1.html"))
   
   # save the table as png
     # doing it this way becuase i couldnt get the dpi high enough with gtsave
   webshot2::webshot(
-    url = paste0(out_dir, "table1.html"),
-    file = paste0(out_dir, "table1.png"),
+    url = paste0(out_dir, "table2.html"),
+    file = paste0(out_dir, "table2.png"),
     zoom = 7,         # apparently this is approx 300 DPI
     selector = "table"  # only capture the table
   )
