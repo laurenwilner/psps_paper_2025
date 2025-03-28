@@ -2,10 +2,16 @@
 # PSPS: Paper tables 
 # March 2025
 #-------------------------------------------------
+# to do: put n under case days and control days. 
+# ask caitlin: the tables are currently uniqu visits not unique ppl, so if someone had multiple visits then they are in there multiple times. lets have it be unique and then also have a row of avg number of visits per person. 
+# combine other/unknown
+# make table 1 supplement 
 
 # setup -------------------------------------------------
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
-pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown)
+pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown, readxl, gt)
+
+pal <- met.brewer(name = "Hokusai2", n=2)
 
 results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
@@ -13,10 +19,197 @@ out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_
 exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_byOOI.csv"))
 exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_byOOI.csv"))
 exp_abs_sm <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary.csv"))
+exp_hyb_sm <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary.csv"))
+
+# make table 1 -------------------------------------------
+table1_df <- read_excel(paste0(results_dir, "/PSPSTable1_demo.xlsx"), sheet = "Sheet2")
+
+create_table1 <- function(data) {
+  categories <- unique(data$category)
+  
+  # Create an empty data frame with the structure we need
+  combined_data <- data.frame(
+    Group = character(0),
+    Cardiovascular = character(0),
+    Psychiatric = character(0),
+    Respiratory = character(0),
+    COPD = character(0),
+    stringsAsFactors = FALSE,
+    row_type = character(0)  # Add a row type identifier column
+  )
+  
+  # Process each category
+  for (cat in categories) {
+    # Skip processing if this is the Total category - we'll handle it separately
+    if (cat == "Total") {
+      next
+    }
+    
+    cat_data <- data %>% filter(category == cat)
+    
+    # Add a header row for the category
+    header_row <- data.frame(
+      Group = cat,
+      Cardiovascular = "",  # Blank instead of NA
+      Psychiatric = "",
+      Respiratory = "", 
+      COPD = "",
+      stringsAsFactors = FALSE,
+      row_type = "header"  # Mark as header row
+    )
+    
+    # Create rows for the subgroups
+    subgroup_rows <- data.frame(
+      Group = cat_data$group,  # Group names directly in the Group column
+      Cardiovascular = cat_data$Cardiovascular,
+      Psychiatric = cat_data$Psychiatric,
+      Respiratory = cat_data$Respiratory,
+      COPD = cat_data$COPD,
+      stringsAsFactors = FALSE,
+      row_type = "subgroup"  # Mark as subgroup row
+    )
+    
+    # Combine header row with subgroup rows
+    section <- rbind(header_row, subgroup_rows)
+    
+    # Add this section to our combined data
+    combined_data <- rbind(combined_data, section)
+  }
+  
+  # Add the Total row
+  total_data <- data %>% filter(category == "Total")
+  if (nrow(total_data) > 0) {
+    total_row <- data.frame(
+      Group = "Total",
+      Cardiovascular = total_data$Cardiovascular[1],
+      Psychiatric = total_data$Psychiatric[1],
+      Respiratory = total_data$Respiratory[1],
+      COPD = total_data$COPD[1],
+      stringsAsFactors = FALSE,
+      row_type = "total"  # Mark as total row
+    )
+    combined_data <- rbind(combined_data, total_row)
+  }
+  
+  # Create gt table - remove the row_type column before creating the table
+  visible_data <- combined_data %>% select(-row_type)
+  gt_table <- gt(visible_data)
+  
+  # Now apply styles based on the row_type in the original data
+  header_rows <- which(combined_data$row_type == "header")
+  subgroup_rows <- which(combined_data$row_type == "subgroup")
+  total_rows <- which(combined_data$row_type == "total")
+  
+  gt_table <- gt_table %>%
+    cols_label(
+      Group = "",
+      Cardiovascular = "Cardiovascular",
+      Psychiatric = "Psychiatric",
+      Respiratory = "Respiratory", 
+      COPD = "COPD"
+    ) %>%
+    # Make category headers bold
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = cells_body(columns = "Group", rows = header_rows)
+    ) %>%
+    # Make Total row bold
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = cells_body(columns = "Group", rows = total_rows)
+    ) %>%
+    # Add indentation to subgroup values
+    tab_style(
+      style = cell_text(indent = px(15)),
+      locations = cells_body(columns = "Group", rows = subgroup_rows)
+    ) %>%
+    # Style the header row
+    tab_style(
+      style = cell_fill(color = pal[1]),
+      locations = cells_column_labels(columns = everything())
+    ) %>%
+    tab_style(
+      style = cell_text(color = "black", weight = "bold"),
+      locations = cells_column_labels(columns = everything())
+    ) %>% 
+    # Add a border under the column headers
+    tab_style(
+      style = cell_borders(
+        sides = "bottom",
+        color = "black",
+        weight = px(1),
+        style = "solid"
+      ),
+      locations = cells_column_labels(columns = everything())
+    ) %>%
+    tab_options(
+      column_labels.padding = px(15)  # Increase this value to make the header taller
+    ) %>%
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = cells_body(rows = total_rows)  # Remove the columns = "Group" to apply to all columns
+    ) %>%
+    tab_style(
+      style = list(
+        cell_text(align = "center")
+      ),
+      locations = cells_column_labels(columns = everything())
+    ) %>%
+    tab_options(
+      table.border.top.style = "solid",
+      table.border.top.width = px(1),
+      table.border.top.color = "black",
+      table.border.bottom.style = "solid",
+      table.border.bottom.width = px(1),
+      table.border.bottom.color = "black",
+      column_labels.border.top.style = "none",
+      column_labels.border.bottom.style = "solid",
+      column_labels.border.bottom.width = px(1),
+      column_labels.border.bottom.color = "black",
+      row_group.border.top.style = "none",
+      row_group.border.bottom.style = "none",
+      table_body.border.top.style = "none",
+      table_body.border.bottom.style = "none",
+      table_body.hlines.style = "none",
+      table_body.vlines.style = "none"
+    ) %>%
+    # Add alternating row colors
+    opt_row_striping() %>%
+    # Right-align the numeric columns
+    cols_align(align = "right", columns = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD")) %>%
+    # Left-align the category and subgroup columns
+    cols_align(align = "left", columns = "Group")
+  
+  return(gt_table)
+}
+
+# Create and display the table
+pretty_table1 <- create_table1(table1_df)
+
+# save table 
+  # this is something webshot needs to work...
+  options(chromote.headless = "new")
+
+  # save the table as html using cat 
+   pretty_table1 %>% 
+    as_raw_html() %>% 
+    cat(file = paste0(out_dir, "table1.html"))
+  
+  # save the table as png
+    # doing it this way becuase i couldnt get the dpi high enough with gtsave
+  webshot2::webshot(
+    url = paste0(out_dir, "table1.html"),
+    file = paste0(out_dir, "table1.png"),
+    zoom = 7,         # apparently this is approx 300 DPI
+    selector = "table"  # only capture the table
+  )
+
+
+
 
 # make table 2 -------------------------------------------
 # table 2: summary of exposure by OOI, severity_customers, and case_indicator
-table2 <- exposure_summary_abs_by_ooi %>% 
+abs_table <- exposure_summary_abs_by_ooi %>% 
     select(c("OOI", "severity_customers", "case_indicator", "count")) %>%
     group_by(OOI, severity_customers, case_indicator) %>%
     summarize(
@@ -28,7 +221,33 @@ table2 <- exposure_summary_abs_by_ooi %>%
         Exposure = severity_customers
     ) %>%
     # make 2 vars for "Case" and "Control"
-    dplyr::mutate(case_indicator = ifelse(case_indicator==1, "Case", "Control")) %>%
+    dplyr::mutate(case_indicator = ifelse(case_indicator==1, "Case-days", "Control-days")) %>%
+    pivot_wider(
+        names_from = case_indicator,
+        values_from = count) %>% 
+    # rename causes 
+    mutate(Cause = ifelse(
+        Cause == "cardio", "Cardiovascular",
+        ifelse(Cause == "resp", "Respiratory",
+        ifelse(Cause == "psych", "Psychiatric",
+        ifelse(Cause == "copd", "COPD")))), 
+        # rename exposure ==0 to unexposed
+        Exposure = ifelse(
+            Exposure == 0, "Unexposed", Exposure
+        )) %>% ungroup() %>% distinct()
+hyb_table <- exposure_summary_hybrid_by_ooi %>% 
+    select(c("OOI", "severity_hybrid", "case_indicator", "count")) %>%
+    group_by(OOI, severity_hybrid, case_indicator) %>%
+    summarize(
+        count = sum(count)
+    ) %>% 
+    # label ooi as "Cause" and severity_customers as "Exposure"
+    rename(
+        Cause = OOI,
+        Exposure = severity_hybrid
+    ) %>%
+    # make 2 vars for "Case" and "Control"
+    dplyr::mutate(case_indicator = ifelse(case_indicator==1, "Case-days", "Control-days")) %>%
     pivot_wider(
         names_from = case_indicator,
         values_from = count) %>% 
@@ -43,24 +262,41 @@ table2 <- exposure_summary_abs_by_ooi %>%
             Exposure == 0, "Unexposed", Exposure
         )) %>% ungroup() %>% distinct()
 
-# pretty table 2
-# Option 1: Reorder the data frame first
-table2 <- table2 %>%
+# rename columns in both tables to avoid conflicts when joining
+abs_table <- abs_table %>%
+  rename(
+    Abs_Case = `Case-days`,
+    Abs_Control = `Control-days`
+  )
+hyb_table <- hyb_table %>%
+  rename(
+    Hyb_Case = `Case-days`,
+    Hyb_Control = `Control-days`
+  )
+# join the tables
+combined_table <- abs_table %>%
+  full_join(hyb_table, by = c("Cause", "Exposure")) %>%
   mutate(Cause = factor(Cause, levels = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD"))) %>%
-  relocate(Case, .before = Control)
+  arrange(Cause, Exposure)
 
-# Then create the table
-pretty_table2 <- table2 %>%
+# pretty table 2
+pretty_table2 <- combined_table %>%
   gt() %>%
-  tab_header(
-    title = "Case-Control Counts by Cause and Exposure Level"
-  ) %>%
   fmt_number(
-    columns = c(Case, Control),
+    columns = c(Abs_Case, Abs_Control, Hyb_Case, Hyb_Control),
     decimals = 0,
     use_seps = TRUE
   ) %>%
-  # Create row groups in REVERSE order of how you want them displayed
+  # Add spanner headers
+  tab_spanner(
+    label = "Absolute",
+    columns = c(Abs_Case, Abs_Control)
+  ) %>%
+  tab_spanner(
+    label = "Hybrid",
+    columns = c(Hyb_Case, Hyb_Control)
+  ) %>%
+  # Create row groups in REVERSE order
   tab_row_group(
     label = "COPD",
     rows = Cause == "COPD"
@@ -79,10 +315,63 @@ pretty_table2 <- table2 %>%
   ) %>%
   # Hide the original Cause column
   cols_hide(columns = Cause) %>%
-  # Style options
+  # Rename columns to simplify headers
+  cols_label(
+    Abs_Case = "Case-days",
+    Abs_Control = "Control-days",
+    Hyb_Case = "Case-days",
+    Hyb_Control = "Control-days"
+  ) %>%
+    tab_options(
+    row_group.font.weight = "bold",
+    row_group.background.color = "#f7f7f7",
+    # Table border options
+    table.border.top.color = "black",
+    table.border.bottom.color = "black", 
+    # Header border options
+    heading.border.bottom.color = "black",
+    # Column labels border options
+    column_labels.border.top.color = "black",
+    column_labels.border.bottom.color = "black",
+    # Body border options
+    row_group.border.top.color = "black",
+    row_group.border.bottom.color = "black",
+    # Table body border top and bottom color
+    table_body.border.top.color = "black",
+    table_body.border.bottom.color = "black",
+    table.border.top.width = px(1),
+    table.border.bottom.width = px(1),
+    heading.border.bottom.width = px(1),
+    column_labels.border.top.width = px(1),
+    column_labels.border.bottom.width = px(1),
+    row_group.border.top.width = px(1),
+    row_group.border.bottom.width = px(1),
+    table_body.border.top.width = px(1),
+    table_body.border.bottom.width = px(1)
+  ) %>% 
+  # Style options for row groups
   tab_options(
     row_group.font.weight = "bold",
     row_group.background.color = "#f7f7f7"
+  ) %>%
+  # Style the header (column labels)
+  tab_style(
+    style = list(
+      cell_fill(color = pal[1]),
+      cell_text(weight = "bold")
+    ),
+    locations = list(
+      cells_column_labels(),
+      cells_column_spanners()
+    )
+  ) %>%
+  # Also bold the Exposure column header
+  tab_style(
+    style = list(
+      cell_fill(color = pal[1]),
+      cell_text(weight = "bold")
+    ),
+    locations = cells_column_labels(columns = Exposure)
   )
 
   # this is something webshot needs to work...
@@ -91,7 +380,7 @@ pretty_table2 <- table2 %>%
   # save the table as html using cat 
    pretty_table2 %>% 
     as_raw_html() %>% 
-    cat(file = paste0(out_dir, "table1.html"))
+    cat(file = paste0(out_dir, "table2.html"))
   
   # save the table as png
     # doing it this way becuase i couldnt get the dpi high enough with gtsave
@@ -101,4 +390,3 @@ pretty_table2 <- table2 %>%
     zoom = 7,         # apparently this is approx 300 DPI
     selector = "table"  # only capture the table
   )
-
