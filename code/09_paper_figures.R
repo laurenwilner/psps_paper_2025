@@ -7,7 +7,7 @@
 
 # setup -------------------------------------------------
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
-pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown,sf, tigris, patchwork, stringr)
+pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown,sf, tigris, patchwork, stringr, scales)
 pal <- c( '#6f9969', '#efc86e',"#0f7ba2")
 crs <- "EPSG:3310" # California Albers Equal Area Conic projection
 
@@ -282,10 +282,6 @@ exp_data <- merge(wf_exp, psps_exp, by = c("date", "zip_code"), all = TRUE) %>%
 # read in map data -------------------------------------------------
 # load data -------------------------------------------------
 zctas <- c(90001:90008, 90011:90041, 94102:94158) # FILL IN WITH ZCTAS FROM HCAI! 
-ca_shp <- tigris::states(cb = TRUE, year = 2020) %>% 
-    filter(STUSPS == "CA") %>% 
-    select(geometry)  %>% 
-    st_transform(epsg = 3310)
 zcta_shp <- tigris::zctas(cb = TRUE, year = 2020) %>% 
     rename(zcta = ZCTA5CE20) %>% 
     st_transform(epsg = 3310) %>% 
@@ -326,7 +322,7 @@ fig1 <- ggplot() +
     # QUESTION FOR JOAN: DO WE WANT TO SHOW 'NO EXPOSURE' IN BAR CHART? 
     # QUESTION FOR JOAN: do we want to filter to wf over 10? look at caitlins code together.
 
-# fig 2a -------------------------------------------------
+# fig 2 -------------------------------------------------
 # get the number of zipcode-days for each exposure type
 exp_summary <- exp_data %>% 
     mutate(year = lubridate::year(date),
@@ -353,6 +349,7 @@ exp_sum_shp <- exp_summary %>%
 exposure_types <- unique(exp_sum_shp$exposure_type)
 all_years <- sort(unique(exp_sum_shp$year))
 
+# make plot -------------------------------------------------
 # Create a list to store individual plots
 plot_list <- list()
 
@@ -371,6 +368,9 @@ for (i in seq_along(exposure_types)) {
   missing_years <- setdiff(all_years, years_in_data)
   
   # Create the plot
+  exp_type <- ifelse(exp_type == "WF smoke + PSPS event", "WFS + PSPS", exp_type)
+  exp_type <- ifelse(exp_type == "PSPS event", "PSPS", exp_type)
+  exp_type <- ifelse(exp_type == "WF smoke", "WFS", exp_type)
   p <- ggplot() +
     geom_sf(data = exp_sum_shp_temp, aes(fill = n_days)) +
     geom_sf(data = zip_shp, fill = NA, color = alpha("grey", 0.5), size = 0.5) +
@@ -378,7 +378,8 @@ for (i in seq_along(exposure_types)) {
     scale_fill_gradient(
       low = alpha(exp_color, 0.2),
       high = exp_color,
-      name = "Number of Days"
+      name = "Number of Days",
+      labels = scales::comma_format(accuracy = 1)
     ) +
     theme_minimal() +
     labs(title = exp_type) +
@@ -387,44 +388,18 @@ for (i in seq_along(exposure_types)) {
       axis.text.y = element_blank(),
       axis.ticks = element_blank(),
       panel.grid = element_blank(),
-      strip.text = element_text(size = 10, face = "bold"),
-      plot.title = element_text(size = 12, face = "bold", hjust = 0.5)
-    )
+      plot.title = element_text(size = 10, face = "bold", hjust = 0),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 12),
+      legend.position = "bottom",
+    ) 
   
   plot_list[[i]] <- p
 }
 
 # Combine plots using patchwork
-combined_plot <- plot_list[[1]] / plot_list[[2]] / plot_list[[3]] +
-  plot_layout(guides = "collect") &
-  theme(legend.position = "bottom")
+fig2 <- plot_list[[1]] + plot_list[[2]] + plot_list[[3]]
 
-
-
-# fig2a <- ggplot(exp_sum_collapse, aes(x = n, y = reorder(exposure_type, n), fill = exposure_type)) +
-#   geom_col(width = 0.7) +
-#   geom_text(aes(label = label), hjust = -0.1, size = 4.5) +
-#   scale_fill_manual(values = c("WF smoke + PSPS event" = pal[1], 
-#                               "PSPS event" = pal[2], 
-#                               "WF smoke" = pal[3])) +
-#   labs(x = "Zip Code-Days Exposure", 
-#        y = "") +
-#   theme_minimal() +
-#   theme(legend.position = "none",
-#         panel.grid.major.y = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         # Increased text sizes for axis labels and title
-#         axis.text.y = element_text(size = 14),         # Larger y-axis labels (exposure types)
-#         axis.text.x = element_text(size = 14),         # Larger x-axis numbers
-#         axis.title.x = element_text(size = 14),        # Larger x-axis title
-#         plot.title = element_text(hjust = 0, face = "bold", size = 16),
-#         # Compress the plot height
-#         aspect.ratio = 0.4) +
-#         coord_cartesian(xlim = c(0, max(exp_summary$n) * 1.05)) +
-#         scale_x_continuous(expand = expansion(mult = c(0, 0.2)),
-#             breaks = seq(0, ceiling(max(exp_summary$n) * 1.05), by = 250))
-
-# fig 2b ---------------------------------
 
 
 # notes from JAC
@@ -490,10 +465,10 @@ supp_fig1_hyb <- mild_hyb / mod_hyb / sev_hyb
 supp_fig1_abs <- mild_abs / mod_abs / sev_abs
 
 # save figs -------------------------------------------
-ggsave(paste0(out_dir, "fig1.png"), fig1, width = 10, height = 5, dpi = 100)
-ggsave(paste0(out_dir, "fig2a.png"), fig2a, width = 10, height = 3, dpi = 100)
-ggsave(paste0(out_dir, "fig3.png"), fig3, width = 10, height = 5, dpi = 100)
-ggsave(paste0(out_dir, "supp_fig1_hyb.png"), supp_fig1_hyb, width = 10, height = 15, dpi = 100)
-ggsave(paste0(out_dir, "supp_fig1_abs.png"), supp_fig1_abs, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "fig1.pdf"), fig1, width = 10, height = 5, dpi = 100)
+ggsave(paste0(out_dir, "fig2.pdf"), fig2, width = 15, height = 3, dpi = 100)
+ggsave(paste0(out_dir, "fig3.pdf"), fig3, width = 10, height = 5, dpi = 100)
+ggsave(paste0(out_dir, "supp_fig1_hyb.pdf"), supp_fig1_hyb, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "supp_fig1_abs.pdf"), supp_fig1_abs, width = 10, height = 15, dpi = 100)
 
 
