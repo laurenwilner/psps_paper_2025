@@ -7,8 +7,9 @@
 
 # setup -------------------------------------------------
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
-pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown,sf, tigris, patchwork, stringr)
+pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown,sf, tigris, patchwork, stringr, scales)
 pal <- c( '#6f9969', '#efc86e',"#0f7ba2")
+crs <- "EPSG:3310" # California Albers Equal Area Conic projection
 
 results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ Mar\ 2025/")
 exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
@@ -51,8 +52,13 @@ process_results <- function(severity_level, all_lag0, metric = "abs", cov_matric
     cov_value <- get_covariance(cause, metric, severity_level, cov_matrices)
     
     # Define variable patterns based on severity level
-    interaction_var <- paste0("severity_customers", severity_level, ".mean_lag05_per10")
-    main_effect_var <- paste0("severity_customers", severity_level)
+    if(metric == "abs"){
+        interaction_var <- paste0("severity_customers", severity_level, ".mean_lag05_per10")
+        main_effect_var <- paste0("severity_customers", severity_level)
+    }else{
+        interaction_var <- paste0("severity_hybrid", severity_level, ".mean_lag05_per10")
+        main_effect_var <- paste0("severity_hybrid", severity_level)
+    }
     wf_var <- "mean_lag05_per10"
     
     # Map cause to display name
@@ -175,41 +181,41 @@ create_results_fig <- function(data, severity, show_disease_labels = TRUE, show_
 # resp
 resp_lag0 <- read.csv(paste0(results_dir, "results_PSPS_wflag05_nstemp_resp_V2.csv")) %>% 
                 mutate(across(everything(), ~str_replace_all(., ":", ".")))
-# resp_abs_cov <- read.csv(paste0(results_dir, "vcov_absmod_resp.csv")) %>% 
-  # mutate(across(everything(), ~str_replace_all(., ":", ".")))
+resp_abs_cov <- read.csv(paste0(results_dir, "vcov_absmod_resp.csv")) %>% 
+  mutate(across(everything(), ~str_replace_all(., ":", ".")))
 resp_hyb_cov <- read.csv(paste0(results_dir, "vcov_hybmod_resp.csv")) %>% 
   mutate(across(everything(), ~str_replace_all(., ":", ".")))
 # cardio
 cardio_lag0 <- read.csv(paste0(results_dir, "results_PSPS_wflag05_nstemp_cardio_V2.csv")) %>% 
                 mutate(across(everything(), ~str_replace_all(., ":", ".")))
-# cardio_abs_cov <- read.csv(paste0(results_dir, "vcov_absmod_cardio.csv")) %>% 
-  # mutate(across(everything(), ~str_replace_all(., ":", ".")))
+cardio_abs_cov <- read.csv(paste0(results_dir, "vcov_absmod_cardio.csv")) %>% 
+  mutate(across(everything(), ~str_replace_all(., ":", ".")))
 cardio_hyb_cov <- read.csv(paste0(results_dir, "vcov_hybmod_cardio.csv")) %>% 
                   mutate(across(everything(), ~str_replace_all(., ":", ".")))
 # psych
 psych_lag0 <- read.csv(paste0(results_dir, "results_PSPS_wflag05_nstemp_psych_V2.csv")) %>% 
                 mutate(across(everything(), ~str_replace_all(., ":", ".")))
-# psych_abs_cov <- read.csv(paste0(results_dir, "vcov_absmod_psych.csv")) %>% 
-  # mutate(across(everything(), ~str_replace_all(., ":", ".")))
+psych_abs_cov <- read.csv(paste0(results_dir, "vcov_absmod_psych.csv")) %>% 
+  mutate(across(everything(), ~str_replace_all(., ":", ".")))
 psych_hyb_cov <- read.csv(paste0(results_dir, "vcov_hybmod_psych.csv")) %>% 
                  mutate(across(everything(), ~str_replace_all(., ":", ".")))
 # copd
 copd_lag0 <- read.csv(paste0(results_dir, "results_PSPS_wflag05_nstemp_copd_V2.csv")) %>% 
                 mutate(across(everything(), ~str_replace_all(., ":", ".")))
-# copd_abs_cov <- read.csv(paste0(results_dir, "vcov_absmod_copd.csv")) %>% 
-  # mutate(across(everything(), ~str_replace_all(., ":", ".")))
+copd_abs_cov <- read.csv(paste0(results_dir, "vcov_absmod_copd.csv")) %>% 
+  mutate(across(everything(), ~str_replace_all(., ":", ".")))
 copd_hyb_cov <- read.csv(paste0(results_dir, "vcov_hybmod_copd.csv")) %>% 
                 mutate(across(everything(), ~str_replace_all(., ":", ".")))
 
 # store all covariance matrices
 cov_matrices <- list(
-  # resp_abs_cov = resp_abs_cov,
+  resp_abs_cov = resp_abs_cov,
   resp_hyb_cov = resp_hyb_cov,
-  # cardio_abs_cov = cardio_abs_cov,
+  cardio_abs_cov = cardio_abs_cov,
   cardio_hyb_cov = cardio_hyb_cov,
-  # psych_abs_cov = psych_abs_cov,
+  psych_abs_cov = psych_abs_cov,
   psych_hyb_cov = psych_hyb_cov,
-  # copd_abs_cov = copd_abs_cov,
+  copd_abs_cov = copd_abs_cov,
   copd_hyb_cov = copd_hyb_cov
 )
 
@@ -255,58 +261,27 @@ all_lag0_hyb <- bind_rows(resp_lag0_hyb, cardio_lag0_hyb, psych_lag0_hyb, copd_l
   # make or, ci_lower, ci_upper numeric
   mutate(across(c("OR", "CI_Lower", "CI_Upper"), as.numeric))
 
-# read in exp data -------------------------------------------------
-exp_data <- read.csv(paste0(exp_dir, "ca_ZIP_daily_psps_no_washout_classified_2013-2022.csv"))
+# # read in exp data -------------------------------------------------
+psps_exp <- read.csv(paste0(exp_dir, "daily_psps_binary.csv")) %>% 
+    mutate(date = as.Date(date, format = "%Y-%m-%d"),
+           psps_event = ifelse(psps_abs == 1 | psps_hybrid == 1, 1, 0)) %>%
+    select(c("date", "psps_event", "zip_code")) %>%
+    group_by(zip_code, date) %>%
+    reframe(psps_event = max(psps_event))
+wf_exp <- read.csv(paste0(exp_dir, "zip_wfpm20132019.csv")) %>% 
+    mutate(date = as.Date(date, format = "%Y-%m-%d")) %>%
+    select(c("date", "mean_lag05_per10", "zip_code"))
 
-# Create exposure summary by expanding dates and counting exposures
-exp_summary <- exp_data %>%
-  # First expand out the dates for each PSPS event
-  mutate(
-    date = as.Date(date),
-    wf_exposed = as.logical(wf_exposed),
-    psps_event = as.logical(psps_event)
-  ) %>%
-  # Now we can count the different types of exposure days
-  group_by(zcta, date) %>%
-  summarize(
-    wf_exposed = any(wf_exposed),
-    psps_event = any(psps_event),
-    .groups = "drop"
-  ) %>%
-  # Calculate exposure types
-  mutate(
-    exposure_type = case_when(
-      wf_exposed & psps_event ~ "PSPS + WFS",
-      wf_exposed ~ "WFS",
-      psps_event ~ "PSPS",
-      TRUE ~ "None"
-    )
-  ) %>%
-  # Get counts by exposure type
-  group_by(exposure_type) %>%
-  summarize(
-    n_days = n(),
-    n_unique_zctas = n_distinct(zcta)
-  ) %>%
-  filter(exposure_type != "None") %>%
-  # Calculate percentages and create labels
-  mutate(
-    pct = n_days / sum(n_days) * 100,
-    label = sprintf("%d (%d ZCTAs, %.1f%%)", n_days, n_unique_zctas, pct),
-    exposure_type = factor(exposure_type, levels = c("WFS", "PSPS", "PSPS + WFS"))
-  )
-
-# Print summary stats
-print("Summary of exposure days:")
-print(exp_summary)
+# generate exposure dataset for fig2
+# we need the number of zip-days for PSPS exp, WF exp, and dual exp
+    # a left join should be fine since wf is daily, but outer just in case
+exp_data <- merge(wf_exp, psps_exp, by = c("date", "zip_code"), all = TRUE) %>% 
+    mutate(psps_event = ifelse(is.na(psps_event), 0, psps_event)) %>%
+    rename(wf = mean_lag05_per10)
 
 # read in map data -------------------------------------------------
 # load data -------------------------------------------------
 zctas <- c(90001:90008, 90011:90041, 94102:94158) # FILL IN WITH ZCTAS FROM HCAI! 
-ca_shp <- tigris::states(cb = TRUE, year = 2020) %>% 
-    filter(STUSPS == "CA") %>% 
-    select(geometry)  %>% 
-    st_transform(epsg = 3310)
 zcta_shp <- tigris::zctas(cb = TRUE, year = 2020) %>% 
     rename(zcta = ZCTA5CE20) %>% 
     st_transform(epsg = 3310) %>% 
@@ -315,8 +290,9 @@ zcta_shp <- tigris::zctas(cb = TRUE, year = 2020) %>%
     st_intersection(ca_shp) %>%
     select(zcta, geometry) %>% 
     mutate(fill_flag = zcta %in% zctas)
-
-
+zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>% 
+            rename(zip_code = ZIP_CODE) %>%
+            select(c("zip_code", "geometry"))
 # make figs -------------------------------------------------
 
 ################
@@ -341,24 +317,95 @@ fig1 <- ggplot() +
 # Figure 2a is a descriptive plot showing the number of zip-days included in this analysis for each exposure category.
 # Figure 2b is a map of PSPS and WF events, exact details tbd. 
 
+
+    # QUESTION FOR JOAN: do we want mild/mod/sev psps or just binary? 
+    # QUESTION FOR JOAN: DO WE WANT TO SHOW 'NO EXPOSURE' IN BAR CHART? 
+    # QUESTION FOR JOAN: do we want to filter to wf over 10? look at caitlins code together.
+
+# fig 2 -------------------------------------------------
+# get the number of zipcode-days for each exposure type
+exp_summary <- exp_data %>% 
+    mutate(year = lubridate::year(date),
+        zip_code = as.character(zip_code),
+        exposure_type = case_when(psps_event>0 & wf<=0 ~ "PSPS event", 
+                            psps_event<=0 & wf>0 ~ "WF smoke",
+                            psps_event>0 & wf>0 ~ "WF smoke + PSPS event", 
+                            TRUE ~ "No exposure")) %>% 
+    group_by(zip_code, exposure_type, year) %>% 
+    summarise(
+        n_days = n()) %>% 
+    filter(year >= 2013 & year <= 2019)
+
+exp_sum_shp <- exp_summary %>% 
+    filter(exposure_type != "No exposure") %>%
+    left_join(zip_shp, by = "zip_code") %>% 
+    st_as_sf() %>%
+    filter(!st_is_empty(geometry)) %>%
+    st_transform(., crs) %>% 
+    filter(year == 2019) # doing this for now!
+
+# ggplot map faceted by year and exp type
+# Get unique exposure types
+exposure_types <- unique(exp_sum_shp$exposure_type)
+all_years <- sort(unique(exp_sum_shp$year))
+
+# make plot -------------------------------------------------
+# Create a list to store individual plots
+plot_list <- list()
+
+# Create a separate plot for each exposure type
+for (i in seq_along(exposure_types)) {
+  exp_type <- exposure_types[i]
+  exp_color <- ifelse(exp_type == "WF smoke + PSPS event", pal[1], 
+                      ifelse(exp_type == "PSPS event", pal[2], pal[3]))
+  
+  # Filter data for this exposure type
+  exp_sum_shp_temp <- exp_sum_shp %>% 
+    filter(exposure_type == exp_type)
+
+  # make sure everything gets filled in for each yr 
+  years_in_data <- unique(exp_sum_shp_temp$year)
+  missing_years <- setdiff(all_years, years_in_data)
+  
+  # Create the plot
+  exp_type <- ifelse(exp_type == "WF smoke + PSPS event", "WFS + PSPS", exp_type)
+  exp_type <- ifelse(exp_type == "PSPS event", "PSPS", exp_type)
+  exp_type <- ifelse(exp_type == "WF smoke", "WFS", exp_type)
+  p <- ggplot() +
+    geom_sf(data = exp_sum_shp_temp, aes(fill = n_days)) +
+    geom_sf(data = zip_shp, fill = NA, color = alpha("grey", 0.5), size = 0.5) +
+    # facet_wrap(~ year, ncol = 7) +
+    scale_fill_gradient(
+      low = alpha(exp_color, 0.2),
+      high = exp_color,
+      name = "Number of Days",
+      labels = scales::comma_format(accuracy = 1)
+    ) +
+    theme_minimal() +
+    labs(title = exp_type) +
+    theme(
+      axis.text.x = element_blank(),
+      axis.text.y = element_blank(),
+      axis.ticks = element_blank(),
+      panel.grid = element_blank(),
+      plot.title = element_text(size = 10, face = "bold", hjust = 0),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 12),
+      legend.position = "bottom",
+    ) 
+  
+  plot_list[[i]] <- p
+}
+
+# Combine plots using patchwork
+fig2 <- plot_list[[1]] + plot_list[[2]] + plot_list[[3]]
+
+
+
 # notes from JAC
 # - make a fig to accompany the bar chart fig that is a map of zctas and they are colored by count of days during which they are exposed to wf > 10 and psps event. for bar chart fig, use same colors as results. in zctas with only psps events, do the color of just psps. in zctas with only wf, do the color of the wf smoke. and then for the dual exposure use the interaction term color as a gradient. 
 # - another idea: 3 panel map with the days of psps events in one, days of wf smoke in another, and days of dual exposure in the third. if the third one is boring, maybe reroute. each is a gradient of the color that it got in the results box plot situation. 
 # - combine figs 2 & 3 into one figure.
-
-# create fig 2a -------------------------------------------------
-fig2a <- ggplot(exp_summary, aes(y = exposure_type, x = n_days)) +
-  geom_col(fill = pal[1]) +
-  geom_text(aes(label = label), hjust = -0.1) +
-  labs(
-    x = "ZCTA-Days Exposure",
-    y = ""
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text = element_text(size = 12),
-    axis.title = element_text(size = 12)
-  )
 
 ################
 ### FIGURE 3 ###
@@ -383,14 +430,14 @@ fig2a <- ggplot(exp_summary, aes(y = exposure_type, x = n_days)) +
 
 # process `severe` for fig 3
 # severe_df <- process_results("Severe", all_lag0, "resp", "abs", cov_matrices)
-severe_df <- process_results("Severe", all_lag0_hyb, "hyb", cov_matrices)
-# severe_dfb <- process_results("Severe", all_lag0_abs, "abs", cov_matrices)
+severe_df_hyb <- process_results("Severe", all_lag0_hyb, "hyb", cov_matrices)
+severe_df_abs <- process_results("Severe", all_lag0_abs, "abs", cov_matrices)
 
 # make fig 3
-fig3a <- create_results_fig(severe_df, "severe", show_severity = FALSE)
-# fig3b <- create_results_fig(severe_dfb, "severe", show_severity = FALSE)
+fig3_abs <- create_results_fig(severe_df_abs, "severe", show_severity = FALSE)
+fig3_hyb <- create_results_fig(severe_df_hyb, "severe", show_severity = FALSE)
 
-# fig3 <- fig3a / fig3b
+fig3 <- fig3_abs / fig3_hyb
 
 #####################
 ### SUPP FIGURE 1 ###
@@ -398,30 +445,30 @@ fig3a <- create_results_fig(severe_df, "severe", show_severity = FALSE)
 # can use same function as fig 3 for the supp fig 1
 
 # process mild/mod for supp fig 1
-mild_df <- process_results("Mild", all_lag0_hyb, "hyb", cov_matrices)
-moderate_df <- process_results("Moderate", all_lag0_hyb, "hyb", cov_matrices)
+mild_df_hyb <- process_results("Mild", all_lag0_hyb, "hyb", cov_matrices)
+moderate_df_hyb <- process_results("Moderate", all_lag0_hyb, "hyb", cov_matrices)
 
-# mild_dfb <- process_results("Mild", all_lag0_abs, "abs", cov_matrices)
-# moderate_dfb <- process_results("Moderate", all_lag0_abs, "abs", cov_matrices)
+mild_df_abs <- process_results("Mild", all_lag0_abs, "abs", cov_matrices)
+moderate_df_abs <- process_results("Moderate", all_lag0_abs, "abs", cov_matrices)
 
 # make the three indiv figs
-mild <- create_results_fig(mild_df, "Mild", show_disease_labels = TRUE, show_severity = TRUE)
-mod <- create_results_fig(moderate_df, "Moderate", show_disease_labels = FALSE, show_severity = TRUE)
-sev <- create_results_fig(severe_df, "Severe", show_disease_labels = FALSE, show_severity = TRUE)
+mild_hyb <- create_results_fig(mild_df_hyb, "Mild", show_disease_labels = TRUE, show_severity = TRUE)
+mod_hyb <- create_results_fig(moderate_df_hyb, "Moderate", show_disease_labels = FALSE, show_severity = TRUE)
+sev_hyb <- create_results_fig(severe_df_hyb, "Severe", show_disease_labels = FALSE, show_severity = TRUE)
 
-# mildb <- create_results_fig(mild_dfb, "Mild", show_disease_labels = TRUE, show_severity = TRUE)
-# modb <- create_results_fig(moderate_dfb, "Moderate", show_disease_labels = FALSE, show_severity = TRUE)
-# sevb <- create_results_fig(severe_dfb, "Severe", show_disease_labels = FALSE, show_severity = TRUE)
+mild_abs <- create_results_fig(mild_df_abs, "Mild", show_disease_labels = TRUE, show_severity = TRUE)
+mod_abs <- create_results_fig(moderate_df_abs, "Moderate", show_disease_labels = FALSE, show_severity = TRUE)
+sev_abs <- create_results_fig(severe_df_abs, "Severe", show_disease_labels = FALSE, show_severity = TRUE)
 
 # Create a layout with labels on the left side
-supp_fig1a <- mild / mod / sev
-# supp_fig1b <- mildb / modb / sevb
+supp_fig1_hyb <- mild_hyb / mod_hyb / sev_hyb
+supp_fig1_abs <- mild_abs / mod_abs / sev_abs
 
 # save figs -------------------------------------------
-ggsave(paste0(out_dir, "fig1.png"), fig1, width = 10, height = 5, dpi = 100)
-ggsave(paste0(out_dir, "fig2a.png"), fig2a, width = 10, height = 3, dpi = 100)
-# ggsave(paste0(out_dir, "fig3.png"), fig3, width = 10, height = 5, dpi = 100)
-# ggsave(paste0(out_dir, "supp_fig1a.png"), supp_fig1a, width = 10, height = 15, dpi = 100)
-# ggsave(paste0(out_dir, "supp_fig1b.png"), supp_fig1b, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "fig1.pdf"), fig1, width = 10, height = 5, dpi = 100)
+ggsave(paste0(out_dir, "fig2.pdf"), fig2, width = 15, height = 3, dpi = 100)
+ggsave(paste0(out_dir, "fig3.pdf"), fig3, width = 10, height = 5, dpi = 100)
+ggsave(paste0(out_dir, "supp_fig1_hyb.pdf"), supp_fig1_hyb, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "supp_fig1_abs.pdf"), supp_fig1_abs, width = 10, height = 15, dpi = 100)
 
 
