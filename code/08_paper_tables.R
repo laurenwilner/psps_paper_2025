@@ -16,15 +16,201 @@ pal <- met.brewer(name = "Hokusai2", n=2)
 results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 
-exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_byOOI.csv"))
-exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_byOOI.csv"))
-exp_abs_sm <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary.csv"))
-exp_hyb_sm <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary.csv"))
+exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_byOOI_V2.csv"))
+exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_byOOI_V2.csv"))
+exp_abs_sm <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_V2.csv"))
+exp_hyb_sm <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_V2.csv"))
+
+table1s_df <- read_excel(paste0(results_dir, "/PSPSTable1_demo_V2.xlsx"), sheet = "Sheet2")
+
+
 
 # make table 1 -------------------------------------------
-table1_df <- read_excel(paste0(results_dir, "/PSPSTable1_demo.xlsx"), sheet = "Sheet2")
+# table 1: summary of exposure by OOI, severity_customers, and case_indicator
+abs_table <- exposure_summary_abs_by_ooi %>% 
+    select(c("OOI", "severity_customers", "case_indicator", "count")) %>%
+    group_by(OOI, severity_customers, case_indicator) %>%
+    summarize(
+        count = sum(count)
+    ) %>% 
+    # label ooi as "Cause" and severity_customers as "Exposure"
+    rename(
+        Cause = OOI,
+        Exposure = severity_customers
+    ) %>%
+    # make 2 vars for "Case" and "Control"
+    dplyr::mutate(case_indicator = ifelse(case_indicator==1, "Case-days", "Control-days")) %>%
+    pivot_wider(
+        names_from = case_indicator,
+        values_from = count) %>% 
+    # rename causes 
+    mutate(Cause = ifelse(
+        Cause == "cardio", "Cardiovascular",
+        ifelse(Cause == "resp", "Respiratory",
+        ifelse(Cause == "psych", "Psychiatric",
+        "COPD"))), 
+        # rename exposure ==0 to unexposed
+        Exposure = ifelse(
+            Exposure == 0, "Unexposed", Exposure
+        )) %>% ungroup() %>% distinct()
+hyb_table <- exposure_summary_hybrid_by_ooi %>% 
+    select(c("OOI", "severity_hybrid", "case_indicator", "count")) %>%
+    group_by(OOI, severity_hybrid, case_indicator) %>%
+    summarize(
+        count = sum(count)
+    ) %>% 
+    # label ooi as "Cause" and severity_customers as "Exposure"
+    rename(
+        Cause = OOI,
+        Exposure = severity_hybrid
+    ) %>%
+    # make 2 vars for "Case" and "Control"
+    dplyr::mutate(case_indicator = ifelse(case_indicator==1, "Case-days", "Control-days")) %>%
+    pivot_wider(
+        names_from = case_indicator,
+        values_from = count) %>% 
+    # rename causes 
+    mutate(Cause = ifelse(
+        Cause == "cardio", "Cardiovascular",
+        ifelse(Cause == "resp", "Respiratory",
+        ifelse(Cause == "psych", "Psychiatric",
+        "COPD"))), 
+        # rename exposure ==0 to unexposed
+        Exposure = ifelse(
+            Exposure == 0, "Unexposed", Exposure
+        )) %>% ungroup() %>% distinct()
 
-create_table1 <- function(data) {
+# rename columns in both tables to avoid conflicts when joining
+abs_table <- abs_table %>%
+  rename(
+    Abs_Case = `Case-days`,
+    Abs_Control = `Control-days`
+  )
+hyb_table <- hyb_table %>%
+  rename(
+    Hyb_Case = `Case-days`,
+    Hyb_Control = `Control-days`
+  )
+# join the tables
+combined_table <- abs_table %>%
+  full_join(hyb_table, by = c("Cause", "Exposure")) %>%
+  mutate(Cause = factor(Cause, levels = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD"))) %>%
+  arrange(Cause, Exposure)
+
+# pretty table 1
+pretty_table1 <- combined_table %>%
+  gt() %>%
+  fmt_number(
+    columns = c(Abs_Case, Abs_Control, Hyb_Case, Hyb_Control),
+    decimals = 0,
+    use_seps = TRUE
+  ) %>%
+  # Add spanner headers
+  tab_spanner(
+    label = "Absolute",
+    columns = c(Abs_Case, Abs_Control)
+  ) %>%
+  tab_spanner(
+    label = "Hybrid",
+    columns = c(Hyb_Case, Hyb_Control)
+  ) %>%
+  # Create row groups in REVERSE order
+  tab_row_group(
+    label = "COPD",
+    rows = Cause == "COPD"
+  ) %>%
+  tab_row_group(
+    label = "Respiratory",
+    rows = Cause == "Respiratory"
+  ) %>%
+  tab_row_group(
+    label = "Psychiatric",
+    rows = Cause == "Psychiatric"
+  ) %>%
+  tab_row_group(
+    label = "Cardiovascular",
+    rows = Cause == "Cardiovascular"
+  ) %>%
+  # Hide the original Cause column
+  cols_hide(columns = Cause) %>%
+  # Rename columns to simplify headers
+  cols_label(
+    Abs_Case = "Case-days",
+    Abs_Control = "Control-days",
+    Hyb_Case = "Case-days",
+    Hyb_Control = "Control-days"
+  ) %>%
+    tab_options(
+    row_group.font.weight = "bold",
+    row_group.background.color = "#f7f7f7",
+    # Table border options
+    table.border.top.color = "black",
+    table.border.bottom.color = "black", 
+    # Header border options
+    heading.border.bottom.color = "black",
+    # Column labels border options
+    column_labels.border.top.color = "black",
+    column_labels.border.bottom.color = "black",
+    # Body border options
+    row_group.border.top.color = "black",
+    row_group.border.bottom.color = "black",
+    # Table body border top and bottom color
+    table_body.border.top.color = "black",
+    table_body.border.bottom.color = "black",
+    table.border.top.width = px(1),
+    table.border.bottom.width = px(1),
+    heading.border.bottom.width = px(1),
+    column_labels.border.top.width = px(1),
+    column_labels.border.bottom.width = px(1),
+    row_group.border.top.width = px(1),
+    row_group.border.bottom.width = px(1),
+    table_body.border.top.width = px(1),
+    table_body.border.bottom.width = px(1)
+  ) %>% 
+  # Style options for row groups
+  tab_options(
+    row_group.font.weight = "bold",
+    row_group.background.color = "#f7f7f7"
+  ) %>%
+  # Style the header (column labels)
+  tab_style(
+    style = list(
+      cell_fill(color = pal[1]),
+      cell_text(weight = "bold")
+    ),
+    locations = list(
+      cells_column_labels(),
+      cells_column_spanners()
+    )
+  ) %>%
+  # Also bold the Exposure column header
+  tab_style(
+    style = list(
+      cell_fill(color = pal[1]),
+      cell_text(weight = "bold")
+    ),
+    locations = cells_column_labels(columns = Exposure)
+  )
+
+  # this is something webshot needs to work...
+  options(chromote.headless = "new")
+
+  # save the table as html using cat 
+   pretty_table1 %>% 
+    as_raw_html() %>% 
+    cat(file = paste0(out_dir, "table1.html"))
+  
+  # save the table as png
+    # doing it this way becuase i couldnt get the dpi high enough with gtsave
+  webshot2::webshot(
+    url = paste0(out_dir, "table1.html"),
+    file = paste0(out_dir, "table1.png"),
+    zoom = 7,         # apparently this is approx 300 DPI
+    selector = "table"  # only capture the table
+  )
+
+# make supp table 1 -------------------------------------------
+create_table1s <- function(data) {
   categories <- unique(data$category)
   
   # Create an empty data frame with the structure we need
@@ -184,209 +370,25 @@ create_table1 <- function(data) {
 }
 
 # Create and display the table
-pretty_table1 <- create_table1(table1_df)
+pretty_table1s <- create_table1s(table1s_df)
 
 # save table 
   # this is something webshot needs to work...
   options(chromote.headless = "new")
 
   # save the table as html using cat 
-   pretty_table1 %>% 
+   pretty_table1s %>% 
     as_raw_html() %>% 
-    cat(file = paste0(out_dir, "table1.html"))
+    cat(file = paste0(out_dir, "supp_table1.html"))
   
   # save the table as png
     # doing it this way becuase i couldnt get the dpi high enough with gtsave
   webshot2::webshot(
-    url = paste0(out_dir, "table1.html"),
-    file = paste0(out_dir, "table1.png"),
+    url = paste0(out_dir, "supp_table1.html"),
+    file = paste0(out_dir, "sup_table1.png"),
     zoom = 7,         # apparently this is approx 300 DPI
     selector = "table"  # only capture the table
   )
 
 
 
-
-# make table 2 -------------------------------------------
-# table 2: summary of exposure by OOI, severity_customers, and case_indicator
-abs_table <- exposure_summary_abs_by_ooi %>% 
-    select(c("OOI", "severity_customers", "case_indicator", "count")) %>%
-    group_by(OOI, severity_customers, case_indicator) %>%
-    summarize(
-        count = sum(count)
-    ) %>% 
-    # label ooi as "Cause" and severity_customers as "Exposure"
-    rename(
-        Cause = OOI,
-        Exposure = severity_customers
-    ) %>%
-    # make 2 vars for "Case" and "Control"
-    dplyr::mutate(case_indicator = ifelse(case_indicator==1, "Case-days", "Control-days")) %>%
-    pivot_wider(
-        names_from = case_indicator,
-        values_from = count) %>% 
-    # rename causes 
-    mutate(Cause = ifelse(
-        Cause == "cardio", "Cardiovascular",
-        ifelse(Cause == "resp", "Respiratory",
-        ifelse(Cause == "psych", "Psychiatric",
-        ifelse(Cause == "copd", "COPD")))), 
-        # rename exposure ==0 to unexposed
-        Exposure = ifelse(
-            Exposure == 0, "Unexposed", Exposure
-        )) %>% ungroup() %>% distinct()
-hyb_table <- exposure_summary_hybrid_by_ooi %>% 
-    select(c("OOI", "severity_hybrid", "case_indicator", "count")) %>%
-    group_by(OOI, severity_hybrid, case_indicator) %>%
-    summarize(
-        count = sum(count)
-    ) %>% 
-    # label ooi as "Cause" and severity_customers as "Exposure"
-    rename(
-        Cause = OOI,
-        Exposure = severity_hybrid
-    ) %>%
-    # make 2 vars for "Case" and "Control"
-    dplyr::mutate(case_indicator = ifelse(case_indicator==1, "Case-days", "Control-days")) %>%
-    pivot_wider(
-        names_from = case_indicator,
-        values_from = count) %>% 
-    # rename causes 
-    mutate(Cause = ifelse(
-        Cause == "cardio", "Cardiovascular",
-        ifelse(Cause == "resp", "Respiratory",
-        ifelse(Cause == "psych", "Psychiatric",
-        ifelse(Cause == "copd", "COPD")))), 
-        # rename exposure ==0 to unexposed
-        Exposure = ifelse(
-            Exposure == 0, "Unexposed", Exposure
-        )) %>% ungroup() %>% distinct()
-
-# rename columns in both tables to avoid conflicts when joining
-abs_table <- abs_table %>%
-  rename(
-    Abs_Case = `Case-days`,
-    Abs_Control = `Control-days`
-  )
-hyb_table <- hyb_table %>%
-  rename(
-    Hyb_Case = `Case-days`,
-    Hyb_Control = `Control-days`
-  )
-# join the tables
-combined_table <- abs_table %>%
-  full_join(hyb_table, by = c("Cause", "Exposure")) %>%
-  mutate(Cause = factor(Cause, levels = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD"))) %>%
-  arrange(Cause, Exposure)
-
-# pretty table 2
-pretty_table2 <- combined_table %>%
-  gt() %>%
-  fmt_number(
-    columns = c(Abs_Case, Abs_Control, Hyb_Case, Hyb_Control),
-    decimals = 0,
-    use_seps = TRUE
-  ) %>%
-  # Add spanner headers
-  tab_spanner(
-    label = "Absolute",
-    columns = c(Abs_Case, Abs_Control)
-  ) %>%
-  tab_spanner(
-    label = "Hybrid",
-    columns = c(Hyb_Case, Hyb_Control)
-  ) %>%
-  # Create row groups in REVERSE order
-  tab_row_group(
-    label = "COPD",
-    rows = Cause == "COPD"
-  ) %>%
-  tab_row_group(
-    label = "Respiratory",
-    rows = Cause == "Respiratory"
-  ) %>%
-  tab_row_group(
-    label = "Psychiatric",
-    rows = Cause == "Psychiatric"
-  ) %>%
-  tab_row_group(
-    label = "Cardiovascular",
-    rows = Cause == "Cardiovascular"
-  ) %>%
-  # Hide the original Cause column
-  cols_hide(columns = Cause) %>%
-  # Rename columns to simplify headers
-  cols_label(
-    Abs_Case = "Case-days",
-    Abs_Control = "Control-days",
-    Hyb_Case = "Case-days",
-    Hyb_Control = "Control-days"
-  ) %>%
-    tab_options(
-    row_group.font.weight = "bold",
-    row_group.background.color = "#f7f7f7",
-    # Table border options
-    table.border.top.color = "black",
-    table.border.bottom.color = "black", 
-    # Header border options
-    heading.border.bottom.color = "black",
-    # Column labels border options
-    column_labels.border.top.color = "black",
-    column_labels.border.bottom.color = "black",
-    # Body border options
-    row_group.border.top.color = "black",
-    row_group.border.bottom.color = "black",
-    # Table body border top and bottom color
-    table_body.border.top.color = "black",
-    table_body.border.bottom.color = "black",
-    table.border.top.width = px(1),
-    table.border.bottom.width = px(1),
-    heading.border.bottom.width = px(1),
-    column_labels.border.top.width = px(1),
-    column_labels.border.bottom.width = px(1),
-    row_group.border.top.width = px(1),
-    row_group.border.bottom.width = px(1),
-    table_body.border.top.width = px(1),
-    table_body.border.bottom.width = px(1)
-  ) %>% 
-  # Style options for row groups
-  tab_options(
-    row_group.font.weight = "bold",
-    row_group.background.color = "#f7f7f7"
-  ) %>%
-  # Style the header (column labels)
-  tab_style(
-    style = list(
-      cell_fill(color = pal[1]),
-      cell_text(weight = "bold")
-    ),
-    locations = list(
-      cells_column_labels(),
-      cells_column_spanners()
-    )
-  ) %>%
-  # Also bold the Exposure column header
-  tab_style(
-    style = list(
-      cell_fill(color = pal[1]),
-      cell_text(weight = "bold")
-    ),
-    locations = cells_column_labels(columns = Exposure)
-  )
-
-  # this is something webshot needs to work...
-  options(chromote.headless = "new")
-
-  # save the table as html using cat 
-   pretty_table2 %>% 
-    as_raw_html() %>% 
-    cat(file = paste0(out_dir, "table2.html"))
-  
-  # save the table as png
-    # doing it this way becuase i couldnt get the dpi high enough with gtsave
-  webshot2::webshot(
-    url = paste0(out_dir, "table2.html"),
-    file = paste0(out_dir, "table2.png"),
-    zoom = 7,         # apparently this is approx 300 DPI
-    selector = "table"  # only capture the table
-  )
