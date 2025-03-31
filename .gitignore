@@ -1,4 +1,4 @@
-tables_figures/
+tables_figures/*.pdf
 exposure_data/
 results/
 

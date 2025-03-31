@@ -471,4 +471,9 @@ ggsave(paste0(out_dir, "fig3.pdf"), fig3, width = 10, height = 5, dpi = 100)
 ggsave(paste0(out_dir, "supp_fig1_hyb.pdf"), supp_fig1_hyb, width = 10, height = 15, dpi = 100)
 ggsave(paste0(out_dir, "supp_fig1_abs.pdf"), supp_fig1_abs, width = 10, height = 15, dpi = 100)
 
+ggsave(paste0(out_dir, "fig1.png"), fig1, width = 10, height = 5, dpi = 100)
+ggsave(paste0(out_dir, "fig2.png"), fig2, width = 15, height = 3, dpi = 100)
+ggsave(paste0(out_dir, "fig3.png"), fig3, width = 10, height = 5, dpi = 100)
+ggsave(paste0(out_dir, "supp_fig1_hyb.png"), supp_fig1_hyb, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "supp_fig1_abs.png"), supp_fig1_abs, width = 10, height = 15, dpi = 100)
 
