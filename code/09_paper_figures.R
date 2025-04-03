@@ -14,6 +14,7 @@ crs <- "EPSG:3310" # California Albers Equal Area Conic projection
 results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ Mar\ 2025/")
 exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
+data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
 
 # load functions -------------------------------------------------
 # function to get covariance value for a specific cause/metric/severity combination
@@ -262,7 +263,8 @@ all_lag0_hyb <- bind_rows(resp_lag0_hyb, cardio_lag0_hyb, psych_lag0_hyb, copd_l
   mutate(across(c("OR", "CI_Lower", "CI_Upper"), as.numeric))
 
 # # read in exp data -------------------------------------------------
-psps_exp <- read.csv(paste0(exp_dir, "daily_psps_binary.csv")) %>% 
+psps_exp_temp <- read.csv(paste0(exp_dir, "daily_psps_binary.csv")) 
+psps_exp <- psps_exp_temp %>% 
     mutate(date = as.Date(date, format = "%Y-%m-%d"),
            psps_event = ifelse(psps_abs == 1 | psps_hybrid == 1, 1, 0)) %>%
     select(c("date", "psps_event", "zip_code")) %>%
@@ -271,6 +273,8 @@ psps_exp <- read.csv(paste0(exp_dir, "daily_psps_binary.csv")) %>%
 wf_exp <- read.csv(paste0(exp_dir, "zip_wfpm20132019.csv")) %>% 
     mutate(date = as.Date(date, format = "%Y-%m-%d")) %>%
     select(c("date", "mean_lag05_per10", "zip_code"))
+
+og_psps_dataset <- read.csv(paste0(data_dir, "ca_ZIP_daily_psps_no_washout_classified_2013-2022.csv"))
 
 # generate exposure dataset for fig2
 # we need the number of zip-days for PSPS exp, WF exp, and dual exp
@@ -282,6 +286,9 @@ exp_data <- merge(wf_exp, psps_exp, by = c("date", "zip_code"), all = TRUE) %>%
 # read in map data -------------------------------------------------
 # load data -------------------------------------------------
 zctas <- c(90001:90008, 90011:90041, 94102:94158) # FILL IN WITH ZCTAS FROM HCAI! 
+ca_shp <- tigris::states(cb = TRUE, year = 2020) %>% 
+  filter(NAME == "California") %>% 
+  st_transform(epsg = 3310)
 zcta_shp <- tigris::zctas(cb = TRUE, year = 2020) %>% 
     rename(zcta = ZCTA5CE20) %>% 
     st_transform(epsg = 3310) %>% 
@@ -327,8 +334,8 @@ fig1 <- ggplot() +
 exp_summary <- exp_data %>% 
     mutate(year = lubridate::year(date),
         zip_code = as.character(zip_code),
-        exposure_type = case_when(psps_event>0 & wf<=0 ~ "PSPS event", 
-                            psps_event<=0 & wf>0 ~ "WF smoke",
+        exposure_type = case_when(psps_event>0 & wf<=0 ~ "PSPS event only", 
+                            psps_event<=0 & wf>0 ~ "WF smoke only",
                             psps_event>0 & wf>0 ~ "WF smoke + PSPS event", 
                             TRUE ~ "No exposure")) %>% 
     group_by(zip_code, exposure_type, year) %>% 
@@ -342,42 +349,34 @@ exp_sum_shp <- exp_summary %>%
     st_as_sf() %>%
     filter(!st_is_empty(geometry)) %>%
     st_transform(., crs) %>% 
-    filter(year == 2019) # doing this for now!
+    group_by(zip_code, exposure_type, geometry) %>% 
+    summarise(n_days = sum(n_days))
 
-# ggplot map faceted by year and exp type
-# Get unique exposure types
-exposure_types <- unique(exp_sum_shp$exposure_type)
-all_years <- sort(unique(exp_sum_shp$year))
 
-# make plot -------------------------------------------------
-# Create a list to store individual plots
-plot_list <- list()
+# ggplot map faceted by exp type
+exposure_types <- c("WF smoke only", "PSPS event only", "WF smoke + PSPS event")
+
+# Create lists to store individual plots
+map_plots <- list()
+violin_plots <- list()
 
 # Create a separate plot for each exposure type
 for (i in seq_along(exposure_types)) {
   exp_type <- exposure_types[i]
   exp_color <- ifelse(exp_type == "WF smoke + PSPS event", pal[1], 
-                      ifelse(exp_type == "PSPS event", pal[2], pal[3]))
+                      ifelse(exp_type == "PSPS event only", pal[2], pal[3]))
   
   # Filter data for this exposure type
   exp_sum_shp_temp <- exp_sum_shp %>% 
     filter(exposure_type == exp_type)
 
-  # make sure everything gets filled in for each yr 
-  years_in_data <- unique(exp_sum_shp_temp$year)
-  missing_years <- setdiff(all_years, years_in_data)
-  
-  # Create the plot
-  exp_type <- ifelse(exp_type == "WF smoke + PSPS event", "WFS + PSPS", exp_type)
-  exp_type <- ifelse(exp_type == "PSPS event", "PSPS", exp_type)
-  exp_type <- ifelse(exp_type == "WF smoke", "WFS", exp_type)
-  p <- ggplot() +
+  # Create the map
+  map_plot <- ggplot() +
     geom_sf(data = exp_sum_shp_temp, aes(fill = n_days)) +
     geom_sf(data = zip_shp, fill = NA, color = alpha("grey", 0.5), size = 0.5) +
-    # facet_wrap(~ year, ncol = 7) +
     scale_fill_gradient(
-      low = alpha(exp_color, 0.2),
-      high = exp_color,
+      low = "#fef7e6",  # Very light yellow
+      high = exp_color,  # Original yellow
       name = "Number of Days",
       labels = scales::comma_format(accuracy = 1)
     ) +
@@ -388,24 +387,42 @@ for (i in seq_along(exposure_types)) {
       axis.text.y = element_blank(),
       axis.ticks = element_blank(),
       panel.grid = element_blank(),
-      plot.title = element_text(size = 10, face = "bold", hjust = 0),
+      plot.title = element_text(size = 16, face = "bold", hjust = 0),
       legend.title = element_blank(),
       legend.text = element_text(size = 12),
       legend.position = "bottom",
-    ) 
+      legend.key.width = unit(0.175, "npc"),  # Make legend wider
+      legend.box.just = "center",  # Center the legend
+      legend.box.margin = margin(0, 0, 0, 0)  # Remove extra margin
+    )
   
-  plot_list[[i]] <- p
+  # Create the violin plot
+  violin_plot <- ggplot(exp_sum_shp_temp, aes(x = n_days, y = 1)) +
+    geom_violin(fill = NA, color = exp_color, size = 0.5) +
+    theme_minimal() +
+    theme(
+      axis.text.y = element_blank(),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      panel.grid = element_blank(),
+      plot.margin = margin(t = 0, r = 0, b = 0, l = 0),
+      aspect.ratio = 0.2  # Make the plot shorter
+    ) +
+    scale_x_continuous(labels = scales::comma_format(accuracy = 1))
+  
+  # Store plots in lists
+  map_plots[[i]] <- map_plot
+  violin_plots[[i]] <- violin_plot
 }
 
-# Combine plots using patchwork
-fig2 <- plot_list[[1]] + plot_list[[2]] + plot_list[[3]]
+# Create each panel separately
+panel1 <- sev / violin_plots[[1]]
+panel2 <- mod / violin_plots[[2]]
+panel3 <- mild / violin_plots[[3]]
 
-
-
-# notes from JAC
-# - make a fig to accompany the bar chart fig that is a map of zctas and they are colored by count of days during which they are exposed to wf > 10 and psps event. for bar chart fig, use same colors as results. in zctas with only psps events, do the color of just psps. in zctas with only wf, do the color of the wf smoke. and then for the dual exposure use the interaction term color as a gradient. 
-# - another idea: 3 panel map with the days of psps events in one, days of wf smoke in another, and days of dual exposure in the third. if the third one is boring, maybe reroute. each is a gradient of the color that it got in the results box plot situation. 
-# - combine figs 2 & 3 into one figure.
+# Combine panels side by side
+fig2 <- panel3 + panel2 + panel1 + 
+  plot_layout(ncol=3)
 
 ################
 ### FIGURE 3 ###
@@ -413,14 +430,6 @@ fig2 <- plot_list[[1]] + plot_list[[2]] + plot_list[[3]]
 # Figure 3 is a plot of our results. 
 
 # prep for figure 3 -------------------------------------------
-# 4 panel plot with one panel per cause, log transform the y axis
-# •	main effect alone
-# •	effect for severe psps (add the main effect + interaction)
-# •	do that for each disease category
-# •	main analysis: absolute
-# •	supplement: same plots for hybrid
-# •	make this figure similar to that hell-ish forest plot where i had the point ests and CIs listed and then the bars for the pt est and CI 
-# •	DO NOT INCLUDE LAGS 1 AND 2. ONLY LAG 0. so each plot is wf main effect, psps main effect, and interaction term effect. then in results section sum interaction and main effect. 
 
 # subset to terms of interest and rename 
 #  y = beta1*psps + beta2*wf + beta3*psps*wf + spline
@@ -464,16 +473,47 @@ sev_abs <- create_results_fig(severe_df_abs, "Severe", show_disease_labels = FAL
 supp_fig1_hyb <- mild_hyb / mod_hyb / sev_hyb
 supp_fig1_abs <- mild_abs / mod_abs / sev_abs
 
-# save figs -------------------------------------------
+########################
+### Duration for Joan ###
+########################
+# This plot is just a plot of PSPS durations for Joan 
+pal_hist <- met.brewer("Derain")
+duration_hist <- og_psps_dataset %>% 
+  select(c("duration", "severity_customers")) %>% 
+  mutate(severity_customers = factor(severity_customers, 
+                                   levels = c("Severe", "Moderate", "Mild"))) %>%
+  filter(duration < 250) %>%
+  ggplot(aes(x = duration, fill = severity_customers)) +
+  scale_fill_manual(values = pal_hist) +
+  geom_histogram(binwidth = 1) +
+  theme_minimal() +
+  geom_vline(xintercept = 8, linetype = "dashed", color = pal_hist[6], size = 1.5) +
+  labs(x = "PSPS duration (hours)", 
+       y = "count", 
+       title = "PSPS duration distribution",
+       fill = "Severity") + 
+  theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+
+
+########################
+### SAVE ALL FIGURES ###
+########################
 ggsave(paste0(out_dir, "fig1.pdf"), fig1, width = 10, height = 5, dpi = 100)
-ggsave(paste0(out_dir, "fig2.pdf"), fig2, width = 15, height = 3, dpi = 100)
-ggsave(paste0(out_dir, "fig3.pdf"), fig3, width = 10, height = 5, dpi = 100)
+ggsave(paste0(out_dir, "fig2_panel1.pdf"), fig2_panel1, width = 5, height = 10, dpi = 100)
+ggsave(paste0(out_dir, "fig2_panel2.pdf"), fig2_panel2, width = 5, height = 10, dpi = 100)
+ggsave(paste0(out_dir, "fig2_panel3.pdf"), fig2_panel3, width = 5, height = 10, dpi = 100)
+ggsave(paste0(out_dir, "fig3.pdf"), fig3, width = 10, height = 15, dpi = 100)
 ggsave(paste0(out_dir, "supp_fig1_hyb.pdf"), supp_fig1_hyb, width = 10, height = 15, dpi = 100)
 ggsave(paste0(out_dir, "supp_fig1_abs.pdf"), supp_fig1_abs, width = 10, height = 15, dpi = 100)
 
 ggsave(paste0(out_dir, "fig1.png"), fig1, width = 10, height = 5, dpi = 100)
-ggsave(paste0(out_dir, "fig2.png"), fig2, width = 15, height = 3, dpi = 100)
-ggsave(paste0(out_dir, "fig3.png"), fig3, width = 10, height = 5, dpi = 100)
+ggsave(paste0(out_dir, "fig2_panel1.png"), fig2_panel1, width = 5, height = 10, dpi = 100)
+ggsave(paste0(out_dir, "fig2_panel2.png"), fig2_panel2, width = 5, height = 10, dpi = 100)
+ggsave(paste0(out_dir, "fig2_panel3.png"), fig2_panel3, width = 5, height = 10, dpi = 100)
+ggsave(paste0(out_dir, "fig3.png"), fig3, width = 10, height = 15, dpi = 100)
 ggsave(paste0(out_dir, "supp_fig1_hyb.png"), supp_fig1_hyb, width = 10, height = 15, dpi = 100)
 ggsave(paste0(out_dir, "supp_fig1_abs.png"), supp_fig1_abs, width = 10, height = 15, dpi = 100)
 
+ggsave(paste0(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
+
+## NOTE: INCREASE DPIS WHEN WE ARE DONE! 

@@ -385,7 +385,7 @@ pretty_table1s <- create_table1s(table1s_df)
     # doing it this way becuase i couldnt get the dpi high enough with gtsave
   webshot2::webshot(
     url = paste0(out_dir, "supp_table1.html"),
-    file = paste0(out_dir, "sup_table1.png"),
+    file = paste0(out_dir, "supp_table1.png"),
     zoom = 7,         # apparently this is approx 300 DPI
     selector = "table"  # only capture the table
   )
