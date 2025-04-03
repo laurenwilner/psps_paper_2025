@@ -399,9 +399,9 @@ for (i in seq_along(exposure_types)) {
   # Create the violin plot
   violin_plot <- ggplot(exp_sum_shp_temp, aes(x = n_days, y = 1)) +
     geom_violin(fill = NA, color = exp_color, size = 0.5) +
-    theme_minimal() +
+    theme_void() +
     theme(
-      axis.text.y = element_blank(),
+      axis.text = element_blank(),
       axis.title.x = element_blank(),
       axis.title.y = element_blank(),
       panel.grid = element_blank(),
@@ -416,13 +416,13 @@ for (i in seq_along(exposure_types)) {
 }
 
 # Create each panel separately
-panel1 <- sev / violin_plots[[1]]
-panel2 <- mod / violin_plots[[2]]
-panel3 <- mild / violin_plots[[3]]
+fig2_panel1 <- map_plots[[1]] / violin_plots[[1]]
+fig2_panel2 <- map_plots[[2]] / violin_plots[[2]]
+fig2_panel3 <- map_plots[[3]] / violin_plots[[3]]
 
 # Combine panels side by side
-fig2 <- panel3 + panel2 + panel1 + 
-  plot_layout(ncol=3)
+# fig2 <- panel3 + panel2 + panel1 + 
+#   plot_layout(ncol=3)
 
 ################
 ### FIGURE 3 ###
@@ -444,7 +444,7 @@ severe_df_abs <- process_results("Severe", all_lag0_abs, "abs", cov_matrices)
 
 # make fig 3
 fig3_abs <- create_results_fig(severe_df_abs, "severe", show_severity = FALSE)
-fig3_hyb <- create_results_fig(severe_df_hyb, "severe", show_severity = FALSE)
+fig3_hyb <- create_results_fig(severe_df_hyb, "severe", show_severity = FALSE, show_disease_labels = FALSE)
 
 fig3 <- fig3_abs / fig3_hyb
 
