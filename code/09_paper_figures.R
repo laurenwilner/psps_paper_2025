@@ -510,7 +510,7 @@ ggsave(paste0(out_dir, "fig1.png"), fig1, width = 10, height = 5, dpi = 100)
 ggsave(paste0(out_dir, "fig2_panel1.png"), fig2_panel1, width = 5, height = 10, dpi = 100)
 ggsave(paste0(out_dir, "fig2_panel2.png"), fig2_panel2, width = 5, height = 10, dpi = 100)
 ggsave(paste0(out_dir, "fig2_panel3.png"), fig2_panel3, width = 5, height = 10, dpi = 100)
-ggsave(paste0(out_dir, "fig3.png"), fig3, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "fig3.png"), fig3, width = 10, height = 10, dpi = 100)
 ggsave(paste0(out_dir, "supp_fig1_hyb.png"), supp_fig1_hyb, width = 10, height = 15, dpi = 100)
 ggsave(paste0(out_dir, "supp_fig1_abs.png"), supp_fig1_abs, width = 10, height = 15, dpi = 100)
 
