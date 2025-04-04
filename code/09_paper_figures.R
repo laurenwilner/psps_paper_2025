@@ -258,9 +258,12 @@ copd_lag0_hyb <- copd_lag0 %>%
 all_lag0_abs <- bind_rows(resp_lag0_abs, cardio_lag0_abs, psych_lag0_abs, copd_lag0_abs) %>% 
   # make or, ci_lower, ci_upper numeric
   mutate(across(c("OR", "CI_Lower", "CI_Upper"), as.numeric))
+write.csv(all_lag0_abs, paste0(results_dir, "all_lag0_abs.csv"), row.names = FALSE)
 all_lag0_hyb <- bind_rows(resp_lag0_hyb, cardio_lag0_hyb, psych_lag0_hyb, copd_lag0_hyb) %>% 
   # make or, ci_lower, ci_upper numeric
   mutate(across(c("OR", "CI_Lower", "CI_Upper"), as.numeric))
+write.csv(all_lag0_hyb, paste0(results_dir, "all_lag0_hyb.csv"), row.names = FALSE)
+
 
 # # read in exp data -------------------------------------------------
 psps_exp_temp <- read.csv(paste0(exp_dir, "daily_psps_binary.csv")) 
@@ -282,6 +285,7 @@ og_psps_dataset <- read.csv(paste0(data_dir, "ca_ZIP_daily_psps_no_washout_class
 exp_data <- merge(wf_exp, psps_exp, by = c("date", "zip_code"), all = TRUE) %>% 
     mutate(psps_event = ifelse(is.na(psps_event), 0, psps_event)) %>%
     rename(wf = mean_lag05_per10)
+write.csv(exp_data, paste0(exp_dir, "zip_daily_psps_wf_exposure.csv"), row.names = FALSE)
 
 # read in map data -------------------------------------------------
 # load data -------------------------------------------------
@@ -351,6 +355,7 @@ exp_sum_shp <- exp_summary %>%
     st_transform(., crs) %>% 
     group_by(zip_code, exposure_type, geometry) %>% 
     summarise(n_days = sum(n_days))
+
 
 
 # ggplot map faceted by exp type
