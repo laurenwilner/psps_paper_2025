@@ -154,7 +154,7 @@ psychcasedayssev <- exposure_summary_abs_df %>%
     filter(severity_customers == highestencountersexplevel & OOI == "psych") %>% 
     mutate(n = sum(count)) %>% 
     pull(n) %>% unique()
-    
+
 
 # respiratory absolute metric OR: XXX, 95\CI: XXX, XXX
 respabsor <- results_abs_df %>% 
@@ -169,13 +169,13 @@ respabscihigh <- results_abs_df %>%
 
 # respiratory hybrid metric OR: XXX, 95\CI: XXX, XXX
 resphybor <- results_hyb_df %>% 
-    filter(Cause == "Respiratory" & Exposure == "severity_customersSevere") %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere") %>% 
     pull(OR)
 resphybcilow <- results_hyb_df %>%
-    filter(Cause == "Respiratory" & Exposure == "severity_customersSevere") %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere") %>% 
     pull(CI_Lower)
 resphybcihigh <- results_hyb_df %>%
-    filter(Cause == "Respiratory" & Exposure == "severity_customersSevere") %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere") %>% 
     pull(CI_Upper)
     
 # respiratory interaction term absolute metric OR: XXX, 95\CI: XXX, XXX
@@ -192,13 +192,13 @@ respintabscihigh <- results_abs_df %>%
 
 # respiratory interaction term hybrid metric OR: XXX, 95\CI: XXX, XXX
 respinthybor <- results_hyb_df %>% 
-    filter(Cause == "Respiratory" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
     pull(OR)
 respinthybcilow <- results_hyb_df %>%
-    filter(Cause == "Respiratory" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
     pull(CI_Lower)
 respinthybcihigh <- results_hyb_df %>%
-    filter(Cause == "Respiratory" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
     pull(CI_Upper)
 
 # copd severe outage absolute metric OR: XXX, 95\CI: XXX, XXX
@@ -214,13 +214,13 @@ copdabscihigh <- results_abs_df %>%
 
 # copd severe outage hybrid metric OR: XXX, 95\CI: XXX, XXX
 copdhybor <- results_hyb_df %>% 
-    filter(Cause == "COPD" & Exposure == "severity_customersSevere") %>% 
+    filter(Cause == "COPD" & Exposure == "severity_hybridSevere") %>% 
     pull(OR)
 copdhybcilow <- results_hyb_df %>%
-    filter(Cause == "COPD" & Exposure == "severity_customersSevere") %>% 
+    filter(Cause == "COPD" & Exposure == "severity_hybridSevere") %>% 
     pull(CI_Lower)
 copdhybcihigh <- results_hyb_df %>%
-    filter(Cause == "COPD" & Exposure == "severity_customersSevere") %>% 
+    filter(Cause == "COPD" & Exposure == "severity_hybridSevere") %>% 
     pull(CI_Upper)
 
 
