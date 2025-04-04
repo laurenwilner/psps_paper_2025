@@ -227,10 +227,12 @@ copdhybcihigh <- results_hyb_df %>%
 # write the numbers to a file -----------------------
 all_vars <- ls()
 
-# Function to format all numeric columns with commas and handle decimals appropriately
+# Function to format all numeric columns with commas and handle decimals appropriately,
+# and to also include character variables
 val_to_tex <- sapply(all_vars, function(var_name) {
   var_value <- get(var_name)
-  # Only include numeric values
+  
+  # Handle numeric values
   if (is.numeric(var_value) && length(var_value) == 1) {
     # Check if the number is an integer (no decimal part)
     is_integer_like <- (var_value %% 1 == 0)
@@ -245,6 +247,10 @@ val_to_tex <- sapply(all_vars, function(var_name) {
     }
     
     paste0("\\newcommand{\\", var_name, "}{", formatted_value, "}")
+  }
+  # Handle character values
+  else if (is.character(var_value) && length(var_value) == 1) {
+    paste0("\\newcommand{\\", var_name, "}{", var_value, "}")
   } else {
     NULL
   }
