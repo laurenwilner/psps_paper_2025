@@ -227,15 +227,23 @@ copd_hyb_ci_high <- results_hyb_df %>%
 # write the numbers to a file -----------------------
 all_vars <- ls()
 
-# Function to format all numeric columns with commas and round to one decimal place
+# Function to format all numeric columns with commas and handle decimals appropriately
 val_to_tex <- sapply(all_vars, function(var_name) {
   var_value <- get(var_name)
   # Only include numeric values
   if (is.numeric(var_value) && length(var_value) == 1) {
-    # Round to one decimal place
-    rounded_value <- round(var_value, 1)
-    # Format with commas for thousands
-    formatted_value <- format(rounded_value, big.mark = ",", scientific = FALSE, nsmall = 1)
+    # Check if the number is an integer (no decimal part)
+    is_integer_like <- (var_value %% 1 == 0)
+    
+    if (is_integer_like) {
+      # For integers, just add commas without decimal places
+      formatted_value <- format(var_value, big.mark = ",", scientific = FALSE, nsmall = 0)
+    } else {
+      # For decimals, round to one decimal place
+      rounded_value <- round(var_value, 1)
+      formatted_value <- format(rounded_value, big.mark = ",", scientific = FALSE, nsmall = 1)
+    }
+    
     paste0("\\newcommand{\\", var_name, "}{", formatted_value, "}")
   } else {
     NULL
