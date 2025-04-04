@@ -23,10 +23,10 @@ exp_hyb_sm <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_exps
 
 table1s_df <- read_excel(paste0(results_dir, "/PSPSTable1_demo_V2.xlsx"), sheet = "Sheet2")
 
+## NOTE: table 1 is made in the methods in latex. 
 
-
-# make table 1 -------------------------------------------
-# table 1: summary of exposure by OOI, severity_customers, and case_indicator
+# make table 2 -------------------------------------------
+# table 2: summary of exposure by OOI, severity_customers, and case_indicator
 abs_table <- exposure_summary_abs_by_ooi %>% 
     select(c("OOI", "severity_customers", "case_indicator", "count")) %>%
     group_by(OOI, severity_customers, case_indicator) %>%
@@ -97,8 +97,8 @@ combined_table <- abs_table %>%
   mutate(Cause = factor(Cause, levels = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD"))) %>%
   arrange(Cause, Exposure)
 
-# pretty table 1
-pretty_table1 <- combined_table %>%
+# pretty table 2
+pretty_table2 <- combined_table %>%
   gt() %>%
   fmt_number(
     columns = c(Abs_Case, Abs_Control, Hyb_Case, Hyb_Control),
@@ -196,15 +196,15 @@ pretty_table1 <- combined_table %>%
   options(chromote.headless = "new")
 
   # save the table as html using cat 
-   pretty_table1 %>% 
+   pretty_table2 %>% 
     as_raw_html() %>% 
-    cat(file = paste0(out_dir, "table1.html"))
+    cat(file = paste0(out_dir, "table2.html"))
   
   # save the table as png
     # doing it this way becuase i couldnt get the dpi high enough with gtsave
   webshot2::webshot(
-    url = paste0(out_dir, "table1.html"),
-    file = paste0(out_dir, "table1.png"),
+    url = paste0(out_dir, "table2.html"),
+    file = paste0(out_dir, "table2.png"),
     zoom = 7,         # apparently this is approx 300 DPI
     selector = "table"  # only capture the table
   )
