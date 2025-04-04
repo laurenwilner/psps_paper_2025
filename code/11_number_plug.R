@@ -132,7 +132,7 @@ casedaysabssevresp <- exposure_summary_abs_df %>%
     pull(n) %>% unique()
 
 # greatest number of encounters associated with the XXX exposure level, with XXXX {cause} case-days during a severe outage and XXXX {cause} case-days
- highest_encounters_exp_level <- exposure_summary_abs_df %>% 
+ highestencountersexplevel <- exposure_summary_abs_df %>% 
     filter(severity_customers != "none") %>%
     group_by(severity_customers) %>% 
     summarise(n = sum(count)) %>% 
@@ -141,14 +141,20 @@ casedaysabssevresp <- exposure_summary_abs_df %>%
     pull(severity_customers)
 
 respcasedayssev <- exposure_summary_abs_df %>% 
-    filter(severity_customers == highest_encounters_exp_level & OOI == "resp") %>% 
+    filter(severity_customers == highestencountersexplevel & OOI == "resp") %>% 
     mutate(n = sum(count)) %>% 
     pull(n) %>% unique()
 
 cvdcasedayssev <- exposure_summary_abs_df %>%
-    filter(severity_customers == highest_encounters_exp_level & OOI == "cardio") %>% 
+    filter(severity_customers == highestencountersexplevel & OOI == "cardio") %>% 
     mutate(n = sum(count)) %>% 
     pull(n) %>% unique()
+
+psychcasedayssev <- exposure_summary_abs_df %>%
+    filter(severity_customers == highestencountersexplevel & OOI == "psych") %>% 
+    mutate(n = sum(count)) %>% 
+    pull(n) %>% unique()
+    
 
 # respiratory absolute metric OR: XXX, 95\CI: XXX, XXX
 respabsor <- results_abs_df %>% 
