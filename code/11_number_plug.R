@@ -227,6 +227,9 @@ copdhybcihigh <- results_hyb_df %>%
 # write the numbers to a file -----------------------
 all_vars <- ls()
 
+# Filter out any variables that contain "dir" in their name
+all_vars <- all_vars[!grepl("dir", all_vars, ignore.case = TRUE)]
+
 # Function to format all numeric columns with commas and handle decimals appropriately,
 # and to also include character variables
 val_to_tex <- sapply(all_vars, function(var_name) {
@@ -258,4 +261,3 @@ val_to_tex <- sapply(all_vars, function(var_name) {
 
 values <- val_to_tex[!sapply(val_to_tex, is.null)]
 write_lines(values, "analysis-values.tex")
-
