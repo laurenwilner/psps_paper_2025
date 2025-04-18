@@ -1,0 +1,93 @@
+---
+title: "The association of public safety power shutoffs (PSPS) events with hospital visits"
+author: Lauren Blair Wilner, Caitlin Jones-Ngo, Tarik Benmarhnia, and Joan A. Casey
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  ioslides_presentation:
+    widescreen: true
+    smaller: true
+---
+
+<style>
+.title-slide hgroup h1 {
+  font-size: 60px;
+  color: #0f7ba2;
+}
+</style>
+
+
+## Background
+
+<div style="margin-top: 100px;">
+```{r graphic, echo=FALSE, message = FALSE, warning = FALSE, fig.align = 'center', out.width='100%'}
+library(kableExtra)
+library(dplyr)
+knitr::include_graphics("/Users/laurenwilner/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/psps_graphic.png")
+```
+
+</div>
+
+## Threats of dual exposure
+<div style="margin-top: 100px;">
+```{r graphic2, echo=FALSE, message = FALSE, warning = FALSE, fig.align = 'center', out.width='80%'}
+library(kableExtra)
+library(dplyr)
+knitr::include_graphics("/Users/laurenwilner/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/psps_graphic_2.png")
+```
+
+</div>
+
+
+## Methods
+
+```{r table-data, echo=FALSE, message=FALSE, warning=FALSE}
+data <- data.frame(
+  Type = c("Exposure", "Exposure", "Outcome"),
+  Data = c("Public safety power shutoff (PSPS) data, PSE", 
+           "Wildfire PM<sub>2.5</sub> data, Aguilera et al. 2023 Environ Int", 
+           "Hospital and emergency department data, Health Care Access and Information (HCAI)"),
+  Coverage = c("Event, circuit-level data from the three major utility providers in CA (PGE, SDG&E, SCE)",
+               "Daily, zip code-level",
+               "Daily, zip-code level visits"),
+  Years = c("2013-2022", "2006 -- 2020", "2013-2019")
+)
+
+kable(data, format = "html", escape = FALSE) %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  row_spec(0, background = "#0f7ba2", color = "white", 
+                font_size = 26) %>%
+  row_spec(1:nrow(data), font_size = 20) %>%  # Set font size for data rows
+  column_spec(1:4, border_left = FALSE, border_right = FALSE)
+```
+
+<br> 
+
+- **Study population**: Adults (18+) in California
+- **Study period**: 2013-2019
+- **Study design**: Time-stratified case-crossover design
+- **Statistical analysis**: Conditional logistic regression
+
+## Exposure distribution
+
+<style>
+.caption {
+  text-align: left !important;
+}
+</style>
+
+
+<div style="margin-top: -75px;">
+```{r results1, echo=FALSE, fig.show='hold', out.width='30%', fig.align = "center", fig.cap="Geographic distribution of days of exposure in California, 2013-2019."}
+  knitr::include_graphics("/Users/laurenwilner/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/fig2_panel1.png")
+  knitr::include_graphics("/Users/laurenwilner/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/fig2_panel2.png")
+  knitr::include_graphics("/Users/laurenwilner/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/fig2_panel3.png")
+```
+
+</div>
+
+## Results: absolute number of customers impacted
+```{r results2, echo=FALSE, out.width='75%', fig.align='center',}
+knitr::include_graphics("/Users/laurenwilner/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/fig3_abs.png")
+```
+
+## Thank you! 

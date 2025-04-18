@@ -142,10 +142,10 @@ create_results_fig <- function(data, severity, show_disease_labels = TRUE, show_
   data <- data %>%
     mutate(Exposure = case_when(
       Exposure == "WF smoke" ~ "WFS",
-      grepl("\\*", Exposure) ~ "PSPS * WFS",
+      grepl("\\*", Exposure) ~ "PSPS + WFS",
       TRUE ~ "PSPS"
     )) %>%
-    mutate(Exposure = factor(Exposure, levels = c("WFS", "PSPS", "PSPS * WFS")))
+    mutate(Exposure = factor(Exposure, levels = c("WFS", "PSPS", "PSPS + WFS")))
   
   # base plot
   p <- ggplot(data, aes(x = Exposure, y = odds_ratio, ymin = lower_ci, ymax = upper_ci)) +
@@ -404,7 +404,7 @@ for (i in seq_along(exposure_types)) {
   # Create the violin plot
   violin_plot <- ggplot(exp_sum_shp_temp, aes(x = n_days, y = 1)) +
     geom_violin(fill = NA, color = exp_color, size = 0.5) +
-    theme_void() +
+    theme_minimal() +
     theme(
       axis.text = element_blank(),
       axis.title.x = element_blank(),
@@ -421,9 +421,21 @@ for (i in seq_along(exposure_types)) {
 }
 
 # Create each panel separately
-fig2_panel1 <- map_plots[[1]] / violin_plots[[1]]
-fig2_panel2 <- map_plots[[2]] / violin_plots[[2]]
-fig2_panel3 <- map_plots[[3]] / violin_plots[[3]]
+fig2_panel1 <- map_plots[[1]] / violin_plots[[1]]  & 
+  theme(
+    plot.background = element_rect(fill = "transparent", color = NA),
+    panel.background = element_rect(fill = "transparent", color = NA)
+  )
+fig2_panel2 <- map_plots[[2]] / violin_plots[[2]] & 
+  theme(
+    plot.background = element_rect(fill = "transparent", color = NA),
+    panel.background = element_rect(fill = "transparent", color = NA)
+  )
+fig2_panel3 <- map_plots[[3]] / violin_plots[[3]] & 
+  theme(
+    plot.background = element_rect(fill = "transparent", color = NA),
+    panel.background = element_rect(fill = "transparent", color = NA)
+  )
 
 # Combine panels side by side
 # fig2 <- panel3 + panel2 + panel1 + 
@@ -504,18 +516,19 @@ duration_hist <- og_psps_dataset %>%
 ### SAVE ALL FIGURES ###
 ########################
 ggsave(paste0(out_dir, "fig1.pdf"), fig1, width = 10, height = 5, dpi = 100)
-ggsave(paste0(out_dir, "fig2_panel1.pdf"), fig2_panel1, width = 5, height = 10, dpi = 100)
-ggsave(paste0(out_dir, "fig2_panel2.pdf"), fig2_panel2, width = 5, height = 10, dpi = 100)
-ggsave(paste0(out_dir, "fig2_panel3.pdf"), fig2_panel3, width = 5, height = 10, dpi = 100)
+ggsave(paste0(out_dir, "fig2_panel1.pdf"), fig2_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "fig2_panel2.pdf"), fig2_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "fig2_panel3.pdf"), fig2_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "fig3.pdf"), fig3, width = 10, height = 15, dpi = 100)
 ggsave(paste0(out_dir, "supp_fig1_hyb.pdf"), supp_fig1_hyb, width = 10, height = 15, dpi = 100)
 ggsave(paste0(out_dir, "supp_fig1_abs.pdf"), supp_fig1_abs, width = 10, height = 15, dpi = 100)
 
 ggsave(paste0(out_dir, "fig1.png"), fig1, width = 10, height = 5, dpi = 100)
-ggsave(paste0(out_dir, "fig2_panel1.png"), fig2_panel1, width = 5, height = 10, dpi = 100)
-ggsave(paste0(out_dir, "fig2_panel2.png"), fig2_panel2, width = 5, height = 10, dpi = 100)
-ggsave(paste0(out_dir, "fig2_panel3.png"), fig2_panel3, width = 5, height = 10, dpi = 100)
+ggsave(paste0(out_dir, "fig2_panel1.png"), fig2_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "fig2_panel2.png"), fig2_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "fig2_panel3.png"), fig2_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "fig3.png"), fig3, width = 10, height = 10, dpi = 100)
+ggsave(paste0(out_dir, "fig3_abs.png"), fig3_abs, width = 10, height = 7, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "supp_fig1_hyb.png"), supp_fig1_hyb, width = 10, height = 15, dpi = 100)
 ggsave(paste0(out_dir, "supp_fig1_abs.png"), supp_fig1_abs, width = 10, height = 15, dpi = 100)
 
