@@ -16,6 +16,26 @@ output:
 </style>
 
 
+## Public safety power shutoffs (PSPS) events: research motivation
+
+**Research motivation**:  
+
+- Wildfires have been increasing in frequency and intensity  
+- Wildfire smoke is associated with adverse health outcomes  
+- One cause of wildfires are power lines
+- Power outages are associated with adverse health outcomes
+
+An important **mitigation strategy** for higher wildfire risk rolled out in California and increasingly adopted in other states is **public safety power shutoffs (PSPS)**, which are planned power outages to prevent power lines from causing fires.  
+
+However, PSPS events are implemented during times of high wildfire risk, and are thus likely to co-occur with the very thing they are trying to prevent: wildfire smoke.
+
+## Public safety power shutoffs (PSPS) events: research questions
+
+
+- **What are the effects of PSPS events on adverse health outcomes?** 
+- **What is the extent of dual wildfire smoke-PSPS exposure?** 
+- **What is the association between this dual exposure and adverse health outcomes?**
+
 ## Background
 
 <div style="margin-top: 100px;">
@@ -27,17 +47,6 @@ knitr::include_graphics("/Users/laurenwilner/Desktop/Desktop/epidemiology_PhD/00
 
 </div>
 
-## Threats of dual exposure
-<div style="margin-top: 100px;">
-```{r graphic2, echo=FALSE, message = FALSE, warning = FALSE, fig.align = 'center', out.width='80%'}
-library(kableExtra)
-library(dplyr)
-knitr::include_graphics("/Users/laurenwilner/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/psps_graphic_2.png")
-```
-
-</div>
-
-
 ## Methods
 
 ```{r table-data, echo=FALSE, message=FALSE, warning=FALSE}
@@ -45,7 +54,7 @@ data <- data.frame(
   Type = c("Exposure", "Exposure", "Outcome"),
   Data = c("Public safety power shutoff (PSPS) data, PSE", 
            "Wildfire PM<sub>2.5</sub> data, Aguilera et al. 2023 Environ Int", 
-           "Hospital and emergency department data, Health Care Access and Information (HCAI)"),
+           "Hospital and emergency department data, California Department of Health Care Access and Information (HCAI)"),
   Coverage = c("Event, circuit-level data from the three major utility providers in CA (PGE, SDG&E, SCE)",
                "Daily, zip code-level",
                "Daily, zip-code level visits"),
@@ -91,3 +100,5 @@ knitr::include_graphics("/Users/laurenwilner/Desktop/Desktop/epidemiology_PhD/00
 ```
 
 ## Thank you! 
+
+wilnerl@uw.edu
