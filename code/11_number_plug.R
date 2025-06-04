@@ -23,8 +23,8 @@ results_abs_df <- read_csv(paste0(results_dir, "all_lag0_abs.csv")) # updated
 results_hyb_df <- read_csv(paste0(results_dir, "all_lag0_hyb.csv")) # updated
 exposure_summary_abs_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/abs-psps-wf_exp-summary-by-OOI.csv")) # updated
 exposure_summary_hybrid_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/hyb-psps-wf_exp-summary-by-OOI.csv")) # updated
-exp_abs_sm_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_V2.csv")) # NEED TO UPDATE
-exp_hyb_sm_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_V2.csv")) # NEED TO UPDATE
+exp_abs_sm_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_V2.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
+exp_hyb_sm_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_V2.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
 zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>% 
             rename(zip_code = ZIP_CODE) %>%
             select(c("zip_code", "geometry")) # no update needed 
