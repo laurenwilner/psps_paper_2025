@@ -16,12 +16,11 @@ pal <- met.brewer(name = "Hokusai2", n=2)
 results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 
-exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_byOOI_V2.csv"))
-exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_byOOI_V2.csv"))
-exp_abs_sm <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_V2.csv"))
-exp_hyb_sm <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_V2.csv"))
+exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/abs-psps-wf_exp-summary-by-OOI.csv"))
+exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/hyb-psps-wf_exp-summary-by-OOI.csv"))
 
 table1s_df <- read_excel(paste0(results_dir, "/PSPSTable1_demo_V2.xlsx"), sheet = "Sheet2")
+# NOTE: MAYBE NEED TO UPDATE THIS.
 
 ## NOTE: table 1 is made in the methods in latex. 
 
@@ -104,6 +103,10 @@ pretty_table2 <- combined_table %>%
     columns = c(Abs_Case, Abs_Control, Hyb_Case, Hyb_Control),
     decimals = 0,
     use_seps = TRUE
+  ) %>%
+  # make first col wider
+  cols_width(
+    Exposure ~ px(200)  # Adjust the pixel value as needed
   ) %>%
   # Add spanner headers
   tab_spanner(
