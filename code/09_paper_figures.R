@@ -459,14 +459,14 @@ duration_hist <- og_psps_dataset %>%
 ########################
 ### SAVE ALL FIGURES ###
 ########################
-ggsave(paste0(out_dir, "fig1.pdf"), fig1, width = 5, height = 7, dpi = 100)
+ggsave(paste0(out_dir, "fig1.pdf"), fig1, width = 4, height = 6, dpi = 100)
 ggsave(paste0(out_dir, "fig2_panel1.pdf"), fig2_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "fig2_panel2.pdf"), fig2_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "fig2_panel3.pdf"), fig2_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "fig3.pdf"), fig3, width = 10, height = 15, dpi = 100)
 ggsave(paste0(out_dir, "supp_fig1.pdf"), supp_fig1, width = 10, height = 15, dpi = 100)
 
-ggsave(paste0(out_dir, "fig1.png"), fig1, width = 4, height = 7, dpi = 100)
+ggsave(paste0(out_dir, "fig1.png"), fig1, width = 4, height = 6, dpi = 100)
 ggsave(paste0(out_dir, "fig2_panel1.png"), fig2_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "fig2_panel2.png"), fig2_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "fig2_panel3.png"), fig2_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
