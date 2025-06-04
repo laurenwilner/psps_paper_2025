@@ -11,7 +11,7 @@ pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown,sf,
 pal <- c( '#6f9969', '#efc86e',"#0f7ba2")
 crs <- "EPSG:3310" # California Albers Equal Area Conic projection
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ Mar\ 2025/")
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ May\ 2025/")
 exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
@@ -31,10 +31,10 @@ get_covariance <- function(cause, metric, severity, cov_matrices) {
                    "copd_abs" = cov_matrices$copd_abs_cov,
                    "copd_hyb" = cov_matrices$copd_hyb_cov)
   
-  # Construct the variable name
+  # make the variable name
   var_name <- paste0("severity_", metric_lab, severity, ".mean_lag05_per10")
   
-  # Get the covariance value using tidyverse functions and ensure it's numeric
+  # get the covariance value using tidyverse functions and ensure it's numeric
   cov_value <- cov_df %>%
     filter(X == var_name) %>%
     pull(var_name) %>%
@@ -45,14 +45,14 @@ get_covariance <- function(cause, metric, severity, cov_matrices) {
 
 # prep data for all severity levels for plotting! 
 process_results <- function(severity_level, all_lag0, metric = "abs", cov_matrices) {
-  # Process each cause separately and then combine
+  # lets process each cause separately and then combine
   causes <- c("resp", "cardio", "psych", "copd")
   
   processed_dfs <- lapply(causes, function(cause) {
-    # Get the appropriate covariance value for this cause
+    # pull the covariance value for this cause
     cov_value <- get_covariance(cause, metric, severity_level, cov_matrices)
     
-    # Define variable patterns based on severity level
+    # var patterns based on severity level
     if(metric == "abs"){
         interaction_var <- paste0("severity_customers", severity_level, ".mean_lag05_per10")
         main_effect_var <- paste0("severity_customers", severity_level)
@@ -62,7 +62,7 @@ process_results <- function(severity_level, all_lag0, metric = "abs", cov_matric
     }
     wf_var <- "mean_lag05_per10"
     
-    # Map cause to display name
+    # map of cause to display name
     cause_display <- switch(cause,
       "resp" = "Respiratory",
       "cardio" = "Cardiovascular",
@@ -70,7 +70,7 @@ process_results <- function(severity_level, all_lag0, metric = "abs", cov_matric
       "copd" = "COPD"
     )
     
-    # Prepare the data for this severity level and cause
+    # prep data for this severity level and cause
     prep_df <- all_lag0 %>% 
       filter(
         Exposure %in% c(interaction_var, main_effect_var, wf_var),
@@ -89,12 +89,12 @@ process_results <- function(severity_level, all_lag0, metric = "abs", cov_matric
       ) %>% 
       select(Exposure, log_odds, variance, Cause, Severity)
     
-    # First, handle the main effects (PSPS and WF smoke separately)
+    # first, handle the main effects (PSPS and WF smoke separately)
     main_effects <- prep_df %>%
       filter(Exposure != "Interaction") %>%
       select(Exposure, log_odds, variance, Cause, Severity)
     
-    # Then, calculate the interaction effect (PSPS + WF smoke + interaction term)
+    # then, calculate the interaction effect (PSPS + WF smoke + interaction term)
     interaction_effect <- prep_df %>%
       # filter to only wf and interaction since thats what we will add 
       filter(Exposure %in% c("WF smoke", "Interaction")) %>%
@@ -108,13 +108,13 @@ process_results <- function(severity_level, all_lag0, metric = "abs", cov_matric
         Severity = first(Severity)
       )
     
-    # Combine main effects and interaction effect
+    # combine main effects and interaction effect
     processed_df <- bind_rows(main_effects, interaction_effect)
     
     return(processed_df)
   })
   
-  # Combine all processed dataframes
+  # combine all processed dataframes
   final_df <- bind_rows(processed_dfs) %>%
     mutate(
       se = sqrt(variance),
@@ -137,24 +137,64 @@ process_results <- function(severity_level, all_lag0, metric = "abs", cov_matric
 }
 
 # plotting function for results figs 
-create_results_fig <- function(data, severity, show_disease_labels = TRUE, show_severity = TRUE) {
-  # reorder the data to ensure WF smoke appears first
-  data <- data %>%
-    mutate(Exposure = case_when(
-      Exposure == "WF smoke" ~ "WFS",
-      grepl("\\*", Exposure) ~ "PSPS + WFS",
-      TRUE ~ "PSPS"
-    )) %>%
+create_results_fig_combined <- function(data_abs, data_hyb, severity, 
+                                show_disease_labels = TRUE, 
+                                show_severity = TRUE, 
+                                show_legend = TRUE) {
+  # process absolute data
+  data_abs_processed <- data_abs %>%
+    mutate(
+      Exposure = case_when(
+        Exposure == "WF smoke" ~ "WFS",
+        grepl("\\*", Exposure) ~ "PSPS + WFS",
+        TRUE ~ "PSPS"
+      ),
+      analysis_type = "Absolute"
+    ) %>%
     mutate(Exposure = factor(Exposure, levels = c("WFS", "PSPS", "PSPS + WFS")))
   
+  # process hybrid data
+  data_hyb_processed <- data_hyb %>%
+    mutate(
+      Exposure = case_when(
+        Exposure == "WF smoke" ~ "WFS",
+        grepl("\\*", Exposure) ~ "PSPS + WFS",
+        TRUE ~ "PSPS"
+      ),
+      analysis_type = "Hybrid"
+    ) %>%
+    mutate(Exposure = factor(Exposure, levels = c("WFS", "PSPS", "PSPS + WFS")))
+  
+  # combine the datasets
+  combined_data <- bind_rows(data_abs_processed, data_hyb_processed) %>%
+    mutate(analysis_type = factor(analysis_type, levels = c("Absolute", "Hybrid")))
+  
+  # get unique categories from the data in the correct order
+  unique_categories <- unique(combined_data$category)
+  
+  # reorder colors to match exposure order: WFS (blue), PSPS (yellow), PSPS + WFS (green)
+  color_order <- c(2, 3, 1)  
+  ordered_colors <- pal[color_order[1:length(unique_categories)]]
+  
+  # create color mapping for categories
+  category_colors <- setNames(ordered_colors, unique_categories)
+  
   # base plot
-  p <- ggplot(data, aes(x = Exposure, y = odds_ratio, ymin = lower_ci, ymax = upper_ci)) +
-    geom_point(aes(color = category), position = position_dodge(width = 0.5), size = 3) +
-    geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci, color = category), 
-                 width = 0.3,
-                 position = position_dodge(width = 0.5)) +
+  p <- ggplot(combined_data, aes(x = Exposure, y = odds_ratio, ymin = lower_ci, ymax = upper_ci)) +
+    geom_point(aes(color = category, alpha = analysis_type, shape = analysis_type), 
+               position = position_dodge(width = 0.6), 
+               size = 3) +
+    geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci, color = category, alpha = analysis_type), 
+                  width = 0.3,
+                  position = position_dodge(width = 0.6)) +
     geom_hline(yintercept = 1, linetype = "dashed") + 
-    scale_color_manual(values = pal) +
+    scale_color_manual(values = category_colors, guide = "none") +
+    scale_alpha_manual(values = c("Absolute" = 1.0, "Hybrid" = 0.6), 
+                       name = "", 
+                       labels = c("Absolute", "Hybrid")) +
+    scale_shape_manual(values = c("Absolute" = 16, "Hybrid" = 17),
+                       name = "",
+                       labels = c("Absolute", "Hybrid")) +
     labs(
       x = "",
       y = if(show_severity) substitute(atop(bold(sev), "Odds Ratio"), list(sev = severity)) else "Odds Ratio"
@@ -162,130 +202,42 @@ create_results_fig <- function(data, severity, show_disease_labels = TRUE, show_
     theme_minimal() +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1),
-      axis.title.y = element_text(size = 14),
-      legend.position = "none",
-      strip.text = element_text(size = 12),
-      axis.text = element_text(size = 12)
+      axis.title.y = element_text(size = 16),
+      legend.position = "bottom",
+      strip.text = element_text(size = 16),
+      axis.text = element_text(size = 14),
+      legend.text = element_text(size = 14)
     ) + 
-    scale_y_log10() +
-    facet_wrap(~Cause, nrow=1)
+    scale_y_log10(breaks = c(0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 3.0)) +
+    facet_wrap(~Cause, nrow = 1)
   
   # remove disease labels if show_disease_labels is FALSE
   if (!show_disease_labels) {
     p <- p + theme(strip.text = element_blank())
   }
+
+  # remove legend if show_legend is FALSE
+  if(!show_legend){
+    p <- p + theme(legend.position = "none")
+  }
   
   return(p)
 }
 
+
 # read in model results and covariance matrices ---------------------------------
-# resp
-resp_lag0 <- read.csv(paste0(results_dir, "results_PSPS_wflag05_nstemp_resp_V2.csv")) %>% 
-                mutate(across(everything(), ~str_replace_all(., ":", ".")))
-resp_abs_cov <- read.csv(paste0(results_dir, "vcov_absmod_resp.csv")) %>% 
-  mutate(across(everything(), ~str_replace_all(., ":", ".")))
-resp_hyb_cov <- read.csv(paste0(results_dir, "vcov_hybmod_resp.csv")) %>% 
-  mutate(across(everything(), ~str_replace_all(., ":", ".")))
-# cardio
-cardio_lag0 <- read.csv(paste0(results_dir, "results_PSPS_wflag05_nstemp_cardio_V2.csv")) %>% 
-                mutate(across(everything(), ~str_replace_all(., ":", ".")))
-cardio_abs_cov <- read.csv(paste0(results_dir, "vcov_absmod_cardio.csv")) %>% 
-  mutate(across(everything(), ~str_replace_all(., ":", ".")))
-cardio_hyb_cov <- read.csv(paste0(results_dir, "vcov_hybmod_cardio.csv")) %>% 
-                  mutate(across(everything(), ~str_replace_all(., ":", ".")))
-# psych
-psych_lag0 <- read.csv(paste0(results_dir, "results_PSPS_wflag05_nstemp_psych_V2.csv")) %>% 
-                mutate(across(everything(), ~str_replace_all(., ":", ".")))
-psych_abs_cov <- read.csv(paste0(results_dir, "vcov_absmod_psych.csv")) %>% 
-  mutate(across(everything(), ~str_replace_all(., ":", ".")))
-psych_hyb_cov <- read.csv(paste0(results_dir, "vcov_hybmod_psych.csv")) %>% 
-                 mutate(across(everything(), ~str_replace_all(., ":", ".")))
-# copd
-copd_lag0 <- read.csv(paste0(results_dir, "results_PSPS_wflag05_nstemp_copd_V2.csv")) %>% 
-                mutate(across(everything(), ~str_replace_all(., ":", ".")))
-copd_abs_cov <- read.csv(paste0(results_dir, "vcov_absmod_copd.csv")) %>% 
-  mutate(across(everything(), ~str_replace_all(., ":", ".")))
-copd_hyb_cov <- read.csv(paste0(results_dir, "vcov_hybmod_copd.csv")) %>% 
-                mutate(across(everything(), ~str_replace_all(., ":", ".")))
-
-# store all covariance matrices
-cov_matrices <- list(
-  resp_abs_cov = resp_abs_cov,
-  resp_hyb_cov = resp_hyb_cov,
-  cardio_abs_cov = cardio_abs_cov,
-  cardio_hyb_cov = cardio_hyb_cov,
-  psych_abs_cov = psych_abs_cov,
-  psych_hyb_cov = psych_hyb_cov,
-  copd_abs_cov = copd_abs_cov,
-  copd_hyb_cov = copd_hyb_cov
-)
-
-# compile these data
-resp_lag0_abs <- resp_lag0 %>% 
-  select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-  mutate(Cause = "Respiratory")%>% 
-  slice(1:10)     
-resp_lag0_hyb <- resp_lag0 %>% 
-  select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-  mutate(Cause = "Respiratory")%>% 
-  slice(11:20)
-cardio_lag0_abs <- cardio_lag0 %>%
-    select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-    mutate(Cause = "Cardiovascular") %>% 
-    slice(1:10)
-cardio_lag0_hyb <- cardio_lag0 %>%
-    select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-    mutate(Cause = "Cardiovascular") %>% 
-    slice(11:20)
-psych_lag0_abs <- psych_lag0 %>%
-    select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-    mutate(Cause = "Psychiatric") %>% 
-    slice(1:10) 
-psych_lag0_hyb <- psych_lag0 %>%
-    select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-    mutate(Cause = "Psychiatric") %>% 
-    slice(11:20)
-copd_lag0_abs <- copd_lag0 %>%
-    select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-    mutate(Cause = "COPD") %>% 
-    slice(1:10) 
-copd_lag0_hyb <- copd_lag0 %>%
-    select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-    mutate(Cause = "COPD") %>% 
-    slice(11:20)
-
-# combine data
-all_lag0_abs <- bind_rows(resp_lag0_abs, cardio_lag0_abs, psych_lag0_abs, copd_lag0_abs) %>% 
-  # make or, ci_lower, ci_upper numeric
-  mutate(across(c("OR", "CI_Lower", "CI_Upper"), as.numeric))
-write.csv(all_lag0_abs, paste0(results_dir, "all_lag0_abs.csv"), row.names = FALSE)
-all_lag0_hyb <- bind_rows(resp_lag0_hyb, cardio_lag0_hyb, psych_lag0_hyb, copd_lag0_hyb) %>% 
-  # make or, ci_lower, ci_upper numeric
-  mutate(across(c("OR", "CI_Lower", "CI_Upper"), as.numeric))
-write.csv(all_lag0_hyb, paste0(results_dir, "all_lag0_hyb.csv"), row.names = FALSE)
+# these were processed and created in the 07_process_results.R script
+cov_matrices <- readRDS("cov_matrices.rds")
+all_lag0_abs <- read.csv(paste0(results_dir, "all_lag0_abs.csv"))
+all_lag0_hyb <- read.csv(paste0(results_dir, "all_lag0_hyb.csv"))
 
 
 # # read in exp data -------------------------------------------------
-psps_exp_temp <- read.csv(paste0(exp_dir, "daily_psps_binary.csv")) 
-psps_exp <- psps_exp_temp %>% 
-    mutate(date = as.Date(date, format = "%Y-%m-%d"),
-           psps_event = ifelse(psps_abs == 1 | psps_hybrid == 1, 1, 0)) %>%
-    select(c("date", "psps_event", "zip_code")) %>%
-    group_by(zip_code, date) %>%
-    reframe(psps_event = max(psps_event))
-wf_exp <- read.csv(paste0(exp_dir, "zip_wfpm20132019.csv")) %>% 
-    mutate(date = as.Date(date, format = "%Y-%m-%d")) %>%
-    select(c("date", "mean_lag05_per10", "zip_code"))
-
 og_psps_dataset <- read.csv(paste0(data_dir, "ca_ZIP_daily_psps_no_washout_classified_2013-2022.csv"))
 
-# generate exposure dataset for fig2
+# read in exposure dataset for fig2
 # we need the number of zip-days for PSPS exp, WF exp, and dual exp
-    # a left join should be fine since wf is daily, but outer just in case
-exp_data <- merge(wf_exp, psps_exp, by = c("date", "zip_code"), all = TRUE) %>% 
-    mutate(psps_event = ifelse(is.na(psps_event), 0, psps_event)) %>%
-    rename(wf = mean_lag05_per10)
-write.csv(exp_data, paste0(exp_dir, "zip_daily_psps_wf_exposure.csv"), row.names = FALSE)
+exp_data <- read.csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv"))
 
 # read in map data -------------------------------------------------
 # load data -------------------------------------------------
@@ -460,10 +412,7 @@ severe_df_hyb <- process_results("Severe", all_lag0_hyb, "hyb", cov_matrices)
 severe_df_abs <- process_results("Severe", all_lag0_abs, "abs", cov_matrices)
 
 # make fig 3
-fig3_abs <- create_results_fig(severe_df_abs, "severe", show_severity = FALSE)
-fig3_hyb <- create_results_fig(severe_df_hyb, "severe", show_severity = FALSE, show_disease_labels = FALSE)
-
-fig3 <- fig3_abs / fig3_hyb
+fig3 <- create_results_fig_combined(severe_df_abs, severe_df_hyb, "severe", show_severity = FALSE)
 
 #####################
 ### SUPP FIGURE 1 ###
@@ -478,17 +427,12 @@ mild_df_abs <- process_results("Mild", all_lag0_abs, "abs", cov_matrices)
 moderate_df_abs <- process_results("Moderate", all_lag0_abs, "abs", cov_matrices)
 
 # make the three indiv figs
-mild_hyb <- create_results_fig(mild_df_hyb, "Mild", show_disease_labels = TRUE, show_severity = TRUE)
-mod_hyb <- create_results_fig(moderate_df_hyb, "Moderate", show_disease_labels = FALSE, show_severity = TRUE)
-sev_hyb <- create_results_fig(severe_df_hyb, "Severe", show_disease_labels = FALSE, show_severity = TRUE)
-
-mild_abs <- create_results_fig(mild_df_abs, "Mild", show_disease_labels = TRUE, show_severity = TRUE)
-mod_abs <- create_results_fig(moderate_df_abs, "Moderate", show_disease_labels = FALSE, show_severity = TRUE)
-sev_abs <- create_results_fig(severe_df_abs, "Severe", show_disease_labels = FALSE, show_severity = TRUE)
+mild <- create_results_fig_combined(mild_df_hyb, mild_df_abs, "mild", show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
+mod <- create_results_fig_combined(moderate_df_hyb, moderate_df_abs, "moderate", show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
+sev <- create_results_fig_combined(severe_df_hyb, severe_df_abs, "severe", show_disease_labels = FALSE, show_severity = TRUE)
 
 # Create a layout with labels on the left side
-supp_fig1_hyb <- mild_hyb / mod_hyb / sev_hyb
-supp_fig1_abs <- mild_abs / mod_abs / sev_abs
+supp_fig1 <- mild / mod / sev
 
 ########################
 ### Duration for Joan ###
@@ -520,17 +464,14 @@ ggsave(paste0(out_dir, "fig2_panel1.pdf"), fig2_panel1, width = 5, height = 10, 
 ggsave(paste0(out_dir, "fig2_panel2.pdf"), fig2_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "fig2_panel3.pdf"), fig2_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "fig3.pdf"), fig3, width = 10, height = 15, dpi = 100)
-ggsave(paste0(out_dir, "supp_fig1_hyb.pdf"), supp_fig1_hyb, width = 10, height = 15, dpi = 100)
-ggsave(paste0(out_dir, "supp_fig1_abs.pdf"), supp_fig1_abs, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "supp_fig1.pdf"), supp_fig1, width = 10, height = 15, dpi = 100)
 
 ggsave(paste0(out_dir, "fig1.png"), fig1, width = 10, height = 5, dpi = 100)
 ggsave(paste0(out_dir, "fig2_panel1.png"), fig2_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "fig2_panel2.png"), fig2_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "fig2_panel3.png"), fig2_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "fig3.png"), fig3, width = 10, height = 10, dpi = 100)
-ggsave(paste0(out_dir, "fig3_abs.png"), fig3_abs, width = 10, height = 7, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "supp_fig1_hyb.png"), supp_fig1_hyb, width = 10, height = 15, dpi = 100)
-ggsave(paste0(out_dir, "supp_fig1_abs.png"), supp_fig1_abs, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "supp_fig1.png"), supp_fig1, width = 10, height = 15, dpi = 100)
 
 ggsave(paste0(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
 

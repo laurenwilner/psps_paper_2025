@@ -16,20 +16,20 @@ out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/")
 data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
 
 # load data -------------------------------------------------
-psps_exp_df <- read_csv(paste0(exp_dir, "ca_ZIP_daily_psps_no_washout_classified_2013-2022.csv"))
-psps_exp_summary <- read.csv(paste0(exp_dir, "daily_psps_binary.csv")) 
-wf_exp_df <- read_csv(paste0(exp_dir, "zip_wfpm20132019.csv"))
-results_abs_df <- read_csv(paste0(results_dir, "all_lag0_abs.csv"))
-results_hyb_df <- read_csv(paste0(results_dir, "all_lag0_hyb.csv"))
-exposure_summary_abs_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_byOOI_V2.csv"))
-exposure_summary_hybrid_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_byOOI_V2.csv"))
-exp_abs_sm_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_V2.csv"))
-exp_hyb_sm_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_V2.csv"))
+psps_exp_df <- read_csv(paste0(exp_dir, "ca_ZIP_daily_psps_no_washout_classified_2013-2022.csv")) # updated
+psps_exp_summary <- read.csv(paste0(exp_dir, "daily_psps_binary.csv")) # updated
+wf_exp_df <- read_csv(paste0(exp_dir, "zip_wfpm20132019.csv")) # no updates needed
+results_abs_df <- read_csv(paste0(results_dir, "all_lag0_abs.csv")) # updated
+results_hyb_df <- read_csv(paste0(results_dir, "all_lag0_hyb.csv")) # updated
+exposure_summary_abs_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/abs-psps-wf_exp-summary-by-OOI.csv")) # updated
+exposure_summary_hybrid_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/hyb-psps-wf_exp-summary-by-OOI.csv")) # updated
+exp_abs_sm_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_V2.csv")) # NEED TO UPDATE
+exp_hyb_sm_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_V2.csv")) # NEED TO UPDATE
 zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>% 
             rename(zip_code = ZIP_CODE) %>%
-            select(c("zip_code", "geometry"))
-ca_zips <- zip_shp$zip_code %>% unique()
-combined_exp_df <- read_csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv"))
+            select(c("zip_code", "geometry")) # no update needed 
+ca_zips <- zip_shp$zip_code %>% unique() # no update needed
+combined_exp_df <- read_csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv")) # updated
 
 # create each number to plug as a var -----------------------
 # we included XXXX PSPS events in this study
