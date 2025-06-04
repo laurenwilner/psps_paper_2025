@@ -241,7 +241,7 @@ exp_data <- read.csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv"))
 
 # read in map data -------------------------------------------------
 # load data -------------------------------------------------
-zctas <- c(90001:90008, 90011:90041, 94102:94158) # FILL IN WITH ZCTAS FROM HCAI! 
+zctas <- read.csv(paste0(exp_dir, "zctas_included.csv")) %>% pull(x) # FILL IN WITH ZCTAS FROM HCAI! 
 ca_shp <- tigris::states(cb = TRUE, year = 2020) %>% 
   filter(NAME == "California") %>% 
   st_transform(epsg = 3310)
