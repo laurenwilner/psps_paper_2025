@@ -10,21 +10,22 @@ rm(list = ls()) # important to get rid of existing vars!
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
 pacman::p_load(dplyr, readr, sf)
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/")
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
 exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/")
 data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
+analysis_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_ca_analysis/data/")
 
 # load data -------------------------------------------------
-psps_exp_df <- read_csv(paste0(exp_dir, "ca_ZIP_daily_psps_no_washout_classified_2013-2022.csv")) # updated
-psps_exp_summary <- read.csv(paste0(exp_dir, "daily_psps_binary.csv")) # updated
+psps_exp_df <- read_csv(paste0(data_dir, 'ca_ZIP_daily_psps_no_washout_wf_classified_2013-2022.csv')) # updated
+psps_exp_summary <- read.csv(paste0(analysis_dir, "daily_psps_binary.csv")) # updated
 wf_exp_df <- read_csv(paste0(exp_dir, "zip_wfpm20132019.csv")) # no updates needed
 results_abs_df <- read_csv(paste0(results_dir, "all_lag0_abs.csv")) # updated
 results_hyb_df <- read_csv(paste0(results_dir, "all_lag0_hyb.csv")) # updated
-exposure_summary_abs_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/abs-psps-wf_exp-summary-by-OOI.csv")) # updated
-exposure_summary_hybrid_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/hyb-psps-wf_exp-summary-by-OOI.csv")) # updated
-exp_abs_sm_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/AbsPSPS_wf_expsummary_V2.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
-exp_hyb_sm_df <- read.csv(paste0(results_dir, "/Exposure\ summaries/HybPSPS_wf_expsummary_V2.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
+exposure_summary_abs_df <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv")) # updated
+exposure_summary_hybrid_df <- read.csv(paste0(results_dir, "hybexp_summary_byOOI.csv")) # updated
+exp_abs_sm_df <- read.csv(paste0(results_dir, "absexp_summary.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
+exp_hyb_sm_df <- read.csv(paste0(results_dir, "hybexp_summary.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
 zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>% 
             rename(zip_code = ZIP_CODE) %>%
             select(c("zip_code", "geometry")) # no update needed 
@@ -261,3 +262,4 @@ val_to_tex <- sapply(all_vars, function(var_name) {
 
 values <- val_to_tex[!sapply(val_to_tex, is.null)]
 write_lines(values, "analysis-values.tex")
+

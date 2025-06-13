@@ -13,14 +13,13 @@ pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown, re
 
 pal <- met.brewer(name = "Hokusai2", n=2)
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results")
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 
-exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/abs-psps-wf_exp-summary-by-OOI.csv"))
-exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "/Exposure\ summaries/hyb-psps-wf_exp-summary-by-OOI.csv"))
+exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv"))
+exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "hybexp_summary_byOOI.csv"))
 
-table1s_df <- read_excel(paste0(results_dir, "/PSPSTable1_demo_V2.xlsx"), sheet = "Sheet2")
-# NOTE: MAYBE NEED TO UPDATE THIS.
+table1s_df <- read_excel(paste0(results_dir, "PSPSTable1_demo_V3.xlsx"), sheet = "Sheet2")
 
 ## NOTE: table 1 is made in the methods in latex. 
 

@@ -7,10 +7,11 @@
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
 pacman::p_load(tidyverse, ggforce, MetBrewer)
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ May\ 2025/")
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
 exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
+analysis_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_ca_analysis/data/")
 
 # read in and concat results to visualize -----------------------------
 # pull directories of results and construct file names
@@ -60,7 +61,7 @@ p <- ggplot(data = results, aes(x = exposure, y = or, color = cause)) +
         scale_y_continuous()
 
 # save the plot
-pdf("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/psps_results_may2025.pdf", height = 13, width = 10)
+pdf("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/psps_results_jun2025.pdf", height = 13, width = 10)
 p
 dev.off()
 
@@ -158,7 +159,7 @@ write.csv(all_lag0_hyb, paste0(results_dir, "all_lag0_hyb.csv"), row.names = FAL
 # we need the number of zip-days for PSPS exp, WF exp, and dual exp
     # a left join should be fine since wf is daily, but outer just in case
 
-psps_exp_temp <- read.csv(paste0(exp_dir, "daily_psps_binary.csv")) 
+psps_exp_temp <- read.csv(paste0(analysis_dir, "daily_psps_binary.csv")) 
 psps_exp <- psps_exp_temp %>% 
     mutate(date = as.Date(date, format = "%Y-%m-%d"),
            psps_event = ifelse(psps_abs == 1 | psps_hybrid == 1, 1, 0)) %>%

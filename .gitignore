@@ -8,6 +8,8 @@ exposure_data/
 results/
 !results/*.csv
 
+cov_matrices.rds
+
 .lintr
 
 .ipynb_checkpoints
