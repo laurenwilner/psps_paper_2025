@@ -11,7 +11,7 @@ pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown,sf,
 pal <- c( '#6f9969', '#efc86e',"#0f7ba2")
 crs <- "EPSG:3310" # California Albers Equal Area Conic projection
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ May\ 2025/")
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
 exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
@@ -233,7 +233,7 @@ all_lag0_hyb <- read.csv(paste0(results_dir, "all_lag0_hyb.csv"))
 
 
 # # read in exp data -------------------------------------------------
-og_psps_dataset <- read.csv(paste0(data_dir, "ca_ZIP_daily_psps_no_washout_classified_2013-2022.csv"))
+og_psps_dataset <- read.csv(paste0(data_dir, "ca_ZIP_daily_psps_no_washout_wf_classified_2013-2022.csv"))
 
 # read in exposure dataset for fig2
 # we need the number of zip-days for PSPS exp, WF exp, and dual exp
@@ -241,7 +241,7 @@ exp_data <- read.csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv"))
 
 # read in map data -------------------------------------------------
 # load data -------------------------------------------------
-zctas <- read.csv(paste0(exp_dir, "zctas_included.csv")) %>% pull(x) # FILL IN WITH ZCTAS FROM HCAI! 
+zctas <- read.csv(paste0(results_dir, "list_zcta_in_analysis.csv")) %>% pull(x) 
 ca_shp <- tigris::states(cb = TRUE, year = 2020) %>% 
   filter(NAME == "California") %>% 
   st_transform(epsg = 3310)
