@@ -246,14 +246,14 @@ val_to_tex <- sapply(all_vars, function(var_name) {
       formatted_value <- format(var_value, big.mark = ",", scientific = FALSE, nsmall = 0)
     } else {
       # For decimals, round to one decimal place
-      rounded_value <- round(var_value, 1)
-      formatted_value <- format(rounded_value, big.mark = ",", scientific = FALSE, nsmall = 1)
+      rounded_value <- round(var_value, 2)
+      formatted_value <- format(rounded_value, big.mark = ",", scientific = FALSE, nsmall = 2)
     }
     
     paste0("\\newcommand{\\", var_name, "}{", formatted_value, "}")
   }
   # Handle character values
-  else if (is.character(var_value) && length(var_value) == 1) {
+  else if (is.character(var_value) && length(var_value) == 2) {
     paste0("\\newcommand{\\", var_name, "}{", var_value, "}")
   } else {
     NULL
