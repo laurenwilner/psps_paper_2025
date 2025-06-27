@@ -15,127 +15,12 @@ results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/res
 exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
+code_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/code/")
 
 # load functions -------------------------------------------------
-# function to get covariance value for a specific cause/metric/severity combination
-get_covariance <- function(cause, metric, severity, cov_matrices) {
-  metric_lab <- ifelse(metric == "abs", "customers", "hybrid")
-  # Select the right covariance matrix
-  cov_df <- switch(paste0(cause, "_", metric),
-                   "resp_abs" = cov_matrices$resp_abs_cov,
-                   "resp_hyb" = cov_matrices$resp_hyb_cov,
-                   "cardio_abs" = cov_matrices$cardio_abs_cov,
-                   "cardio_hyb" = cov_matrices$cardio_hyb_cov,
-                   "psych_abs" = cov_matrices$psych_abs_cov,
-                   "psych_hyb" = cov_matrices$psych_hyb_cov,
-                   "copd_abs" = cov_matrices$copd_abs_cov,
-                   "copd_hyb" = cov_matrices$copd_hyb_cov)
-  
-  # make the variable name
-  var_name <- paste0("severity_", metric_lab, severity, ".mean_lag05_per10")
-  
-  # get the covariance value using tidyverse functions and ensure it's numeric
-  cov_value <- cov_df %>%
-    filter(X == var_name) %>%
-    pull(var_name) %>%
-    as.numeric()
-  
-  return(cov_value)
-}
+source(paste0(code_dir, "00_helper_functions.R"))
 
-# prep data for all severity levels for plotting! 
-process_results <- function(severity_level, all_lag0, metric = "abs", cov_matrices) {
-  # lets process each cause separately and then combine
-  causes <- c("resp", "cardio", "psych", "copd")
-  
-  processed_dfs <- lapply(causes, function(cause) {
-    # pull the covariance value for this cause
-    cov_value <- get_covariance(cause, metric, severity_level, cov_matrices)
-    
-    # var patterns based on severity level
-    if(metric == "abs"){
-        interaction_var <- paste0("severity_customers", severity_level, ".mean_lag05_per10")
-        main_effect_var <- paste0("severity_customers", severity_level)
-    }else{
-        interaction_var <- paste0("severity_hybrid", severity_level, ".mean_lag05_per10")
-        main_effect_var <- paste0("severity_hybrid", severity_level)
-    }
-    wf_var <- "mean_lag05_per10"
-    
-    # map of cause to display name
-    cause_display <- switch(cause,
-      "resp" = "Respiratory",
-      "cardio" = "Cardiovascular",
-      "psych" = "Psychiatric",
-      "copd" = "COPD"
-    )
-    
-    # prep data for this severity level and cause
-    prep_df <- all_lag0 %>% 
-      filter(
-        Exposure %in% c(interaction_var, main_effect_var, wf_var),
-        Cause == cause_display
-      ) %>%
-      mutate(
-        Exposure = case_when(
-          Exposure == interaction_var ~ "Interaction",  # Temporary label
-          Exposure == main_effect_var ~ paste0(severity_level, " PSPS event"),
-          Exposure == wf_var ~ "WF smoke"
-        ),
-        log_odds = log(OR),
-        se = (log(CI_Upper) - log(CI_Lower)) / (2*1.96),
-        variance = se^2,
-        Severity = severity_level  # Add a column to track severity level
-      ) %>% 
-      select(Exposure, log_odds, variance, Cause, Severity)
-    
-    # first, handle the main effects (PSPS and WF smoke separately)
-    main_effects <- prep_df %>%
-      filter(Exposure != "Interaction") %>%
-      select(Exposure, log_odds, variance, Cause, Severity)
-    
-    # then, calculate the interaction effect (PSPS + WF smoke + interaction term)
-    interaction_effect <- prep_df %>%
-      # filter to only wf and interaction since thats what we will add 
-      filter(Exposure %in% c("WF smoke", "Interaction")) %>%
-      summarize(
-        Exposure = paste0(severity_level, " PSPS event * WF smoke"),
-        # Sum the log odds of all components
-        log_odds = sum(log_odds),
-        # Calculate total variance including covariance
-        variance = sum(variance) + 2*cov_value,
-        Cause = first(Cause),
-        Severity = first(Severity)
-      )
-    
-    # combine main effects and interaction effect
-    processed_df <- bind_rows(main_effects, interaction_effect)
-    
-    return(processed_df)
-  })
-  
-  # combine all processed dataframes
-  final_df <- bind_rows(processed_dfs) %>%
-    mutate(
-      se = sqrt(variance),
-      odds_ratio = exp(log_odds),
-      lower_ci = exp(log_odds - 1.96 * se),
-      upper_ci = exp(log_odds + 1.96 * se)
-    ) %>% 
-    select(-c("log_odds", "variance", "se")) %>% 
-    mutate(
-      Cause = factor(Cause, levels = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD")),
-      # make a new column for category for plotting color scheme!
-      category = case_when(
-        grepl("\\*", Exposure) ~ "Interaction",  # For rows with * in Exposure (interaction terms)
-        Exposure == "WF smoke" ~ "WF smoke",     # For WF smoke rows
-        TRUE ~ "PSPS"                           # For all other rows (PSPS events)
-      )
-    )
-  
-  return(final_df)
-}
-
+# plotting function for results figs 
 # plotting function for results figs 
 create_results_fig_combined <- function(data_abs, data_hyb, severity, 
                                 show_disease_labels = TRUE, 
@@ -146,49 +31,49 @@ create_results_fig_combined <- function(data_abs, data_hyb, severity,
     mutate(
       Exposure = case_when(
         Exposure == "WF smoke" ~ "WFS",
-        grepl("\\*", Exposure) ~ "PSPS + WFS",
+        grepl("combined", Exposure) ~ "Combined",
+        grepl("interaction only", Exposure) ~ "PSPS * WFS",
         TRUE ~ "PSPS"
       ),
       analysis_type = "Absolute"
     ) %>%
-    mutate(Exposure = factor(Exposure, levels = c("WFS", "PSPS", "PSPS + WFS")))
+    mutate(Exposure = factor(Exposure, levels = c("WFS", "PSPS", "PSPS * WFS", "Combined")))
   
   # process hybrid data
   data_hyb_processed <- data_hyb %>%
     mutate(
       Exposure = case_when(
         Exposure == "WF smoke" ~ "WFS",
-        grepl("\\*", Exposure) ~ "PSPS + WFS",
+        grepl("combined", Exposure) ~ "Combined",
+        grepl("interaction only", Exposure) ~ "PSPS * WFS",
         TRUE ~ "PSPS"
       ),
       analysis_type = "Hybrid"
     ) %>%
-    mutate(Exposure = factor(Exposure, levels = c("WFS", "PSPS", "PSPS + WFS")))
+    mutate(Exposure = factor(Exposure, levels = c("WFS", "PSPS", "PSPS * WFS", "Combined")))
   
   # combine the datasets
   combined_data <- bind_rows(data_abs_processed, data_hyb_processed) %>%
     mutate(analysis_type = factor(analysis_type, levels = c("Absolute", "Hybrid")))
   
-  # get unique categories from the data in the correct order
-  unique_categories <- unique(combined_data$category)
-  
-  # reorder colors to match exposure order: WFS (blue), PSPS (yellow), PSPS + WFS (green)
-  color_order <- c(2, 3, 1)  
-  ordered_colors <- pal[color_order[1:length(unique_categories)]]
-  
-  # create color mapping for categories
-  category_colors <- setNames(ordered_colors, unique_categories)
+  # Create a simple color mapping based on Exposure names (not category)
+  exposure_colors <- c(
+    "WFS" = pal[3],           # blue
+    "PSPS" = pal[2],          # yellow  
+    "PSPS * WFS" = pal[1],    # green
+    "Combined" = "#013220"    # black
+  )
   
   # base plot
   p <- ggplot(combined_data, aes(x = Exposure, y = odds_ratio, ymin = lower_ci, ymax = upper_ci)) +
-    geom_point(aes(color = category, alpha = analysis_type, shape = analysis_type), 
+    geom_point(aes(color = Exposure, alpha = analysis_type, shape = analysis_type), 
                position = position_dodge(width = 0.6), 
                size = 3) +
-    geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci, color = category, alpha = analysis_type), 
+    geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci, color = Exposure, alpha = analysis_type), 
                   width = 0.3,
                   position = position_dodge(width = 0.6)) +
     geom_hline(yintercept = 1, linetype = "dashed") + 
-    scale_color_manual(values = category_colors, guide = "none") +
+    scale_color_manual(values = exposure_colors, guide = "none") +
     scale_alpha_manual(values = c("Absolute" = 1.0, "Hybrid" = 0.6), 
                        name = "", 
                        labels = c("Absolute", "Hybrid")) +
@@ -223,7 +108,6 @@ create_results_fig_combined <- function(data_abs, data_hyb, severity,
   
   return(p)
 }
-
 
 # read in model results and covariance matrices ---------------------------------
 # these were processed and created in the 07_process_results.R script
@@ -400,14 +284,7 @@ fig2_panel3 <- map_plots[[3]] / violin_plots[[3]] &
 
 # prep for figure 3 -------------------------------------------
 
-# subset to terms of interest and rename 
-#  y = beta1*psps + beta2*wf + beta3*psps*wf + spline
-# no wf + psps = beta1 
-# psps + wf = beta3 + beta2
-# no psps + wf = beta2
-
 # process `severe` for fig 3
-# severe_df <- process_results("Severe", all_lag0, "resp", "abs", cov_matrices)
 severe_df_hyb <- process_results("Severe", all_lag0_hyb, "hyb", cov_matrices)
 severe_df_abs <- process_results("Severe", all_lag0_abs, "abs", cov_matrices)
 
