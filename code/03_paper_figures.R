@@ -21,7 +21,6 @@ code_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/code/"
 source(paste0(code_dir, "00_helper_functions.R"))
 
 # plotting function for results figs 
-# plotting function for results figs 
 create_results_fig_combined <- function(data_abs, data_hyb, severity, 
                                 show_disease_labels = TRUE, 
                                 show_severity = TRUE, 
@@ -30,38 +29,38 @@ create_results_fig_combined <- function(data_abs, data_hyb, severity,
   data_abs_processed <- data_abs %>%
     mutate(
       Exposure = case_when(
-        Exposure == "WF smoke" ~ "WFS",
-        grepl("combined", Exposure) ~ "Combined",
-        grepl("interaction only", Exposure) ~ "PSPS * WFS",
-        TRUE ~ "PSPS"
+        Exposure == "WF smoke" ~ "β₂ = WFS",
+        grepl("combined", Exposure) ~ "β₁ + β₂ + β₃",
+        grepl("interaction only", Exposure) ~ "β₃ = PSPS * WFS",
+        TRUE ~ "β₁ = PSPS"
       ),
       analysis_type = "Absolute"
     ) %>%
-    mutate(Exposure = factor(Exposure, levels = c("WFS", "PSPS", "PSPS * WFS", "Combined")))
+    mutate(Exposure = factor(Exposure, levels = c("β₁ = PSPS", "β₂ = WFS", "β₃ = PSPS * WFS", "β₁ + β₂ + β₃")))
   
   # process hybrid data
   data_hyb_processed <- data_hyb %>%
     mutate(
       Exposure = case_when(
-        Exposure == "WF smoke" ~ "WFS",
-        grepl("combined", Exposure) ~ "Combined",
-        grepl("interaction only", Exposure) ~ "PSPS * WFS",
-        TRUE ~ "PSPS"
+        Exposure == "WF smoke" ~ "β₂ = WFS",
+        grepl("combined", Exposure) ~ "β₁ + β₂ + β₃",
+        grepl("interaction only", Exposure) ~ "β₃ = PSPS * WFS",
+        TRUE ~ "β₁ = PSPS"
       ),
       analysis_type = "Hybrid"
     ) %>%
-    mutate(Exposure = factor(Exposure, levels = c("WFS", "PSPS", "PSPS * WFS", "Combined")))
+    mutate(Exposure = factor(Exposure, levels = c("β₁ = PSPS", "β₂ = WFS", "β₃ = PSPS * WFS", "β₁ + β₂ + β₃")))
   
   # combine the datasets
   combined_data <- bind_rows(data_abs_processed, data_hyb_processed) %>%
     mutate(analysis_type = factor(analysis_type, levels = c("Absolute", "Hybrid")))
   
-  # Create a simple color mapping based on Exposure names (not category)
+  # color mapping
   exposure_colors <- c(
-    "WFS" = pal[3],           # blue
-    "PSPS" = pal[2],          # yellow  
-    "PSPS * WFS" = pal[1],    # green
-    "Combined" = "#013220"    # black
+    "β₂ = WFS" = pal[3],           # blue
+    "β₁ = PSPS" = pal[2],          # yellow  
+    "β₃ = PSPS * WFS" = pal[1],    # green
+    "β₁ + β₂ + β₃" = "#013220"    
   )
   
   # base plot

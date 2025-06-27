@@ -256,6 +256,28 @@ copdhybcihigh <- results_hyb_df %>%
     filter(Cause == "COPD" & Exposure == "severity_hybridSevere") %>% 
     pull(CI_Upper)
 
+# copd interaction term absolute metric OR: XXX, 95\CI: XXX, XXX
+copdintabsor <- results_abs_df %>% 
+    filter(Cause == "COPD" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
+    pull(OR)
+copdintabscilow <- results_abs_df %>%
+    filter(Cause == "COPD" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
+    pull(CI_Lower)
+copdintabscihigh <- results_abs_df %>%
+    filter(Cause == "COPD" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
+    pull(CI_Upper)
+
+# copd interaction term hybrid metric OR: XXX, 95\CI: XXX, XXX
+copdinthybor <- results_hyb_df %>% 
+    filter(Cause == "COPD" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
+    pull(OR)
+copdinthybcilow <- results_hyb_df %>%
+    filter(Cause == "COPD" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
+    pull(CI_Lower)
+copdinthybcihigh <- results_hyb_df %>%
+    filter(Cause == "COPD" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
+    pull(CI_Upper)
+
 # copd combined effect absolute metric OR: XXX, 95\CI: XXX, XXX
 copdcombabsor <- severe_df_abs %>% 
     filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
@@ -277,6 +299,18 @@ copdcombhyblow <- severe_df_hyb %>%
 copdcombhybhigh <- severe_df_hyb %>% 
     filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
     pull(upper_ci)
+
+# WFS absolute metric OR (resp, also doesnt matter re abs or hyb so just pulling one): XXX, 95\CI: XXX, XXX
+wfsabsor <- results_abs_df %>%
+    filter(Cause == "Respiratory" & Exposure == "mean_lag05_per10") %>% 
+    pull(OR)
+wfsabscilow <- results_abs_df %>%
+    filter(Cause == "Respiratory" & Exposure == "mean_lag05_per10") %>% 
+    pull(CI_Lower)
+wfsabscihigh <- results_abs_df %>%
+    filter(Cause == "Respiratory" & Exposure == "mean_lag05_per10") %>% 
+    pull(CI_Upper)
+
 
 
 # write the numbers to a file -----------------------
