@@ -1,12 +1,10 @@
 #-------------------------------------------------
-# PSPS: Paper figures
-# March 2025
+# PSPS: Paper number plugging
+# June 2025
 #-------------------------------------------------
-# question for joan 
-# should we plot the act interaction term or the summed, actual effect? 
 
 # setup -------------------------------------------------
-rm(list = ls()) # important to get rid of existing vars! 
+rm(list = ls()) # important in this script to get rid of existing objects! 
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
 pacman::p_load(dplyr, readr, sf)
 
@@ -15,6 +13,10 @@ exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposur
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/")
 data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
 analysis_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_ca_analysis/data/")
+code_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/code/")
+
+# load functions -------------------------------------------------
+source(paste0(code_dir, "00_helper_functions.R"))
 
 # load data -------------------------------------------------
 psps_exp_df <- read_csv(paste0(data_dir, 'ca_ZIP_daily_psps_no_washout_wf_classified_2013-2022.csv')) # updated
@@ -22,6 +24,7 @@ psps_exp_summary <- read.csv(paste0(analysis_dir, "daily_psps_binary.csv")) # up
 wf_exp_df <- read_csv(paste0(exp_dir, "zip_wfpm20132019.csv")) # no updates needed
 results_abs_df <- read_csv(paste0(results_dir, "all_lag0_abs.csv")) # updated
 results_hyb_df <- read_csv(paste0(results_dir, "all_lag0_hyb.csv")) # updated
+cov_matrices <- readRDS("cov_matrices.rds") # updated
 exposure_summary_abs_df <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv")) # updated
 exposure_summary_hybrid_df <- read.csv(paste0(results_dir, "hybexp_summary_byOOI.csv")) # updated
 exp_abs_sm_df <- read.csv(paste0(results_dir, "absexp_summary.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
@@ -31,6 +34,12 @@ zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>%
             select(c("zip_code", "geometry")) # no update needed 
 ca_zips <- zip_shp$zip_code %>% unique() # no update needed
 combined_exp_df <- read_csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv")) # updated
+
+# run the process results function to get combined ORs 
+severe_df_abs <- process_results("Severe", results_abs_df, "abs", cov_matrices)
+severe_df_hyb <- process_results("Severe", results_hyb_df, "hyb", cov_matrices)
+
+
 
 # create each number to plug as a var -----------------------
 # we included XXXX PSPS events in this study
@@ -157,6 +166,7 @@ psychcasedayssev <- exposure_summary_abs_df %>%
     pull(n) %>% unique()
 
 
+## RESP RESULTS
 # respiratory absolute metric OR: XXX, 95\CI: XXX, XXX
 respabsor <- results_abs_df %>% 
     filter(Cause == "Respiratory" & Exposure == "severity_customersSevere") %>% 
@@ -180,7 +190,6 @@ resphybcihigh <- results_hyb_df %>%
     pull(CI_Upper)
     
 # respiratory interaction term absolute metric OR: XXX, 95\CI: XXX, XXX
-## NOTE MAY NEED TO CHANGE THIS TO THE INTERACTION TERM
 respintabsor <- results_abs_df %>% 
     filter(Cause == "Respiratory" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
     pull(OR)
@@ -202,6 +211,29 @@ respinthybcihigh <- results_hyb_df %>%
     filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
     pull(CI_Upper)
 
+# respiratory combined effect absolute metric OR: XXX, 95\CI: XXX, XXX
+respcombabsor <- severe_df_abs %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(odds_ratio)
+respcombabslow <- severe_df_abs %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(lower_ci)
+respcombabshigh <- severe_df_abs %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(upper_ci)
+
+# respiratory combined effect hybrid metric OR: XXX, 95\CI: XXX, XXX
+respcombhybor <- severe_df_hyb %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(odds_ratio)
+respcombhyblow <- severe_df_hyb %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(lower_ci)
+respcombhybhigh <- severe_df_hyb %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(upper_ci)
+
+## COPD RESULTS
 # copd severe outage absolute metric OR: XXX, 95\CI: XXX, XXX
 copdabsor <- results_abs_df %>% 
     filter(Cause == "COPD" & Exposure == "severity_customersSevere") %>% 
@@ -223,6 +255,28 @@ copdhybcilow <- results_hyb_df %>%
 copdhybcihigh <- results_hyb_df %>%
     filter(Cause == "COPD" & Exposure == "severity_hybridSevere") %>% 
     pull(CI_Upper)
+
+# copd combined effect absolute metric OR: XXX, 95\CI: XXX, XXX
+copdcombabsor <- severe_df_abs %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(odds_ratio)
+copdcombabslow <- severe_df_abs %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(lower_ci)
+copdcombabshigh <- severe_df_abs %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(upper_ci)
+
+# copd combined effect hybrid metric OR: XXX, 95\CI: XXX, XXX
+copdcombhybor <- severe_df_hyb %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(odds_ratio)
+copdcombhyblow <- severe_df_hyb %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(lower_ci)
+copdcombhybhigh <- severe_df_hyb %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(upper_ci)
 
 
 # write the numbers to a file -----------------------
