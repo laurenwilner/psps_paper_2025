@@ -46,7 +46,7 @@ severe_df_hyb <- process_results("Severe", results_hyb_df, "hyb", cov_matrices)
 npspsevents <- length(unique(psps_exp_df$psps_event_id))
 
 # median duration of a PSPS event was XX hours
-medianduration <- median(psps_exp_df$duration, na.rm = TRUE)
+medianduration <- median(psps_exp_df$duration, na.rm = TRUE) %>% round(0)
 
 # XXXX zip code -days in our 7-year study period that experienced PSPS events
 zipdays <- nrow(psps_exp_summary)
@@ -55,7 +55,7 @@ zipdays <- nrow(psps_exp_summary)
 zipevents <- psps_exp_summary %>% group_by(zip_code) %>% 
   summarise(n_events = n()) %>% 
   summarise(mean_events = mean(n_events, na.rm = TRUE)) %>% 
-  pull(mean_events)
+  pull(mean_events) %>% round(0)
 
 # XXXX {severity level} was the most common when we used our absolute metric
 abs_severity_df <- psps_exp_df %>% 
@@ -341,7 +341,7 @@ val_to_tex <- sapply(all_vars, function(var_name) {
     paste0("\\newcommand{\\", var_name, "}{", formatted_value, "}")
   }
   # Handle character values
-  else if (is.character(var_value) && length(var_value) == 2) {
+  else if (is.character(var_value) && length(var_value) == 1) {
     paste0("\\newcommand{\\", var_name, "}{", var_value, "}")
   } else {
     NULL
