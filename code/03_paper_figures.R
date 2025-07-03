@@ -38,7 +38,7 @@ create_results_fig_combined <- function(data_abs, data_hyb, severity,
     ) %>%
     mutate(Exposure = factor(Exposure, levels = c("β₁ = PSPS", "β₂ = WFS", "β₃ = PSPS * WFS", "β₁ + β₂ + β₃")))
   
-  # process hybrid data
+  # process Relative data
   data_hyb_processed <- data_hyb %>%
     mutate(
       Exposure = case_when(
@@ -47,13 +47,13 @@ create_results_fig_combined <- function(data_abs, data_hyb, severity,
         grepl("interaction only", Exposure) ~ "β₃ = PSPS * WFS",
         TRUE ~ "β₁ = PSPS"
       ),
-      analysis_type = "Hybrid"
+      analysis_type = "Relative"
     ) %>%
     mutate(Exposure = factor(Exposure, levels = c("β₁ = PSPS", "β₂ = WFS", "β₃ = PSPS * WFS", "β₁ + β₂ + β₃")))
   
   # combine the datasets
   combined_data <- bind_rows(data_abs_processed, data_hyb_processed) %>%
-    mutate(analysis_type = factor(analysis_type, levels = c("Absolute", "Hybrid")))
+    mutate(analysis_type = factor(analysis_type, levels = c("Absolute", "Relative")))
   
   # color mapping
   exposure_colors <- c(
@@ -73,12 +73,12 @@ create_results_fig_combined <- function(data_abs, data_hyb, severity,
                   position = position_dodge(width = 0.6)) +
     geom_hline(yintercept = 1, linetype = "dashed") + 
     scale_color_manual(values = exposure_colors, guide = "none") +
-    scale_alpha_manual(values = c("Absolute" = 1.0, "Hybrid" = 0.6), 
+    scale_alpha_manual(values = c("Absolute" = 1.0, "Relative" = 0.6), 
                        name = "", 
-                       labels = c("Absolute", "Hybrid")) +
-    scale_shape_manual(values = c("Absolute" = 16, "Hybrid" = 17),
+                       labels = c("Absolute", "Relative")) +
+    scale_shape_manual(values = c("Absolute" = 16, "Relative" = 17),
                        name = "",
-                       labels = c("Absolute", "Hybrid")) +
+                       labels = c("Absolute", "Relative")) +
     labs(
       x = "",
       y = if(show_severity) substitute(atop(bold(sev), "Odds Ratio"), list(sev = severity)) else "Odds Ratio"

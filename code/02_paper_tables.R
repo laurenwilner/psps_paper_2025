@@ -113,7 +113,7 @@ pretty_table2 <- combined_table %>%
     columns = c(Abs_Case, Abs_Control)
   ) %>%
   tab_spanner(
-    label = "Hybrid",
+    label = "Relative",
     columns = c(Hyb_Case, Hyb_Control)
   ) %>%
   # Create row groups in REVERSE order
