@@ -16,8 +16,10 @@ pal <- met.brewer(name = "Hokusai2", n=2)
 results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 
-exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv"))
-exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "hybexp_summary_byOOI.csv"))
+exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv")) %>% 
+    mutate(severity_customers = ifelse(severity_customers == "none", "None", severity_customers))
+exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "hybexp_summary_byOOI.csv")) %>% 
+    mutate(severity_hybrid = ifelse(severity_hybrid == "none", "None", severity_hybrid))
 
 table1s_df <- read_excel(paste0(results_dir, "PSPSTable1_demo_V3.xlsx"), sheet = "Sheet2")
 
@@ -93,10 +95,13 @@ hyb_table <- hyb_table %>%
 combined_table <- abs_table %>%
   full_join(hyb_table, by = c("Cause", "Exposure")) %>%
   mutate(Cause = factor(Cause, levels = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD"))) %>%
+  mutate(Exposure = factor(Exposure, levels = c("Mild", "Moderate", "Severe", "None"))) %>%
   arrange(Cause, Exposure)
 
 # pretty table 2
 pretty_table2 <- combined_table %>%
+  # Add indentation to the Exposure values
+  mutate(Exposure = paste0("\u00A0\u00A0\u00A0\u00A0", Exposure)) %>%  # Add 2 spaces for indentation
   gt() %>%
   fmt_number(
     columns = c(Abs_Case, Abs_Control, Hyb_Case, Hyb_Control),
@@ -135,14 +140,17 @@ pretty_table2 <- combined_table %>%
   ) %>%
   # Hide the original Cause column
   cols_hide(columns = Cause) %>%
-  # Rename columns to simplify headers
+  # Rename columns - change Exposure to have indentation and add Disease end point
   cols_label(
+    Exposure = "Disease end point \n    Exposure",  # This will be the main header
     Abs_Case = "Case-days",
     Abs_Control = "Control-days",
     Hyb_Case = "Case-days",
     Hyb_Control = "Control-days"
   ) %>%
-    tab_options(
+  # Add a stub header for the exposure column
+  tab_stubhead(label = html("Disease end point<br><span style='font-weight: normal;'>    Exposure</span>")) %>%
+  tab_options(
     row_group.font.weight = "bold",
     row_group.background.color = "#f7f7f7",
     # Table border options
@@ -185,13 +193,13 @@ pretty_table2 <- combined_table %>%
       cells_column_spanners()
     )
   ) %>%
-  # Also bold the Exposure column header
+  # Style the stubhead (Disease end point header)
   tab_style(
     style = list(
       cell_fill(color = pal[1]),
       cell_text(weight = "bold")
     ),
-    locations = cells_column_labels(columns = Exposure)
+    locations = cells_stubhead()
   )
 
   # this is something webshot needs to work...
