@@ -120,7 +120,7 @@ pretty_table2 <- combined_table %>%
   tab_spanner(
     label = "Relative",
     columns = c(Hyb_Case, Hyb_Control)
-  ) %>%
+  ) %>%   
   # Create row groups in REVERSE order
   tab_row_group(
     label = "COPD",
@@ -140,16 +140,13 @@ pretty_table2 <- combined_table %>%
   ) %>%
   # Hide the original Cause column
   cols_hide(columns = Cause) %>%
-  # Rename columns - change Exposure to have indentation and add Disease end point
   cols_label(
-    Exposure = "Disease end point \n    Exposure",  # This will be the main header
+    Exposure = "Disease endpoint\nExposure (PSPS)", # can't do an enter and PSPS goes onto the line above so have to do psps after
     Abs_Case = "Case-days",
     Abs_Control = "Control-days",
     Hyb_Case = "Case-days",
     Hyb_Control = "Control-days"
   ) %>%
-  # Add a stub header for the exposure column
-  tab_stubhead(label = html("Disease end point<br><span style='font-weight: normal;'>    Exposure</span>")) %>%
   tab_options(
     row_group.font.weight = "bold",
     row_group.background.color = "#f7f7f7",
@@ -193,7 +190,6 @@ pretty_table2 <- combined_table %>%
       cells_column_spanners()
     )
   ) %>%
-  # Style the stubhead (Disease end point header)
   tab_style(
     style = list(
       cell_fill(color = pal[1]),
