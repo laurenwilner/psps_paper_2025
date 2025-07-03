@@ -108,25 +108,25 @@ meanwfpm <- wf_exp_df %>%
   
 # XXX case-days (absolute, all severities)
 casedaysabs <- exp_abs_sm_df %>% 
-    filter(case_indicator == 1) %>%
+    filter(case_indicator == 1 & severity_customers != 'none') %>%
     mutate(n = sum(count)) %>% 
     pull(n) %>% unique()
 
 # XXX control-days (absolute, all severities)
 controldaysabs <- exp_abs_sm_df %>% 
-    filter(case_indicator == 0) %>%
+    filter(case_indicator == 0 & severity_customers != 'none') %>%
     mutate(n = sum(count)) %>% 
     pull(n) %>% unique()
 
 # XXX case-days (hybrid, all severities)
 casedayshyb <- exp_hyb_sm_df %>% 
-    filter(case_indicator == 1) %>%
+    filter(case_indicator == 1 & severity_hybrid != 'none') %>%
     mutate(n = sum(count)) %>% 
     pull(n) %>% unique()
 
 # XXX control-days (hybrid, all severities)
 controldayshyb <- exp_hyb_sm_df %>% 
-    filter(case_indicator == 0) %>%
+    filter(case_indicator == 0 & severity_hybrid != 'none') %>%
     mutate(n = sum(count)) %>% 
     pull(n) %>% unique()
 
@@ -215,6 +215,7 @@ respinthybcihigh <- results_hyb_df %>%
 respcombabsor <- severe_df_abs %>% 
     filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
     pull(odds_ratio)
+respcombabsperc <- round((respcombabsor - 1) * 100, 0) # convert to percent
 respcombabslow <- severe_df_abs %>% 
     filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
     pull(lower_ci)
@@ -226,6 +227,7 @@ respcombabshigh <- severe_df_abs %>%
 respcombhybor <- severe_df_hyb %>% 
     filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
     pull(odds_ratio)
+respcombhybperc <- round((respcombhybor - 1) * 100, 0) # convert to percent
 respcombhyblow <- severe_df_hyb %>% 
     filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
     pull(lower_ci)
@@ -304,7 +306,7 @@ copdcombhybhigh <- severe_df_hyb %>%
 wfsabsor <- results_abs_df %>%
     filter(Cause == "Respiratory" & Exposure == "mean_lag05_per10") %>% 
     pull(OR)
-wfsabsperc <- (wfsabsor - 1) * 100 # convert to percent
+wfsabsperc <- round((wfsabsor - 1) * 100, 0) # convert to percent
 wfsabscilow <- results_abs_df %>%
     filter(Cause == "Respiratory" & Exposure == "mean_lag05_per10") %>% 
     pull(CI_Lower)
