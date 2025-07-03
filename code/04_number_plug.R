@@ -304,6 +304,7 @@ copdcombhybhigh <- severe_df_hyb %>%
 wfsabsor <- results_abs_df %>%
     filter(Cause == "Respiratory" & Exposure == "mean_lag05_per10") %>% 
     pull(OR)
+wfsabsperc <- (wfsabsor - 1) * 100 # convert to percent
 wfsabscilow <- results_abs_df %>%
     filter(Cause == "Respiratory" & Exposure == "mean_lag05_per10") %>% 
     pull(CI_Lower)
