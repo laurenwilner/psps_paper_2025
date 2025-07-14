@@ -342,6 +342,12 @@ val_to_tex <- sapply(all_vars, function(var_name) {
       rounded_value <- round(var_value, 2)
       formatted_value <- format(rounded_value, big.mark = ",", scientific = FALSE, nsmall = 2)
     }
+
+    # special handling for one percent value that i want just 1 decimal place for! 
+    if (var_name == "percentlongoutages") {
+      # For percentages, append a percent sign
+      formatted_value <- rounded_value %>% round(1)
+    }
     
     paste0("\\newcommand{\\", var_name, "}{", formatted_value, "}")
   }
