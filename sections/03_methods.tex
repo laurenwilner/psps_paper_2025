@@ -4,20 +4,17 @@
 
 \begin{document}
 \section{Methods}
-
-make sure i say this: We chose these cause groups based on previous research of power outages and health.\citep{casey2020power}
 \subsection{Study population}
-In this zip code-level time-stratified case-crossover study in California, we used data on hospital admissions and emergency department visits among adults $\geq$ 20 years of age from 2013 -- 2019 from the California Department of Health Care Access and Information (HCAI).\citep{hcai_datasets} Our study included XXX patients aged XX-XX years, living in 1,777 zip codes across California (Figure \ref{fig1}: map of zips included). Based on prior power outage and wildfire literature, we studied respiratory, cardiovascular, and psychiatric health endpoints.\citep{casey2020power, casey2024measuring}
+In this zip code-level time-stratified case-crossover study in California, we used data on hospital admissions and emergency department visits among adults $\geq$ 20 years of age from 2013 -- 2019 from the California Department of Health Care Access and Information (HCAI).\citep{hcai_datasets} Our study included XXX patients aged XX-XX years, living in 1,777 zip codes across California (figure \ref{fig1}). Based on prior power outage and wildfire literature, we studied respiratory, cardiovascular, and psychiatric health endpoints.\citep{casey2020power, casey2024measuring}
 
 \subsection{Exposures and covariates}
 
 \subsubsection{PSPS data}
 We measured exposure to PSPS events from 2013--2022 using data from PSE Healthy Energy, which compiled PSPS events from the three major energy providers in California, Pacific Gas and Electric (PG\&E), San Diego Gas and Electric (SDG\&E), and Southern California Edison (SCE).\citep{cpuc_psps_reports} 
 
-The original PSPS dataset contains circuit-level information for each PSPS event across the three major utilities (PG\&E, SDG\&E or SCE). A circuit is defined as XXXX. A PSPS event may impact multiple circuits, so each circuit-event had a start time, end time, duration, and number of residential and commercial customers impacted.\citep{pse_healthy_energy} Despite circuits being energized and de-energized throughout events, we did not have information on this, and therefore we assumed that the entire circuit was without power for the duration of a PSPS event affecting that circuit. 
+The original PSPS dataset contains circuit-level information for each PSPS event across the three major utilities (PG\&E, SDG\&E or SCE). A circuit is defined as XXXX. A PSPS event may impact multiple circuits, so each circuit-event had a start time, end time, duration, and number of residential and commercial customers impacted.\citep{pse_healthy_energy} Despite circuits potentially being energized and de-energized multiple times throughout events, we did not have information on this, and therefore we assumed that the entire circuit was without power for the duration of a given PSPS event affecting that circuit. 
 
-The circuits were provided as geospatial polygons with a 18 meter buffer around the circuit polyline that was approximated to include all customers served by that circuit. We overlaid these circuits with high-resolution gridded estimates of population from the 2020 census in California\citep{depsky2022high} to estimate the (1) number of people affected by each outage along the circuit, (2) the number of people theoretically served by the circuit, and finally (3) the number of people affected and the number of people served at the zip code-level. In the absence of more detailed information on customer distribution, we assumed an even distribution of customers across the circuit. Assuming this, to do this we performed two spatial overlays of the circuits with the gridded population data. The first used the number of customers impacted on a circuit and proportionally split them between zip codes. The second used the population pixels that intersected with each circuit to determine the population served by the circuit. By summing each of these metrics by zip code, we determined the number of customers impacted (used as an absolute metric and as the numerator in our relative metric) as well as the population served (to be used as a denominator) on each circuit, for each event. Of note, the denominator did not change from event to event, but the numerator did.
-
+The circuits were provided as geospatial polygons with a 18 meter buffer around the circuit polyline that was approximated to include all customers served by that circuit. We overlaid these circuits with high-resolution gridded estimates of population from the 2020 census in California\citep{depsky2022high} to estimate the (1) number of people affected by each outage along the circuit, (2) the number of people theoretically served by the circuit, and finally (3) the number of people affected and the number of people served at the zip code-level. In the absence of more detailed information on customer distribution, we assumed an even distribution of customers across the circuit and performed two spatial overlays of the circuits with the gridded population data. The first used the number of customers impacted on a circuit and proportionally split them between zip codes. The second used the population pixels that intersected with each circuit to determine the population served by the circuit. By summing each of these metrics by zip code, we determined the number of customers impacted (used as an absolute metric and as the numerator in our relative metric) as well as the population served (to be used as a denominator) on each circuit, for each event. Of note, the denominator did not change from event to event, but the numerator did.
 
 Accordingly, we derived and included two daily-zip code exposure metrics in these datasets meant to capture different aspects of PSPS events. The first metric was the total number of customers impacted in each zip code. Because of highly variable population counts within zip codes, we also constructed a second relative metric meant to measure the severity of the PSPS event. The second metric was computed by multiplying the total number of customers out by the proportion of customers out in each zip code. Exposure for both metrics was categorized as no exposure or mild, moderate, or severe exposure based on rounded tertiles of the non-zero exposure values of each metric for each event-zip code. These tertiles were calculated at the event-zip code level to ensure equal weighting of longer and shorter events and retain the basis of the severity evaluation being on number of people rather than duration. Of note, XX\% of outages were over 8 hours, so there was little concern about an overabundance of short outages.
 
@@ -33,17 +30,9 @@ We examined PSPS events and wildfire \PM exposures by zip code-day to quantify t
 We leveraged gridded (~4km grid) temperature data extracted at the location of population-weighted centroids for zip codes from gridMET.\citep{abatzoglou2013development} 
 
 \subsection{Outcomes}
-
-\begin{wrapfigure}{r}{0.3\textwidth}
-\vspace{-5em}
-    \includegraphics[width=.3\textwidth]{tables_figures/fig1.png}
-    \caption{Zip codes included in study.}
-    \label{fig1}
-\end{wrapfigure}
-
 Our outcome data relied on HCAI individual-level hospital admission and emergency department visit data from 2013--2019, which included date of admission, associated diagnoses based on \textit{International Classification of Disease, Ninth Edition} (\textit{ICD}-9) and Tenth Edition (\textit{ICD}-10) codes, hospital zip code, and patient’s residential zip code. When a patient's zip code was missing, we used the zip code of the hospital (n=XX cases). Patient case- and control-days in this case-crossover study were linked to exposure data using zip code and date. 
 
-Using X diagnosis codes, we identified daily respiratory, cardiovascular, and psychiatric hospital admission and emergency department visits. \textit{ICD} codes used in this analysis are in table \ref{tab:icd_codes}. 
+Using X diagnosis codes, we identified daily respiratory, cardiovascular, and psychiatric hospital admission and emergency department visits. We chose these cause groups based on previous research of power outages and health.\citep{casey2020power} \textit{ICD} codes used in this analysis are in table \ref{tab:icd_codes}. 
 
 \begin{table}[h]
 \centering
