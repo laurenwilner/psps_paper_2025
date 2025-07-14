@@ -62,8 +62,8 @@ abs_severity_df <- psps_exp_df %>%
   group_by(severity_customers) %>% 
   summarise(n = n()) %>% 
   arrange(desc(n))
-mostcommonsevabs <- abs_severity_df[1,]$severity_customers
-secondmostcommonsevabs <- abs_severity_df[2,]$severity_customers
+mostcommonsevabs <- abs_severity_df[1,]$severity_customers %>% tolower()
+secondmostcommonsevabs <- abs_severity_df[2,]$severity_customers %>% tolower()
 
 # XXXX {severity level} was most common according to our relative metric
 hyb_severity_df <- psps_exp_df %>% 
@@ -71,8 +71,8 @@ hyb_severity_df <- psps_exp_df %>%
   summarise(n = n()) %>% 
   arrange(desc(n))
 
-mostcommonsevhyb <- hyb_severity_df[1,]$severity_hybrid
-secondmostcommonsevhyb <- hyb_severity_df[2,]$severity_hybrid
+mostcommonsevhyb <- hyb_severity_df[1,]$severity_hybrid %>% tolower()
+secondmostcommonsevhyb <- hyb_severity_df[2,]$severity_hybrid %>% tolower()
 
 # XXXX of the YYYY zip codes in California experienced at least one PSPS event
 zipcodeswithevents <- psps_exp_summary %>% 
@@ -314,6 +314,8 @@ wfsabscihigh <- results_abs_df %>%
     filter(Cause == "Respiratory" & Exposure == "mean_lag05_per10") %>% 
     pull(CI_Upper)
 
+# Of note, XX\% of outages were over 8 hours, so there was little concern about an overabundance of short outages.
+percentlongoutages <- ((nrow(psps_exp_df %>% filter(duration > 8))/nrow(psps_exp_df)) * 100 )%>% round(1)
 
 
 # write the numbers to a file -----------------------
