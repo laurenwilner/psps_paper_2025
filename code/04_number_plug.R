@@ -40,7 +40,6 @@ severe_df_abs <- process_results("Severe", results_abs_df, "abs", cov_matrices)
 severe_df_hyb <- process_results("Severe", results_hyb_df, "hyb", cov_matrices)
 
 
-
 # create each number to plug as a var -----------------------
 # we included XXXX PSPS events in this study
 npspsevents <- length(unique(psps_exp_df$psps_event_id))
@@ -321,37 +320,36 @@ percentlongoutages <- ((nrow(psps_exp_df %>% filter(duration > 8))/nrow(psps_exp
 # write the numbers to a file -----------------------
 all_vars <- ls()
 
-# Filter out any variables that contain "dir" in their name
+# filter out any variables that contain "dir" in their name
 all_vars <- all_vars[!grepl("dir", all_vars, ignore.case = TRUE)]
 
-# Function to format all numeric columns with commas and handle decimals appropriately,
+# function to format all numeric columns with commas and handle decimals appropriately,
 # and to also include character variables
 val_to_tex <- sapply(all_vars, function(var_name) {
   var_value <- get(var_name)
   
-  # Handle numeric values
+  # handle numeric values
   if (is.numeric(var_value) && length(var_value) == 1) {
-    # Check if the number is an integer (no decimal part)
+    # check if the number is an integer (no decimal part)
     is_integer_like <- (var_value %% 1 == 0)
     
     if (is_integer_like) {
-      # For integers, just add commas without decimal places
+      # for integers, just add commas without decimal places
       formatted_value <- format(var_value, big.mark = ",", scientific = FALSE, nsmall = 0)
     } else {
-      # For decimals, round to one decimal place
+      # for decimals, round to one decimal place
       rounded_value <- round(var_value, 2)
       formatted_value <- format(rounded_value, big.mark = ",", scientific = FALSE, nsmall = 2)
     }
 
     # special handling for one percent value that i want just 1 decimal place for! 
     if (var_name == "percentlongoutages") {
-      # For percentages, append a percent sign
       formatted_value <- rounded_value %>% round(1)
     }
     
     paste0("\\newcommand{\\", var_name, "}{", formatted_value, "}")
   }
-  # Handle character values
+  # handle character values
   else if (is.character(var_value) && length(var_value) == 1) {
     paste0("\\newcommand{\\", var_name, "}{", var_value, "}")
   } else {

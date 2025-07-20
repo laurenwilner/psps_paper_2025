@@ -46,7 +46,7 @@ for(f in files){
 }
 
 # make a plot of each model --------------------------------
-
+# just making this for our own sanity to see the results
 p <- ggplot(data = results, aes(x = exposure, y = or, color = cause)) + 
         geom_point() + 
         geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper, color = cause)) + 
@@ -65,6 +65,8 @@ pdf("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/psps_re
 p
 dev.off()
 
+#######
+####### Now lets process the results for the tables/figs/number plugging in the paper! 
 
 # read in model results and covariance matrices ---------------------------------
 # resp
