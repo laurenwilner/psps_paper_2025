@@ -2,10 +2,6 @@
 # PSPS: Paper tables 
 # March 2025
 #-------------------------------------------------
-# to do: put n under case days and control days. 
-# ask caitlin: the tables are currently uniqu visits not unique ppl, so if someone had multiple visits then they are in there multiple times. lets have it be unique and then also have a row of avg number of visits per person. 
-# combine other/unknown
-# make table 1 supplement 
 
 # setup -------------------------------------------------
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
@@ -110,9 +106,9 @@ pretty_table2 <- combined_table %>%
   ) %>%
   # make first col wider
   cols_width(
-    Exposure ~ px(200)  # Adjust the pixel value as needed
+    Exposure ~ px(200)  # adjust the pixel value as needed
   ) %>%
-  # Add spanner headers
+  # add spanner headers
   tab_spanner(
     label = "Absolute",
     columns = c(Abs_Case, Abs_Control)
@@ -121,7 +117,7 @@ pretty_table2 <- combined_table %>%
     label = "Relative",
     columns = c(Hyb_Case, Hyb_Control)
   ) %>%   
-  # Create row groups in REVERSE order
+  # create row groups in REVERSE order
   tab_row_group(
     label = "COPD",
     rows = Cause == "COPD"
@@ -138,7 +134,7 @@ pretty_table2 <- combined_table %>%
     label = "Cardiovascular",
     rows = Cause == "Cardiovascular"
   ) %>%
-  # Hide the original Cause column
+  # hide the original Cause column
   cols_hide(columns = Cause) %>%
   cols_label(
     Exposure = "Disease endpoint\nExposure (PSPS)", # can't do an enter and PSPS goes onto the line above so have to do psps after
@@ -150,18 +146,18 @@ pretty_table2 <- combined_table %>%
   tab_options(
     row_group.font.weight = "bold",
     row_group.background.color = "#f7f7f7",
-    # Table border options
+    # table border options
     table.border.top.color = "black",
     table.border.bottom.color = "black", 
     # Header border options
     heading.border.bottom.color = "black",
-    # Column labels border options
+    # column labels border options
     column_labels.border.top.color = "black",
     column_labels.border.bottom.color = "black",
-    # Body border options
+    # body border options
     row_group.border.top.color = "black",
     row_group.border.bottom.color = "black",
-    # Table body border top and bottom color
+    # table body border top and bottom color
     table_body.border.top.color = "black",
     table_body.border.bottom.color = "black",
     table.border.top.width = px(1),
@@ -174,12 +170,12 @@ pretty_table2 <- combined_table %>%
     table_body.border.top.width = px(1),
     table_body.border.bottom.width = px(1)
   ) %>% 
-  # Style options for row groups
+  # style options for row groups
   tab_options(
     row_group.font.weight = "bold",
     row_group.background.color = "#f7f7f7"
   ) %>%
-  # Style the header (column labels)
+  # style the header (column labels)
   tab_style(
     style = list(
       cell_fill(color = pal[1]),
@@ -219,7 +215,7 @@ pretty_table2 <- combined_table %>%
 create_table1s <- function(data) {
   categories <- unique(data$category)
   
-  # Create an empty data frame with the structure we need
+  # create an empty data frame with the structure we need
   combined_data <- data.frame(
     Group = character(0),
     Cardiovascular = character(0),
@@ -227,48 +223,48 @@ create_table1s <- function(data) {
     Respiratory = character(0),
     COPD = character(0),
     stringsAsFactors = FALSE,
-    row_type = character(0)  # Add a row type identifier column
+    row_type = character(0)  # add a row type identifier column
   )
   
-  # Process each category
+  # process each category
   for (cat in categories) {
-    # Skip processing if this is the Total category - we'll handle it separately
+    # skip processing if this is the Total category - we'll handle it separately
     if (cat == "Total") {
       next
     }
     
     cat_data <- data %>% filter(category == cat)
     
-    # Add a header row for the category
+    # add a header row for the category
     header_row <- data.frame(
       Group = cat,
-      Cardiovascular = "",  # Blank instead of NA
+      Cardiovascular = "",  # blank instead of NA
       Psychiatric = "",
       Respiratory = "", 
       COPD = "",
       stringsAsFactors = FALSE,
-      row_type = "header"  # Mark as header row
+      row_type = "header"  # mark as header row
     )
     
-    # Create rows for the subgroups
+    # create rows for the subgroups
     subgroup_rows <- data.frame(
-      Group = cat_data$group,  # Group names directly in the Group column
+      Group = cat_data$group,  # group names directly in the Group column
       Cardiovascular = cat_data$Cardiovascular,
       Psychiatric = cat_data$Psychiatric,
       Respiratory = cat_data$Respiratory,
       COPD = cat_data$COPD,
       stringsAsFactors = FALSE,
-      row_type = "subgroup"  # Mark as subgroup row
+      row_type = "subgroup" 
     )
     
-    # Combine header row with subgroup rows
+    # combine header row with subgroup rows
     section <- rbind(header_row, subgroup_rows)
     
-    # Add this section to our combined data
+    # add this section to our combined data
     combined_data <- rbind(combined_data, section)
   }
   
-  # Add the Total row
+  # add the Total row
   total_data <- data %>% filter(category == "Total")
   if (nrow(total_data) > 0) {
     total_row <- data.frame(
@@ -278,16 +274,16 @@ create_table1s <- function(data) {
       Respiratory = total_data$Respiratory[1],
       COPD = total_data$COPD[1],
       stringsAsFactors = FALSE,
-      row_type = "total"  # Mark as total row
+      row_type = "total"  # label as total row
     )
     combined_data <- rbind(combined_data, total_row)
   }
   
-  # Create gt table - remove the row_type column before creating the table
+  # create gt table - remove the row_type column before creating the table
   visible_data <- combined_data %>% select(-row_type)
   gt_table <- gt(visible_data)
   
-  # Now apply styles based on the row_type in the original data
+  # apply styles based on the row_type in the original data
   header_rows <- which(combined_data$row_type == "header")
   subgroup_rows <- which(combined_data$row_type == "subgroup")
   total_rows <- which(combined_data$row_type == "total")
@@ -300,22 +296,22 @@ create_table1s <- function(data) {
       Respiratory = "Respiratory", 
       COPD = "COPD"
     ) %>%
-    # Make category headers bold
+    # category headers bold
     tab_style(
       style = cell_text(weight = "bold"),
       locations = cells_body(columns = "Group", rows = header_rows)
     ) %>%
-    # Make Total row bold
+    # Total row bold
     tab_style(
       style = cell_text(weight = "bold"),
       locations = cells_body(columns = "Group", rows = total_rows)
     ) %>%
-    # Add indentation to subgroup values
+    # indentation to subgroup values
     tab_style(
       style = cell_text(indent = px(15)),
       locations = cells_body(columns = "Group", rows = subgroup_rows)
     ) %>%
-    # Style the header row
+    # header row style
     tab_style(
       style = cell_fill(color = pal[1]),
       locations = cells_column_labels(columns = everything())
@@ -324,7 +320,7 @@ create_table1s <- function(data) {
       style = cell_text(color = "black", weight = "bold"),
       locations = cells_column_labels(columns = everything())
     ) %>% 
-    # Add a border under the column headers
+    # add a border under the column headers
     tab_style(
       style = cell_borders(
         sides = "bottom",
@@ -365,17 +361,17 @@ create_table1s <- function(data) {
       table_body.hlines.style = "none",
       table_body.vlines.style = "none"
     ) %>%
-    # Add alternating row colors
+    # add alternating row colors
     opt_row_striping() %>%
-    # Right-align the numeric columns
+    # right-align the numeric columns
     cols_align(align = "right", columns = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD")) %>%
-    # Left-align the category and subgroup columns
+    # left-align the category and subgroup columns
     cols_align(align = "left", columns = "Group")
   
   return(gt_table)
 }
 
-# Create and display the table
+# create and display the table
 pretty_table1s <- create_table1s(table1s_df)
 
 # save table 

@@ -2,8 +2,6 @@
 # PSPS: Paper figures
 # March 2025
 #-------------------------------------------------
-# question for joan 
-# should we plot the act interaction term or the summed, actual effect? 
 
 # setup -------------------------------------------------
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
@@ -144,31 +142,10 @@ zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>%
 ################
 ### FIGURE 1 ###
 ################
-# Figure 1 is a map of the ZCTAs in California that were included in this analysis. 
+# Figure 1a is a descriptive plot showing the number of zip-days included in this analysis for each exposure category.
+# Figure 1b is a map of PSPS and WF events, exact details tbd. 
 
-# plot -------------------------------------------------
-color_mapping <- c(`TRUE` = pal[3], `FALSE` = "white")
-
-fig1 <- ggplot() +
-  geom_sf(data = ca_shp, fill = "white", color = alpha("black", 0.2), stroke = 0.1) +
-  geom_sf(data = zcta_shp, aes(fill = fill_flag), color = alpha("black", 0.2), stroke = 0.1) +
-  scale_fill_manual(values = color_mapping) +
-  theme_void() +
-  theme(legend.position = "none") +
-  theme(plot.title = element_text(hjust = 0.5))
-
-################
-### FIGURE 2 ###
-################
-# Figure 2a is a descriptive plot showing the number of zip-days included in this analysis for each exposure category.
-# Figure 2b is a map of PSPS and WF events, exact details tbd. 
-
-
-    # QUESTION FOR JOAN: do we want mild/mod/sev psps or just binary? 
-    # QUESTION FOR JOAN: DO WE WANT TO SHOW 'NO EXPOSURE' IN BAR CHART? 
-    # QUESTION FOR JOAN: do we want to filter to wf over 10? look at caitlins code together.
-
-# fig 2 -------------------------------------------------
+# fig 1 -------------------------------------------------
 # get the number of zipcode-days for each exposure type
 exp_summary <- exp_data %>% 
     mutate(year = lubridate::year(date),
@@ -191,26 +168,24 @@ exp_sum_shp <- exp_summary %>%
     group_by(zip_code, exposure_type, geometry) %>% 
     summarise(n_days = sum(n_days))
 
-
-
 # ggplot map faceted by exp type
 exposure_types <- c("WF smoke only", "PSPS event only", "WF smoke + PSPS event")
 
-# Create lists to store individual plots
+# create lists to store individual plots
 map_plots <- list()
 violin_plots <- list()
 
-# Create a separate plot for each exposure type
+# create a separate plot for each exposure type
 for (i in seq_along(exposure_types)) {
   exp_type <- exposure_types[i]
   exp_color <- ifelse(exp_type == "WF smoke + PSPS event", pal[1], 
                       ifelse(exp_type == "PSPS event only", pal[2], pal[3]))
   
-  # Filter data for this exposure type
+  # filter data for this exposure type
   exp_sum_shp_temp <- exp_sum_shp %>% 
     filter(exposure_type == exp_type)
 
-  # Create the map
+  # create the map
   map_plot <- ggplot() +
     geom_sf(data = exp_sum_shp_temp, aes(fill = n_days)) +
     geom_sf(data = zip_shp, fill = NA, color = alpha("grey", 0.5), size = 0.5) +
@@ -236,7 +211,7 @@ for (i in seq_along(exposure_types)) {
       legend.box.margin = margin(0, 0, 0, 0)  # Remove extra margin
     )
   
-  # Create the violin plot
+  # create the violin plot
   violin_plot <- ggplot(exp_sum_shp_temp, aes(x = n_days, y = 1)) +
     geom_violin(fill = NA, color = exp_color, size = 0.5) +
     theme_minimal() +
@@ -246,56 +221,75 @@ for (i in seq_along(exposure_types)) {
       axis.title.y = element_blank(),
       panel.grid = element_blank(),
       plot.margin = margin(t = 0, r = 0, b = 0, l = 0),
-      aspect.ratio = 0.2  # Make the plot shorter
+      aspect.ratio = 0.2  # make the plot shorter
     ) +
     scale_x_continuous(labels = scales::comma_format(accuracy = 1))
   
-  # Store plots in lists
+  # store plots in lists
   map_plots[[i]] <- map_plot
   violin_plots[[i]] <- violin_plot
 }
 
-# Create each panel separately
-fig2_panel1 <- map_plots[[1]] / violin_plots[[1]]  & 
+# make each panel separately
+fig1_panel1 <- map_plots[[1]] / violin_plots[[1]]  & 
   theme(
     plot.background = element_rect(fill = "transparent", color = NA),
     panel.background = element_rect(fill = "transparent", color = NA)
   )
-fig2_panel2 <- map_plots[[2]] / violin_plots[[2]] & 
+fig1_panel2 <- map_plots[[2]] / violin_plots[[2]] & 
   theme(
     plot.background = element_rect(fill = "transparent", color = NA),
     panel.background = element_rect(fill = "transparent", color = NA)
   )
-fig2_panel3 <- map_plots[[3]] / violin_plots[[3]] & 
+fig1_panel3 <- map_plots[[3]] / violin_plots[[3]] & 
   theme(
     plot.background = element_rect(fill = "transparent", color = NA),
     panel.background = element_rect(fill = "transparent", color = NA)
   )
 
-# Combine panels side by side
-# fig2 <- panel3 + panel2 + panel1 + 
+# combine panels side by side
+# fig1 <- panel3 + panel2 + panel1 + 
 #   plot_layout(ncol=3)
+# DOING THIS IN LATEX, IT WAS TOO HARD TO DO HERE! 
 
 ################
-### FIGURE 3 ###
+### FIGURE 2 ###
 ################
-# Figure 3 is a plot of our results. 
+# Figure 2 is a plot of our results. 
 
-# prep for figure 3 -------------------------------------------
+# prep for figure 2 -------------------------------------------
 
-# process `severe` for fig 3
+# process `severe` for fig 2
 severe_df_hyb <- process_results("Severe", all_lag0_hyb, "hyb", cov_matrices)
 severe_df_abs <- process_results("Severe", all_lag0_abs, "abs", cov_matrices)
 
-# make fig 3
-fig3 <- create_results_fig_combined(severe_df_abs, severe_df_hyb, "severe", show_severity = FALSE)
+# make fig 2
+fig2 <- create_results_fig_combined(severe_df_abs, severe_df_hyb, "severe", show_severity = FALSE)
+
+
 
 #####################
 ### SUPP FIGURE 1 ###
 #####################
-# can use same function as fig 3 for the supp fig 1
+# Supplementary figure 1 is a map of the ZCTAs in California that were included in this analysis. 
 
-# process mild/mod for supp fig 1
+# plot -------------------------------------------------
+color_mapping <- c(`TRUE` = pal[3], `FALSE` = "white")
+
+supp_fig1 <- ggplot() +
+  geom_sf(data = ca_shp, fill = "white", color = alpha("black", 0.2), stroke = 0.1) +
+  geom_sf(data = zcta_shp, aes(fill = fill_flag), color = alpha("black", 0.2), stroke = 0.1) +
+  scale_fill_manual(values = color_mapping) +
+  theme_void() +
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#####################
+### SUPP FIGURE 2 ###
+#####################
+# can use same function as fig 2 for the supp fig 2
+
+# process mild/mod for supp fig 2
 mild_df_hyb <- process_results("Mild", all_lag0_hyb, "hyb", cov_matrices)
 moderate_df_hyb <- process_results("Moderate", all_lag0_hyb, "hyb", cov_matrices)
 
@@ -308,7 +302,7 @@ mod <- create_results_fig_combined(moderate_df_hyb, moderate_df_abs, "moderate",
 sev <- create_results_fig_combined(severe_df_hyb, severe_df_abs, "severe", show_disease_labels = FALSE, show_severity = TRUE)
 
 # Create a layout with labels on the left side
-supp_fig1 <- mild / mod / sev
+supp_fig2 <- mild / mod / sev
 
 ########################
 ### Duration for Joan ###
@@ -335,19 +329,19 @@ duration_hist <- og_psps_dataset %>%
 ########################
 ### SAVE ALL FIGURES ###
 ########################
-ggsave(paste0(out_dir, "fig1.pdf"), fig1, width = 4, height = 6, dpi = 100)
-ggsave(paste0(out_dir, "fig2_panel1.pdf"), fig2_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "fig2_panel2.pdf"), fig2_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "fig2_panel3.pdf"), fig2_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "fig3.pdf"), fig3, width = 10, height = 15, dpi = 100)
-ggsave(paste0(out_dir, "supp_fig1.pdf"), supp_fig1, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "supp_fig1.pdf"), supp_fig1, width = 4, height = 6, dpi = 100)
+ggsave(paste0(out_dir, "fig1_panel1.pdf"), fig1_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "fig1_panel2.pdf"), fig1_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "fig1_panel3.pdf"), fig1_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "fig2.pdf"), fig2, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "supp_fig2.pdf"), supp_fig2, width = 10, height = 15, dpi = 100)
 
-ggsave(paste0(out_dir, "fig1.png"), fig1, width = 4, height = 5, dpi = 100)
-ggsave(paste0(out_dir, "fig2_panel1.png"), fig2_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "fig2_panel2.png"), fig2_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "fig2_panel3.png"), fig2_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "fig3.png"), fig3, width = 10, height = 10, dpi = 100)
-ggsave(paste0(out_dir, "supp_fig1.png"), supp_fig1, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "supp_fig1.png"), supp_fig1, width = 4, height = 5, dpi = 100)
+ggsave(paste0(out_dir, "fig1_panel1.png"), fig1_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "fig1_panel2.png"), fig1_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "fig1_panel3.png"), fig1_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "fig2.png"), fig2, width = 10, height = 10, dpi = 100)
+ggsave(paste0(out_dir, "supp_fig2.png"), supp_fig2, width = 10, height = 15, dpi = 100)
 
 ggsave(paste0(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
 
