@@ -5,7 +5,7 @@
 \begin{document}
 \section{Methods}
 \subsection{Study population}
-In this zip code-level time-stratified case-crossover study in California, we used data on hospital admissions and emergency department visits among adults $\geq$ 20 years of age from 2013 -- 2019 from the California Department of Health Care Access and Information (HCAI).\citep{hcai_datasets} Our study included XXX patients aged XX-XX years, living in 1,777 zip codes across California (figure \ref{fig1}). Based on prior power outage and wildfire literature, we studied respiratory, cardiovascular, and psychiatric health endpoints.\citep{casey2020power, casey2024measuring} [ADD IRB APPROVAL SENTENCE HERE]
+In this zip code-level time-stratified case-crossover study in California, we used data on hospital admissions and emergency department visits among adults $\geq$ 20 years of age from 2013 -- 2019 from the California Department of Health Care Access and Information (HCAI).\citep{hcai_datasets} Our study included XXX patients aged XX-XX years, living in 1,777 zip codes across California (figure \ref{fig1}). Based on prior power outage and wildfire literature, we studied all respiratory, COPD, cardiovascular, and psychiatric health endpoints.\citep{casey2020power, casey2024measuring} [ADD IRB APPROVAL SENTENCE HERE]
 
 \subsection{Exposures and covariates}
 
@@ -23,31 +23,33 @@ We used a daily measure of same-day PSPS exposure in all models.
 \subsubsection{Wildfire smoke data}
 We used daily wildfire \PM data at the zip code level.\citep{aguilera2023novel} We averaged wildfire \PM exposure across the 4 days leading up to and the day of interest (either a case or control day). Wildfire \PM was modeled using a linear term per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}.
 
-\subsubsection{Dual exposure}
-We examined PSPS events and wildfire \PM exposures by zip code-day to quantify the extent of dual exposure to PSPS events and wildfire \PM in our study population.
+\subsubsection{Co-occurring exposure}
+We examined PSPS events and wildfire \PM exposures by zip code-day to quantify the extent of co-occurring PSPS events and wildfire \PM in our study population.
 
 \subsubsection{Temperature data}
-We leveraged gridded (~4km grid) temperature data extracted at the location of population-weighted centroids for zip codes from gridMET.\citep{abatzoglou2013development} 
+We leveraged gridded (4km grid) temperature data extracted at the location of population-weighted centroids for zip codes from gridMET.\citep{abatzoglou2013development} 
 
 \subsection{Outcomes}
 Our outcome data relied on HCAI individual-level hospital admission and emergency department visit data from 2013--2019, which included date of admission, associated diagnoses based on \textit{International Classification of Disease, Ninth Edition} (\textit{ICD}-9) and Tenth Edition (\textit{ICD}-10) codes, hospital zip code, and patient’s residential zip code. When a patient's zip code was missing, we used the zip code of the hospital (n=XX cases). Patient case- and control-days in this case-crossover study were linked to exposure data using zip code and date. 
 
-Using X diagnosis codes, we identified daily respiratory, cardiovascular, and psychiatric hospital admission and emergency department visits. We chose these cause groups based on previous research of power outages and health.\citep{casey2020power} \textit{ICD} codes used in this analysis are in table \ref{tab:icd_codes}. 
+Using X diagnosis codes, we identified daily all respiratory, COPD, cardiovascular, and psychiatric hospital admission and emergency department visits. We chose these cause groups based on previous research of power outages and health.\citep{casey2020power} \textit{ICD} codes used in this analysis are in table \ref{tab:icd_codes}. 
 
 \begin{table}[h]
 \centering
-\begin{tabular}{|p{0.15\textwidth}|p{0.38\textwidth}|p{0.38\textwidth}|}
+\begin{tabular}{|p{0.18\textwidth}|p{0.39\textwidth}|p{0.39\textwidth}|}
 \hline
 \textbf{Health endpoint} & \textbf{ICD-9 Codes} & \textbf{ICD-10 Codes} \\
 \hline
 Respiratory & 460-466, 471, 472, 477, 478, 480-487, 490-496, 511, 513-519, 786 & J00-J06, J12-J18, J20-J22, J30, J31, J33, J34, J38, J39, J40-J47, J80-J86, J90-J92, J94, J96-J99, R04-R07, R09 \\
+\hline
+COPD & 491-492, 496 & J41-44 \\
 \hline
 Cardiovascular & 390-398, 401-417, 420-429, 440-449 & I00-I02, I05-I16, I20-I28, I30-I5A, I70-I79 \\
 \hline
 Psychiatric & 290-293, 295, 296, 298 & F06, F10-F16, F18-F21, F23, F25, F28-F33 \\
 \hline
 \end{tabular}
-\caption{ICD-9 and ICD-10 Codes by Medical Condition}
+\caption{\textit{International Classification of Disease, Ninth Edition} (\textit{ICD}-9) and Tenth Edition (\textit{ICD}-10) codes by medical condition.}
 \label{tab:icd_codes}
 \end{table}
 
@@ -58,7 +60,7 @@ The date of hospital admission or emergency department visit was considered the 
 We linked exposure data to hospital admissions and emergency department visits using zip code and date.\citep{hcai_datasets}
 
 \subsection{Statistical analysis}
-This study examined the association between PSPS events with and without co-occurring wildfire \PM and respiratory, cardiovascular, and psychiatric hospitalizations and emergency department encounters among adults. By allowing every case to serve as their own control in a time-stratified case-crossover design, we estimated the effect of a PSPS event alone as well as a PSPS event co-occurring with wildfire \PM on these four causes. While PSPS events usually last more than 24 hours, we considered only same-day exposure with healthcare encounters to identify case-days. Case-crossover studies are commonly used in epidemiologic studies of air pollution as they inherently control for time-invariant individual-level factors, such as demographics and comorbidities, and temporal variation, such as day of week effects and seasonality.\citep{bateson2004sensitive, carracedo2010case, janes2005case, schwarz2024effects} The primary analysis examined the effects of severe PSPS events using both absolute and relative metrics. A secondary analysis examined mild and moderate PSPS events.
+This study examined the association between PSPS events with and without co-occurring wildfire \PM and all respiratory, COPD, cardiovascular, and psychiatric hospitalizations and emergency department encounters among adults. By allowing every case to serve as their own control in a time-stratified case-crossover design, we estimated the effect of a PSPS event alone as well as a PSPS event co-occurring with wildfire \PM on these four causes. While PSPS events usually last more than 24 hours, we considered only same-day exposure with healthcare encounters to identify case-days. Case-crossover studies are commonly used in epidemiologic studies of air pollution as they inherently control for time-invariant individual-level factors, such as demographics and comorbidities, and temporal variation, such as day of week effects and seasonality.\citep{bateson2004sensitive, carracedo2010case, janes2005case, schwarz2024effects} The primary analysis examined the effects of severe PSPS events using both absolute and relative metrics. A secondary analysis examined mild and moderate PSPS events.
 
 We examined the association between a (1) PSPS event alone, (2) wildfire \PM alone, and (3) co-exposure to a PSPS event and wildfire \PM and cause-specific hospital admissions and emergency department visits.
 
