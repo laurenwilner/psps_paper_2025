@@ -51,7 +51,9 @@ create_results_fig_combined <- function(data_abs, data_hyb, severity,
   
   # combine the datasets
   combined_data <- bind_rows(data_abs_processed, data_hyb_processed) %>%
-    mutate(analysis_type = factor(analysis_type, levels = c("Absolute", "Relative")))
+    mutate(analysis_type = factor(analysis_type, levels = c("Absolute", "Relative")),
+    Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))
+)
   
   # color mapping
   exposure_colors <- c(

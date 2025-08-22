@@ -45,6 +45,7 @@ abs_table <- exposure_summary_abs_by_ooi %>%
         ifelse(Cause == "resp", "Respiratory",
         ifelse(Cause == "psych", "Psychiatric",
         "COPD"))), 
+        Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")), 
         # rename exposure ==0 to unexposed
         Exposure = ifelse(
             Exposure == 0, "Unexposed", Exposure
@@ -90,7 +91,7 @@ hyb_table <- hyb_table %>%
 # join the tables
 combined_table <- abs_table %>%
   full_join(hyb_table, by = c("Cause", "Exposure")) %>%
-  mutate(Cause = factor(Cause, levels = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD"))) %>%
+  mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
   mutate(Exposure = factor(Exposure, levels = c("Mild", "Moderate", "Severe", "None"))) %>%
   arrange(Cause, Exposure)
 
@@ -119,20 +120,20 @@ pretty_table2 <- combined_table %>%
   ) %>%   
   # create row groups in REVERSE order
   tab_row_group(
-    label = "COPD",
-    rows = Cause == "COPD"
-  ) %>%
-  tab_row_group(
-    label = "Respiratory",
-    rows = Cause == "Respiratory"
-  ) %>%
-  tab_row_group(
     label = "Psychiatric",
     rows = Cause == "Psychiatric"
   ) %>%
   tab_row_group(
     label = "Cardiovascular",
     rows = Cause == "Cardiovascular"
+  ) %>%
+    tab_row_group(
+    label = "COPD",
+    rows = Cause == "COPD"
+  ) %>%
+  tab_row_group(
+    label = "Respiratory",
+    rows = Cause == "Respiratory"
   ) %>%
   # hide the original Cause column
   cols_hide(columns = Cause) %>%
@@ -218,10 +219,10 @@ create_table1s <- function(data) {
   # create an empty data frame with the structure we need
   combined_data <- data.frame(
     Group = character(0),
-    Cardiovascular = character(0),
-    Psychiatric = character(0),
     Respiratory = character(0),
     COPD = character(0),
+    Cardiovascular = character(0),
+    Psychiatric = character(0),
     stringsAsFactors = FALSE,
     row_type = character(0)  # add a row type identifier column
   )
@@ -238,10 +239,10 @@ create_table1s <- function(data) {
     # add a header row for the category
     header_row <- data.frame(
       Group = cat,
-      Cardiovascular = "",  # blank instead of NA
-      Psychiatric = "",
       Respiratory = "", 
       COPD = "",
+      Cardiovascular = "",  # blank instead of NA
+      Psychiatric = "",
       stringsAsFactors = FALSE,
       row_type = "header"  # mark as header row
     )
@@ -249,10 +250,10 @@ create_table1s <- function(data) {
     # create rows for the subgroups
     subgroup_rows <- data.frame(
       Group = cat_data$group,  # group names directly in the Group column
-      Cardiovascular = cat_data$Cardiovascular,
-      Psychiatric = cat_data$Psychiatric,
       Respiratory = cat_data$Respiratory,
       COPD = cat_data$COPD,
+      Cardiovascular = cat_data$Cardiovascular,
+      Psychiatric = cat_data$Psychiatric,
       stringsAsFactors = FALSE,
       row_type = "subgroup" 
     )
@@ -269,10 +270,10 @@ create_table1s <- function(data) {
   if (nrow(total_data) > 0) {
     total_row <- data.frame(
       Group = "Total",
-      Cardiovascular = total_data$Cardiovascular[1],
-      Psychiatric = total_data$Psychiatric[1],
       Respiratory = total_data$Respiratory[1],
       COPD = total_data$COPD[1],
+      Cardiovascular = total_data$Cardiovascular[1],
+      Psychiatric = total_data$Psychiatric[1],
       stringsAsFactors = FALSE,
       row_type = "total"  # label as total row
     )
@@ -291,10 +292,10 @@ create_table1s <- function(data) {
   gt_table <- gt_table %>%
     cols_label(
       Group = "",
-      Cardiovascular = "Cardiovascular",
-      Psychiatric = "Psychiatric",
       Respiratory = "Respiratory", 
-      COPD = "COPD"
+      COPD = "COPD",
+      Cardiovascular = "Cardiovascular",
+      Psychiatric = "Psychiatric"
     ) %>%
     # category headers bold
     tab_style(
@@ -364,7 +365,7 @@ create_table1s <- function(data) {
     # add alternating row colors
     opt_row_striping() %>%
     # right-align the numeric columns
-    cols_align(align = "right", columns = c("Cardiovascular", "Psychiatric", "Respiratory", "COPD")) %>%
+    cols_align(align = "right", columns = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")) %>%
     # left-align the category and subgroup columns
     cols_align(align = "left", columns = "Group")
   
