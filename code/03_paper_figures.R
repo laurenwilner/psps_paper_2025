@@ -19,81 +19,146 @@ code_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/code/"
 source(paste0(code_dir, "00_helper_functions.R"))
 
 # plotting function for results figs 
-create_results_fig_combined <- function(data_abs, data_hyb, severity, 
+create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severity, 
                                 show_disease_labels = TRUE, 
                                 show_severity = TRUE, 
                                 show_legend = TRUE) {
-  # process absolute data
-  data_abs_processed <- data_abs %>%
-    mutate(
-      Exposure = case_when(
-        Exposure == "WF smoke" ~ "β₂ = WFS",
-        grepl("combined", Exposure) ~ "β₁ + β₂ + β₃",
-        grepl("interaction only", Exposure) ~ "β₃ = PSPS * WFS",
-        TRUE ~ "β₁ = PSPS"
-      ),
-      analysis_type = "Absolute"
-    ) %>%
-    mutate(Exposure = factor(Exposure, levels = c("β₁ = PSPS", "β₂ = WFS", "β₃ = PSPS * WFS", "β₁ + β₂ + β₃")))
   
-  # process Relative data
-  data_hyb_processed <- data_hyb %>%
-    mutate(
-      Exposure = case_when(
-        Exposure == "WF smoke" ~ "β₂ = WFS",
-        grepl("combined", Exposure) ~ "β₁ + β₂ + β₃",
-        grepl("interaction only", Exposure) ~ "β₃ = PSPS * WFS",
-        TRUE ~ "β₁ = PSPS"
-      ),
-      analysis_type = "Relative"
-    ) %>%
-    mutate(Exposure = factor(Exposure, levels = c("β₁ = PSPS", "β₂ = WFS", "β₃ = PSPS * WFS", "β₁ + β₂ + β₃")))
+  # Check which datasets are provided
+  datasets_provided <- c(!is.null(data_abs), !is.null(data_hyb))
   
-  # combine the datasets
-  combined_data <- bind_rows(data_abs_processed, data_hyb_processed) %>%
-    mutate(analysis_type = factor(analysis_type, levels = c("Absolute", "Relative")),
-    Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))
-)
+  # Process absolute data if provided
+  if (!is.null(data_abs)) {
+    data_abs_processed <- data_abs %>%
+      mutate(
+        Exposure = case_when(
+          Exposure == "WF smoke" ~ "WFS",
+          grepl("combined", Exposure) ~ "Additive interaction",
+          grepl("interaction only", Exposure) ~ "Multiplicative interaction",
+          TRUE ~ "PSPS"
+        ),
+        analysis_type = "Absolute"
+      ) %>%
+      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WFS", "Multiplicative interaction", "Additive interaction")))
+  }
+  
+  # Process Relative data if provided
+  if (!is.null(data_hyb)) {
+    data_hyb_processed <- data_hyb %>%
+      mutate(
+        Exposure = case_when(
+          Exposure == "WF smoke" ~ "WFS",
+          grepl("combined", Exposure) ~ "Additive interaction",
+          grepl("interaction only", Exposure) ~ "Multiplicative interaction",
+          TRUE ~ "PSPS"
+        ),
+        analysis_type = "Relative"
+      ) %>%
+      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WFS", "Multiplicative interaction", "Additive interaction")))
+  }
+  
+  # Combine the datasets based on what's provided
+  if (all(datasets_provided)) {
+    # Both datasets provided
+    combined_data <- bind_rows(data_abs_processed, data_hyb_processed) %>%
+      mutate(analysis_type = factor(analysis_type, levels = c("Absolute", "Relative")),
+             Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")))
+    
+    # Set up scales for both types
+    alpha_scale <- scale_alpha_manual(values = c("Absolute" = 1.0, "Relative" = 0.6), 
+                                     name = "", 
+                                     labels = c("Absolute", "Relative"))
+    shape_scale <- scale_shape_manual(values = c("Absolute" = 16, "Relative" = 17),
+                                     name = "",
+                                     labels = c("Absolute", "Relative"))
+  } else if (datasets_provided[1]) {
+    # Only absolute data provided
+    combined_data <- data_abs_processed %>%
+      mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")))
+    
+    # No need for alpha or shape scales
+    alpha_scale <- NULL
+    shape_scale <- NULL
+  } else if (datasets_provided[2]) {
+    # Only relative data provided
+    combined_data <- data_hyb_processed %>%
+      mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")))
+    
+    # No need for alpha or shape scales
+    alpha_scale <- NULL
+    shape_scale <- NULL
+  } else {
+    stop("At least one dataset (data_abs or data_hyb) must be provided")
+  }
   
   # color mapping
   exposure_colors <- c(
-    "β₂ = WFS" = pal[3],           # blue
-    "β₁ = PSPS" = pal[2],          # yellow  
-    "β₃ = PSPS * WFS" = pal[1],    # green
-    "β₁ + β₂ + β₃" = "#013220"    
+    "WFS" = pal[3],           # blue
+    "PSPS" = pal[2],          # yellow  
+    "Multiplicative interaction" = pal[1],    # green
+    "Additive interaction" = "#013220"    
   )
   
-  # base plot
-  p <- ggplot(combined_data, aes(x = Exposure, y = odds_ratio, ymin = lower_ci, ymax = upper_ci)) +
-    geom_point(aes(color = Exposure, alpha = analysis_type, shape = analysis_type), 
-               position = position_dodge(width = 0.6), 
-               size = 3) +
-    geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci, color = Exposure, alpha = analysis_type), 
-                  width = 0.3,
-                  position = position_dodge(width = 0.6)) +
-    geom_hline(yintercept = 1, linetype = "dashed") + 
-    scale_color_manual(values = exposure_colors, guide = "none") +
-    scale_alpha_manual(values = c("Absolute" = 1.0, "Relative" = 0.6), 
-                       name = "", 
-                       labels = c("Absolute", "Relative")) +
-    scale_shape_manual(values = c("Absolute" = 16, "Relative" = 17),
-                       name = "",
-                       labels = c("Absolute", "Relative")) +
-    labs(
-      x = "",
-      y = if(show_severity) substitute(atop(bold(sev), "Odds Ratio"), list(sev = severity)) else "Odds Ratio"
-    ) +
-    theme_minimal() +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1),
-      axis.title.y = element_text(size = 16),
-      legend.position = "bottom",
-      strip.text = element_text(size = 16),
-      axis.text = element_text(size = 14),
-      legend.text = element_text(size = 14)
-    ) + 
-    scale_y_log10(breaks = c(0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 3.0)) +
-    facet_wrap(~Cause, nrow = 1)
+  # base plot - conditional aesthetics based on number of datasets
+  if (all(datasets_provided)) {
+    # Both datasets - use alpha and shape
+    p <- ggplot(combined_data, aes(x = Exposure, y = odds_ratio, ymin = lower_ci, ymax = upper_ci)) +
+      geom_point(aes(color = Exposure, alpha = analysis_type, shape = analysis_type), 
+                 position = position_dodge(width = 0.6), 
+                 size = 3) +
+      geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci, color = Exposure, alpha = analysis_type), 
+                    width = 0.3,
+                    position = position_dodge(width = 0.6)) +
+      geom_hline(yintercept = 1, linetype = "dashed") + 
+      scale_color_manual(values = exposure_colors, name = "Exposure Type") +
+      alpha_scale +
+      shape_scale +
+      labs(
+        x = "",
+        y = if(show_severity) substitute(atop(bold(sev), "Odds Ratio"), list(sev = severity)) else "Odds Ratio"
+      ) +
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 16),
+        legend.position = "bottom",
+        legend.box = "vertical",
+        legend.spacing.y = unit(0.3, "cm"),
+        strip.text = element_text(size = 16),
+        axis.text = element_text(size = 14),
+        legend.text = element_text(size = 14)
+      ) + 
+      scale_y_log10(breaks = c(0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 3.0)) +
+      facet_wrap(~Cause, nrow = 1)
+  } else {
+    # Single dataset - no alpha or shape
+    p <- ggplot(combined_data, aes(x = Exposure, y = odds_ratio, ymin = lower_ci, ymax = upper_ci)) +
+      geom_point(aes(color = Exposure), 
+                 position = position_dodge(width = 0.6), 
+                 size = 3) +
+      geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci, color = Exposure), 
+                    width = 0.3,
+                    position = position_dodge(width = 0.6)) +
+      geom_hline(yintercept = 1, linetype = "dashed") + 
+      scale_color_manual(values = exposure_colors, name = "Exposure Type") +
+      labs(
+        x = "",
+        y = if(show_severity) substitute(atop(bold(sev), "Odds Ratio"), list(sev = severity)) else "Odds Ratio"
+      ) +
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 16),
+        legend.position = "bottom",
+        legend.box = "vertical",
+        legend.spacing.y = unit(0.3, "cm"),
+        strip.text = element_text(size = 16),
+        axis.text = element_text(size = 14),
+        legend.text = element_text(size = 14)
+      ) + 
+      scale_y_log10(breaks = c(0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 3.0)) +
+      facet_wrap(~Cause, nrow = 1)
+  }
   
   # remove disease labels if show_disease_labels is FALSE
   if (!show_disease_labels) {
@@ -141,11 +206,10 @@ zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>%
             select(c("zip_code", "geometry"))
 # make figs -------------------------------------------------
 
-################
-### FIGURE 1 ###
-################
-# Figure 1a is a descriptive plot showing the number of zip-days included in this analysis for each exposure category.
-# Figure 1b is a map of PSPS and WF events, exact details tbd. 
+###################################
+### MAP AND VIOLIN PANELLED PLOT ###
+###################################
+# This is a map + violin plot of the number of zip-days for each exposure type. 
 
 # fig 1 -------------------------------------------------
 # get the number of zipcode-days for each exposure type
@@ -233,52 +297,97 @@ for (i in seq_along(exposure_types)) {
 }
 
 # make each panel separately
-fig1_panel1 <- map_plots[[1]] / violin_plots[[1]]  & 
+map_violin_panel1 <- map_plots[[1]] / violin_plots[[1]]  & 
   theme(
     plot.background = element_rect(fill = "transparent", color = NA),
     panel.background = element_rect(fill = "transparent", color = NA)
   )
-fig1_panel2 <- map_plots[[2]] / violin_plots[[2]] & 
+map_violin_panel2 <- map_plots[[2]] / violin_plots[[2]] & 
   theme(
     plot.background = element_rect(fill = "transparent", color = NA),
     panel.background = element_rect(fill = "transparent", color = NA)
   )
-fig1_panel3 <- map_plots[[3]] / violin_plots[[3]] & 
+map_violin_panel3 <- map_plots[[3]] / violin_plots[[3]] & 
   theme(
     plot.background = element_rect(fill = "transparent", color = NA),
     panel.background = element_rect(fill = "transparent", color = NA)
   )
 
 # combine panels side by side
-# fig1 <- panel3 + panel2 + panel1 + 
+# map_violin_panel <- map_violin_panel3 + map_violin_panel2 + map_violin_panel1 + 
 #   plot_layout(ncol=3)
 # DOING THIS IN LATEX, IT WAS TOO HARD TO DO HERE! 
 
-################
-### FIGURE 2 ###
-################
-# Figure 2 is a plot of our results. 
+########################
+### SEASONALITY FIG ###
+########################
+# Create monthly summary of PSPS events (collapsed across years)
+monthly_summary <- exp_data %>%
+  mutate(
+    date = as.Date(date),
+    month = lubridate::month(date, label = TRUE, abbr = TRUE)
+  ) %>%
+  group_by(month) %>%
+  summarise(
+    n_events = sum(psps_event),
+    .groups = "drop"
+  )
 
-# prep for figure 2 -------------------------------------------
+# Create seasonality plot
+seasonality_plot <- ggplot(monthly_summary, aes(x = month, y = n_events)) +
+  geom_col(fill = pal[2], alpha = 0.8, width = 1) +
+  geom_text(aes(label = n_events), vjust = -0.5, size = 4) + 
+  theme_minimal() +
+  theme(
+    axis.text = element_text(size = 14),
+    axis.title = element_text(size = 16),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_line(color = "grey90", size = 0.5),
+    plot.title = element_text(size = 18, hjust = 0.5, margin = margin(b = 20)),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  labs(
+    x = "",
+    y = "Number of PSPS events",
+    title = "Seasonality of PSPS events"
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.1)),
+    breaks = scales::pretty_breaks(n = 6)
+  ) 
 
-# process `severe` for fig 2
+
+
+
+
+####################
+### RESULTS FIG ###
+####################
+# This is a plot of our results. 
+
+# prep for results figure -------------------------------------------
 severe_df_hyb <- process_results("Severe", all_lag0_hyb, "hyb", cov_matrices)
 severe_df_abs <- process_results("Severe", all_lag0_abs, "abs", cov_matrices)
 
-# make fig 2
-fig2 <- create_results_fig_combined(severe_df_abs, severe_df_hyb, "severe", show_severity = FALSE)
+# make results figure -------------------------------------------
+results_fig <- create_results_fig_combined(severe_df_abs, NULL, "severe", show_severity = FALSE)
+
+
+# make results figure for supplement -------------------------------------------
+# results_fig_supplement <- create_results_fig_combined(severe_df_abs, severe_df_hyb, "severe", show_severity = FALSE)
 
 
 
-#####################
-### SUPP FIGURE 1 ###
-#####################
-# Supplementary figure 1 is a map of the ZCTAs in California that were included in this analysis. 
+##########################################
+### Map of ZCTAS included in analysis ###
+##########################################
+# This is a map of the ZCTAs in California that were included in this analysis. 
 
 # plot -------------------------------------------------
 color_mapping <- c(`TRUE` = pal[3], `FALSE` = "white")
 
-supp_fig1 <- ggplot() +
+zctas_included_map <- ggplot() +
   geom_sf(data = ca_shp, fill = "white", color = alpha("black", 0.2), stroke = 0.1) +
   geom_sf(data = zcta_shp, aes(fill = fill_flag), color = alpha("black", 0.2), stroke = 0.1) +
   scale_fill_manual(values = color_mapping) +
@@ -286,9 +395,9 @@ supp_fig1 <- ggplot() +
   theme(legend.position = "none") +
   theme(plot.title = element_text(hjust = 0.5))
 
-#####################
-### SUPP FIGURE 2 ###
-#####################
+########################
+### SUPP RESULTS FIG ###
+########################
 # can use same function as fig 2 for the supp fig 2
 
 # process mild/mod for supp fig 2
@@ -304,7 +413,7 @@ mod <- create_results_fig_combined(moderate_df_hyb, moderate_df_abs, "moderate",
 sev <- create_results_fig_combined(severe_df_hyb, severe_df_abs, "severe", show_disease_labels = FALSE, show_severity = TRUE)
 
 # Create a layout with labels on the left side
-supp_fig2 <- mild / mod / sev
+results_fig_supplement <- mild / mod / sev
 
 ########################
 ### Duration for Joan ###
@@ -331,20 +440,22 @@ duration_hist <- og_psps_dataset %>%
 ########################
 ### SAVE ALL FIGURES ###
 ########################
-ggsave(paste0(out_dir, "supp_fig1.pdf"), supp_fig1, width = 4, height = 6, dpi = 100)
-ggsave(paste0(out_dir, "fig1_panel1.pdf"), fig1_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "fig1_panel2.pdf"), fig1_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "fig1_panel3.pdf"), fig1_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "fig2.pdf"), fig2, width = 10, height = 15, dpi = 100)
-ggsave(paste0(out_dir, "supp_fig2.pdf"), supp_fig2, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "zctas_included_map.pdf"), zctas_included_map, width = 4, height = 6, dpi = 100)
+ggsave(paste0(out_dir, "map_violin_panel1.pdf"), map_violin_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "map_violin_panel2.pdf"), map_violin_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "map_violin_panel3.pdf"), map_violin_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "results_fig.pdf"), results_fig, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "results_fig_supplement.pdf"), results_fig_supplement, width = 10, height = 15, dpi = 100)
 
-ggsave(paste0(out_dir, "supp_fig1.png"), supp_fig1, width = 4, height = 5, dpi = 100)
-ggsave(paste0(out_dir, "fig1_panel1.png"), fig1_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "fig1_panel2.png"), fig1_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "fig1_panel3.png"), fig1_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "fig2.png"), fig2, width = 10, height = 10, dpi = 100)
-ggsave(paste0(out_dir, "supp_fig2.png"), supp_fig2, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "zctas_included_map.png"), zctas_included_map, width = 4, height = 5, dpi = 100)
+ggsave(paste0(out_dir, "map_violin_panel1.png"), map_violin_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "map_violin_panel2.png"), map_violin_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "map_violin_panel3.png"), map_violin_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(paste0(out_dir, "results_fig.png"), results_fig, width = 10, height = 10, dpi = 100)
+ggsave(paste0(out_dir, "results_fig_supplement.png"), results_fig_supplement, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "seasonality_plot.png"), seasonality_plot, width = 15, height = 7, dpi = 100)
 
 ggsave(paste0(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
+ggsave(paste0(out_dir, "seasonality_plot.pdf"), seasonality_plot, width = 15, height = 7, dpi = 100)
 
 ## NOTE: INCREASE DPIS WHEN WE ARE DONE! 
