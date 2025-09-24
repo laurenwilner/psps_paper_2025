@@ -5,7 +5,7 @@
 \begin{document}
 \section{Methods}
 \subsection{Study population}
-In this zip code-level time-stratified case-crossover study in California, we used data on hospital admissions and emergency department visits among adults $\geq$ 20 years of age from 2013 -- 2019 from the California Department of Health Care Access and Information (HCAI), \citep{hcai_datasets} across 1,721 California zip codes where we had access to power outage data and at least one healthcare encounter occurred (97\% of zip codes) (figure \ref{fig1}). Based on prior power outage and wildfire literature, we studied all respiratory, COPD, cardiovascular, and psychiatric healthcare encounters.\citep{casey2020power, casey2024measuring} This study was approved by the California Health and Human Services Agency’s Committee for the Protection of Human Subjects (project number 2021-116).
+In this zip code-level time-stratified case-crossover\citep{lumley2000bias} study in California, we used data on hospital admissions and emergency department visits among adults $\geq$ 20 years of age from 2013 -- 2019 from the California Department of Health Care Access and Information (HCAI), \citep{hcai_datasets} across 1,721 California zip codes where we had access to power outage data and at least one healthcare encounter occurred (97\% of zip codes) (figure \ref{fig1}). Based on prior power outage and wildfire literature, we studied all respiratory, COPD, cardiovascular, and psychiatric healthcare encounters.\citep{casey2020power, casey2024measuring} This study was approved by the California Health and Human Services Agency’s Committee for the Protection of Human Subjects (project number 2021-116).
 
 \subsection{Exposures and covariates}
 
@@ -22,7 +22,7 @@ Because of highly variable population counts within zip codes, we also construct
 We used daily wildfire \PM estimates at the zip code level.\citep{aguilera2023novel} The estimates were modeled for ZIP Code Tabulation Areas (ZCTAs) by using a set of machine learning models and multiple predictor variables, including air quality monitor data, aerosol optical depth, land cover, and meteorological conditions, to produce daily PM2.5 concentrations.\citep{aguilera2023novel} Wildfire-specific PM2.5 was then calculated by imputing non-wildfire-related PM2.5 concentrations using a chained random forest algorithm and taking the difference between these values and the modeled PM2.5 concentrations. We averaged wildfire \PM exposure across the 4 days prior to and the day of interest (either a case or control day)).
 
 \subsubsection{Co-occurring exposure}
-We examined PSPS events and wildfire \PM exposures by zip code-day to quantify the extent of co-occurring PSPS events and wildfire \PM in our study population.
+We examined PSPS events and wildfire \PM exposures by zip code-day to quantify the extent of co-occurring PSPS events and wildfire \PM in our study population. Hereafter, we refer to this co-occurrence as co-exposure.
 
 \subsubsection{Temperature data}
 We leveraged gridded (4km grid) daily temperature data extracted at the location of population-weighted centroids for zip codes from gridMET.\citep{abatzoglou2013development} 
