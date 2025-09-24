@@ -4,6 +4,34 @@
 \begin{document}
 \section{Appendix}
 
+
+Supplemental methods
+The circuits were provided as geospatial polygons with a 18 meter buffer around the circuit polyline that was approximated to include all customers potentially served by that circuit. The PSPS dataset contained the number of people affected by each outage along the circuit. We overlaid these circuits with high-resolution gridded estimates of population from the 2020 census in California\citep{depsky2022high} to estimate the (1) the number of people theoretically served by the circuit, and (2) the number of people affected and the number of people served at the zip code-level. In the absence of more detailed information on customer distribution, we assumed an even distribution of customers across the circuit and performed two spatial overlays of the circuits with the gridded population data. The first used the number of customers impacted on a circuit and proportionally split them between zip codes. The second used the population pixels that intersected with each circuit to determine the population served by the circuit. By summing each of these metrics by zip code, we determined the number of customers impacted as well as the population served on each circuit, for each event. Of note, the denominator did not change from event to event, but the numerator did.
+
+Accordingly, we derived and included two daily-zip code exposure metrics in these datasets meant to capture different aspects of PSPS events. The first metric was the total number of customers impacted in each zip code. Because of highly variable population counts within zip codes, we also constructed a secondary relative metric meant to measure the severity of the PSPS event. The secondary metric was computed by multiplying the total number of customers without power by the proportion of customers affected in each zip code. Exposure for both metrics was categorized as no exposure or mild, moderate, or severe exposure based on rounded tertiles of the non-zero exposure values of each metric for each event-zip code. These tertiles were calculated at the event-zip code level to ensure equal weighting of longer and shorter events and retain the basis of the severity evaluation being on number of people rather than duration.  
+
+Add equation for model and definition of each beta + defintion of b1+b2+b3. 
+
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{0.18\textwidth}|p{0.39\textwidth}|p{0.39\textwidth}|}
+\hline
+\textbf{Health endpoint} & \textbf{ICD-9 Codes} & \textbf{ICD-10 Codes} \\
+\hline
+Respiratory & 460-466, 471, 472, 477, 478, 480-487, 490-496, 511, 513-519, 786 & J00-J06, J12-J18, J20-J22, J30, J31, J33, J34, J38, J39, J40-J47, J80-J86, J90-J92, J94, J96-J99, R04-R07, R09 \\
+\hline
+COPD & 491-492, 496 & J41-44 \\
+\hline
+Cardiovascular & 390-398, 401-417, 420-429, 440-449 & I00-I02, I05-I16, I20-I28, I30-I5A, I70-I79 \\
+\hline
+Psychiatric & 290-293, 295, 296, 298 & F06, F10-F16, F18-F21, F23, F25, F28-F33 \\
+\hline
+\end{tabular}
+\caption{\textit{International Classification of Disease, Ninth Edition} (\textit{ICD}-9) and Tenth Edition (\textit{ICD}-10) codes by medical condition.}
+\label{tab:icd_codes}
+\end{table}
+
 \begin{figure}[h]
 \includegraphics[width=0.3\textwidth]{tables_figures/supp_fig1.png}    \caption{Zip codes included in study.}
     \label{supp_fig1}
