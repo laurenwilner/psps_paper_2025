@@ -90,6 +90,9 @@ zipcodedayswf <- wf_exp_df %>%
   summarise(total_days = sum(n_days, na.rm = TRUE)) %>% 
   pull(total_days)
 
+# percent zip code-days with wildfire smoke \PM
+percentzipcodedayswf <- (zipcodedayswf / zipdays) * 100
+
 # YYY zip code-days of co-occurring wildfire smoke
 zipdaysdualexp <- combined_exp_df %>% 
     filter(wf > 0 & psps_event > 0) %>%
@@ -316,6 +319,23 @@ wfsabscihigh <- results_abs_df %>%
 # Of note, XX\% of outages were over 8 hours, so there was little concern about an overabundance of short outages.
 percentlongoutages <- ((nrow(psps_exp_df %>% filter(duration > 8))/nrow(psps_exp_df)) * 100 )%>% round(1)
 
+# We identified \pspsexpresp respiratory, \pspsexpcopd COPD, \pspsexpcardio cardiovascular, \pspsexppsych psychiatric index days exposed to a PSPS event (mild, moderate, or severe) (table \ref{exposure_table}). 
+pspsexpresp <- exposure_summary_abs_df %>% 
+    filter(severity_customers != "none" & OOI == "resp" & case_indicator == 1) %>% 
+    mutate(n = sum(count)) %>% 
+    pull(n) %>% unique()
+pspsexpcopd <- exposure_summary_abs_df %>% 
+    filter(severity_customers != "none" & OOI == "copd" & case_indicator == 1) %>% 
+    mutate(n = sum(count)) %>% 
+    pull(n) %>% unique()
+pspsexpcardio <- exposure_summary_abs_df %>% 
+    filter(severity_customers != "none" & OOI == "cardio" & case_indicator == 1) %>% 
+    mutate(n = sum(count)) %>% 
+    pull(n) %>% unique()
+pspsexppsych <- exposure_summary_abs_df %>% 
+    filter(severity_customers != "none" & OOI == "psych" & case_indicator == 1) %>% 
+    mutate(n = sum(count)) %>% 
+    pull(n) %>% unique()
 
 # write the numbers to a file -----------------------
 all_vars <- ls()
