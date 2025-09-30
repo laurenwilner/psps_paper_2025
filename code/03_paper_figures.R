@@ -32,14 +32,14 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
     data_abs_processed <- data_abs %>%
       mutate(
         Exposure = case_when(
-          Exposure == "WF smoke" ~ "WFS",
+          Exposure == "WF smoke" ~ "WFS (per 10 μg/m³)",
           grepl("combined", Exposure) ~ "Additive interaction",
           grepl("interaction only", Exposure) ~ "Multiplicative interaction",
           TRUE ~ "PSPS"
         ),
         analysis_type = "Absolute"
       ) %>%
-      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WFS", "Multiplicative interaction", "Additive interaction")))
+      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WFS (per 10 μg/m³)", "Multiplicative interaction", "Additive interaction")))
   }
   
   # Process Relative data if provided
@@ -47,14 +47,14 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
     data_hyb_processed <- data_hyb %>%
       mutate(
         Exposure = case_when(
-          Exposure == "WF smoke" ~ "WFS",
+          Exposure == "WF smoke" ~ "WFS (per 10 μg/m³)",
           grepl("combined", Exposure) ~ "Additive interaction",
           grepl("interaction only", Exposure) ~ "Multiplicative interaction",
           TRUE ~ "PSPS"
         ),
         analysis_type = "Relative"
       ) %>%
-      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WFS", "Multiplicative interaction", "Additive interaction")))
+      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WFS (per 10 μg/m³)", "Multiplicative interaction", "Additive interaction")))
   }
   
   # Combine the datasets based on what's provided
@@ -93,7 +93,7 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
   
   # color mapping
   exposure_colors <- c(
-    "WFS" = pal[3],           # blue
+    "WFS (per 10 μg/m³)" = pal[3],           # blue
     "PSPS" = pal[2],          # yellow  
     "Multiplicative interaction" = pal[1],    # green
     "Additive interaction" = "#013220"    
@@ -204,6 +204,8 @@ zcta_shp <- tigris::zctas(cb = TRUE, year = 2020) %>%
 zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>% 
             rename(zip_code = ZIP_CODE) %>%
             select(c("zip_code", "geometry"))
+
+
 # make figs -------------------------------------------------
 
 ###################################
@@ -321,6 +323,7 @@ map_violin_panel3 <- map_plots[[3]] / violin_plots[[3]] &
 ########################
 ### SEASONALITY FIG ###
 ########################
+# PSPS seasonality plot -------------------------------------------------
 # Create monthly summary of PSPS events (collapsed across years)
 monthly_summary <- exp_data %>%
   mutate(
@@ -340,6 +343,44 @@ seasonality_plot <- ggplot(monthly_summary, aes(x = month, y = n_events)) +
   theme_minimal() +
   theme(
     axis.text = element_text(size = 14),
+    axis.text.x = element_blank(),  # Remove x-axis labels from top plot
+    axis.title = element_text(size = 16),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_line(color = "grey90", size = 0.5),
+    plot.title = element_text(size = 18, hjust = 0.5, margin = margin(b = 20)),
+    plot.margin = margin(20, 20, 5, 20)  # Reduce bottom margin
+  ) +
+  labs(
+    x = "",
+    y = "Number of zip code-event days"
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.1)),
+    breaks = scales::pretty_breaks(n = 6)
+  ) 
+
+# WFS seasonality plot -------------------------------------------------
+# Create monthly summary of WFS events (collapsed across years)
+monthly_summary_wf <- exp_data %>%
+  mutate(
+    date = as.Date(date)
+  ) %>%
+  group_by(date) %>%
+  summarise(mean_wf = mean(wf, na.rm=TRUE)) %>%
+  mutate(month = lubridate::month(date, label = TRUE, abbr = TRUE)) %>%
+  group_by(month) %>%
+  summarise(
+    mean_wf = mean(mean_wf, na.rm=TRUE)
+  )
+
+# Create seasonality plot
+seasonality_plot_wf <- ggplot(monthly_summary_wf, aes(x = month, y = mean_wf)) +
+  geom_col(fill = pal[3], alpha = 0.8, width = 1) +
+  geom_text(aes(label = round(mean_wf, 4)), vjust = -0.5, size = 4) + 
+  theme_minimal() +
+  theme(
+    axis.text = element_text(size = 14),
     axis.title = element_text(size = 16),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
@@ -349,19 +390,18 @@ seasonality_plot <- ggplot(monthly_summary, aes(x = month, y = n_events)) +
   ) +
   labs(
     x = "",
-    y = "Number of PSPS events",
-    title = "Seasonality of PSPS events"
+    y = "Mean WFS"
   ) +
   scale_y_continuous(
     expand = expansion(mult = c(0, 0.1)),
     breaks = scales::pretty_breaks(n = 6)
   ) 
 
-
-
-
-
-####################
+# patchwork with common x axis and common title 
+seasonality_plot_combined <- seasonality_plot / seasonality_plot_wf + 
+  plot_layout(ncol = 1)
+  
+####################    
 ### RESULTS FIG ###
 ####################
 # This is a plot of our results. 
@@ -371,7 +411,7 @@ severe_df_hyb <- process_results("Severe", all_lag0_hyb, "hyb", cov_matrices)
 severe_df_abs <- process_results("Severe", all_lag0_abs, "abs", cov_matrices)
 
 # make results figure -------------------------------------------
-results_fig <- create_results_fig_combined(severe_df_abs, NULL, "severe", show_severity = FALSE)
+results_fig <- create_results_fig_combined(severe_df_abs, NULL, "Severe", show_severity = FALSE)
 
 
 # make results figure for supplement -------------------------------------------
@@ -408,9 +448,9 @@ mild_df_abs <- process_results("Mild", all_lag0_abs, "abs", cov_matrices)
 moderate_df_abs <- process_results("Moderate", all_lag0_abs, "abs", cov_matrices)
 
 # make the three indiv figs
-mild <- create_results_fig_combined(mild_df_hyb, mild_df_abs, "mild", show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
-mod <- create_results_fig_combined(moderate_df_hyb, moderate_df_abs, "moderate", show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
-sev <- create_results_fig_combined(severe_df_hyb, severe_df_abs, "severe", show_disease_labels = FALSE, show_severity = TRUE)
+mild <- create_results_fig_combined(mild_df_hyb, mild_df_abs, "Mild", show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
+mod <- create_results_fig_combined(moderate_df_hyb, moderate_df_abs, "Moderate", show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
+sev <- create_results_fig_combined(severe_df_hyb, severe_df_abs, "Severe", show_disease_labels = FALSE, show_severity = TRUE)
 
 # Create a layout with labels on the left side
 results_fig_supplement <- mild / mod / sev
@@ -446,6 +486,8 @@ ggsave(paste0(out_dir, "map_violin_panel2.pdf"), map_violin_panel2, width = 5, h
 ggsave(paste0(out_dir, "map_violin_panel3.pdf"), map_violin_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "results_fig.pdf"), results_fig, width = 10, height = 15, dpi = 100)
 ggsave(paste0(out_dir, "results_fig_supplement.pdf"), results_fig_supplement, width = 10, height = 15, dpi = 100)
+ggsave(paste0(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
+ggsave(paste0(out_dir, "seasonality_plot.pdf"), seasonality_plot_combined, width = 15, height = 7, dpi = 100)
 
 ggsave(paste0(out_dir, "zctas_included_map.png"), zctas_included_map, width = 4, height = 5, dpi = 100)
 ggsave(paste0(out_dir, "map_violin_panel1.png"), map_violin_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
@@ -453,9 +495,7 @@ ggsave(paste0(out_dir, "map_violin_panel2.png"), map_violin_panel2, width = 5, h
 ggsave(paste0(out_dir, "map_violin_panel3.png"), map_violin_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "results_fig.png"), results_fig, width = 10, height = 10, dpi = 100)
 ggsave(paste0(out_dir, "results_fig_supplement.png"), results_fig_supplement, width = 10, height = 15, dpi = 100)
-ggsave(paste0(out_dir, "seasonality_plot.png"), seasonality_plot, width = 15, height = 7, dpi = 100)
+ggsave(paste0(out_dir, "seasonality_plot.png"), seasonality_plot_combined, width = 15, height = 7, dpi = 100)
 
-ggsave(paste0(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
-ggsave(paste0(out_dir, "seasonality_plot.pdf"), seasonality_plot, width = 15, height = 7, dpi = 100)
 
 ## NOTE: INCREASE DPIS WHEN WE ARE DONE! 
