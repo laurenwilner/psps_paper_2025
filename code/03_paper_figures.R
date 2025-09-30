@@ -339,16 +339,15 @@ monthly_summary <- exp_data %>%
 # Create seasonality plot
 seasonality_plot <- ggplot(monthly_summary, aes(x = month, y = n_events)) +
   geom_col(fill = pal[2], alpha = 0.8, width = 1) +
-  geom_text(aes(label = n_events), vjust = -0.5, size = 4) + 
+  geom_text(aes(label = n_events), vjust = -0.5, size = 6) + 
   theme_minimal() +
   theme(
-    axis.text = element_text(size = 14),
+    axis.text = element_text(size = 18),
     axis.text.x = element_blank(),  # Remove x-axis labels from top plot
-    axis.title = element_text(size = 16),
+    axis.title = element_text(size = 20),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     panel.grid.major.y = element_line(color = "grey90", size = 0.5),
-    plot.title = element_text(size = 18, hjust = 0.5, margin = margin(b = 20)),
     plot.margin = margin(20, 20, 5, 20)  # Reduce bottom margin
   ) +
   labs(
@@ -377,15 +376,14 @@ monthly_summary_wf <- exp_data %>%
 # Create seasonality plot
 seasonality_plot_wf <- ggplot(monthly_summary_wf, aes(x = month, y = mean_wf)) +
   geom_col(fill = pal[3], alpha = 0.8, width = 1) +
-  geom_text(aes(label = round(mean_wf, 4)), vjust = -0.5, size = 4) + 
+  geom_text(aes(label = round(mean_wf, 4)), vjust = -0.5, size = 6) + 
   theme_minimal() +
   theme(
-    axis.text = element_text(size = 14),
-    axis.title = element_text(size = 16),
+    axis.text = element_text(size = 18),
+    axis.title = element_text(size = 20),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     panel.grid.major.y = element_line(color = "grey90", size = 0.5),
-    plot.title = element_text(size = 18, hjust = 0.5, margin = margin(b = 20)),
     plot.margin = margin(20, 20, 20, 20)
   ) +
   labs(
