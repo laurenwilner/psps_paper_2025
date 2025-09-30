@@ -56,9 +56,9 @@ abs_table <- exposure_summary_abs_by_ooi %>%
 # rename columns in both tables to avoid conflicts when joining
 exposure_table <- abs_table %>%
   rename(
-    Abs_Case = `Index days`,
-    Abs_Control = `Referent days`
+    Abs_Case = `Index days`
   ) %>%
+  select(-`Referent days`) %>%  # Remove the referent days column
   mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
   mutate(Exposure = factor(Exposure, levels = c("Mild", "Moderate", "Severe", "None"))) %>%
   arrange(Cause, Exposure)
@@ -69,7 +69,7 @@ pretty_exposure_table <- exposure_table %>%
   mutate(Exposure = paste0("\u00A0\u00A0\u00A0\u00A0", Exposure)) %>%  # Add 2 spaces for indentation
   gt() %>%
   fmt_number(
-    columns = c(Abs_Case, Abs_Control),
+    columns = c(Abs_Case),
     decimals = 0,
     use_seps = TRUE
   ) %>%
@@ -80,7 +80,7 @@ pretty_exposure_table <- exposure_table %>%
   # add spanner headers
   tab_spanner(
     label = "Absolute (primary)",
-    columns = c(Abs_Case, Abs_Control)
+    columns = c(Abs_Case)
   ) %>%
   # create row groups in REVERSE order
   tab_row_group(
@@ -103,8 +103,7 @@ pretty_exposure_table <- exposure_table %>%
   cols_hide(columns = Cause) %>%
   cols_label(
     Exposure = "Disease endpoint\nExposure (PSPS)", # can't do an enter and PSPS goes onto the line above so have to do psps after
-    Abs_Case = "Index days",
-    Abs_Control = "Referent days",
+    Abs_Case = "Index days"
   ) %>%
   tab_options(
     row_group.font.weight = "bold",
@@ -423,14 +422,14 @@ hyb_table <- exposure_summary_hybrid_by_ooi %>%
 # rename columns in both tables to avoid conflicts when joining
 abs_table <- abs_table %>%
   rename(
-    Abs_Case = `Index days`,
-    Abs_Control = `Referent days`
-  )
+    Abs_Case = `Index days`
+  ) %>%
+  select(-`Referent days`)  # Remove the referent days column
 hyb_table <- hyb_table %>%
   rename(
-    Hyb_Case = `Index days`,
-    Hyb_Control = `Referent days`
-  )
+    Hyb_Case = `Index days`
+  ) %>%
+  select(-`Referent days`)  # Remove the referent days column
 # join the tables
 supp_combined_table <- abs_table %>%
   full_join(hyb_table, by = c("Cause", "Exposure")) %>%
@@ -444,7 +443,7 @@ supp_pretty_exposure_table <- supp_combined_table %>%
   mutate(Exposure = paste0("\u00A0\u00A0\u00A0\u00A0", Exposure)) %>%  # Add 2 spaces for indentation
   gt() %>%
   fmt_number(
-    columns = c(Abs_Case, Abs_Control, Hyb_Case, Hyb_Control),
+    columns = c(Abs_Case, Hyb_Case),
     decimals = 0,
     use_seps = TRUE
   ) %>%
@@ -455,11 +454,11 @@ supp_pretty_exposure_table <- supp_combined_table %>%
   # add spanner headers
   tab_spanner(
     label = "Absolute (primary)",
-    columns = c(Abs_Case, Abs_Control)
+    columns = c(Abs_Case)
   ) %>%
   tab_spanner(
     label = "Relative (secondary)",
-    columns = c(Hyb_Case, Hyb_Control)
+    columns = c(Hyb_Case)
   ) %>%   
   # create row groups in REVERSE order
   tab_row_group(
@@ -483,9 +482,7 @@ supp_pretty_exposure_table <- supp_combined_table %>%
   cols_label(
     Exposure = "Disease endpoint\nExposure (PSPS)", # can't do an enter and PSPS goes onto the line above so have to do psps after
     Abs_Case = "Index days",
-    Abs_Control = "Referent days",
-    Hyb_Case = "Index days",
-    Hyb_Control = "Referent days"
+    Hyb_Case = "Index days"
   ) %>%
   tab_options(
     row_group.font.weight = "bold",
