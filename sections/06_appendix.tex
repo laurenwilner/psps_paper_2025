@@ -4,6 +4,11 @@
 \begin{document}
 \section{Appendix}
 
+do methods then all figures then all tables, within each it should be in the order that they are cited in the manuscript. cite 'supplemental methods' in main manuscript. read journal requirements.
+
+relative v absolute
+
+Accordingly, we assessed exposure at the daily zip code-level using two metrics by determining (1) the number of customers without power in a given zip code, and (2) the product of the number of customers without power and the proportion of customers without power as a measure of severity. Given the variability in zip code size, these absolute and relative metrics allowed us to measure exposure to PSPS outages, both in terms of the actual number of households affected (absolute) as well as in terms of the portion of households affected (relative). 
 
 Supplemental methods
 The circuits were provided as geospatial polygons with a 18 meter buffer around the circuit polyline that was approximated to include all customers potentially served by that circuit. The PSPS dataset contained the number of people affected by each outage along the circuit. We overlaid these circuits with high-resolution gridded estimates of population from the 2020 census in California\citep{depsky2022high} to estimate the (1) the number of people theoretically served by the circuit, and (2) the number of people affected and the number of people served at the zip code-level. In the absence of more detailed information on customer distribution, we assumed an even distribution of customers across the circuit and performed two spatial overlays of the circuits with the gridded population data. The first used the number of customers impacted on a circuit and proportionally split them between zip codes. The second used the population pixels that intersected with each circuit to determine the population served by the circuit. By summing each of these metrics by zip code, we determined the number of customers impacted as well as the population served on each circuit, for each event. Of note, the denominator did not change from event to event, but the numerator did.

@@ -12,17 +12,9 @@ This study included 7,656,684, 591,315, 3,303,133, and 2,248,161 hospital admiss
 
 During the 7-year study period, there were \zipdays{} zip code-days with PSPS events (figure \ref{map_violin}), and most were classified as '\mostcommonsevabs{}'. Overall, \zipcodeswithevents{} of the \cazipcodes{} zip codes in California experienced at least one PSPS event in the study period (figure \ref{zctas_included_map}). Most PSPS events occurred in the summer and fall \ref{seasonality_plot}.
 
-\begin{wraptable}{r}{0.55\textwidth}
-  \centering
-  \includegraphics[width=0.5\textwidth]{tables_figures/exposure_table.png}
-  \caption{Cases and controls by exposure status. PSPS event categories (mild/moderate/severe) are tertiles for each metric.}
-  \vspace{-2em}
-  \label{exposure_table}
-\end{wraptable}
-
 We examined our secondary exposure, wildfire \PM, independent from and concurrent with PSPS events. The mean daily wildfire \PM concentration across the study period was \meanwfpm{} \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}. There were \zipcodedayswf{} (\percentzipcodedayswf\%) zip code-days where there was any wildfire \PM from 2013 -- 2019 and \zipdaysdualexp{} zip code-days with any wildfire \PM and a PSPS event (figure \ref{map_violin}). 
 
-We identified \pspsexpresp respiratory, \pspsexpcopd COPD, \pspsexpcardio cardiovascular, \pspsexppsych psychiatric index days exposed to a PSPS event (mild, moderate, or severe) (table \ref{exposure_table}). 
+We identified \pspsexpresp{} respiratory, \pspsexpcopd{} COPD, \pspsexpcardio{} cardiovascular, \pspsexppsych{} psychiatric index days exposed to a PSPS event (mild, moderate, or severe) (table \ref{exposure_table}). 
 
 \begin{figure}[htbp]
     \centering
@@ -37,22 +29,29 @@ We identified \pspsexpresp respiratory, \pspsexpcopd COPD, \pspsexpcardio cardio
 
 
 \subsection{Respiratory morbidity}
-Using both our relative and absolute metrics, we found that severe PSPS exposure on days with no wildfire smoke was associated with an elevated same-day odds of a respiratory hospital or emergency department encounter (relative: OR = \resphybor{}, 95\% confidence interval [CI]: \resphybcilow{}, \resphybcihigh{}; absolute: OR = \respabsor{}, 95\% CI: \respabscilow{}, \respabscihigh{}) (figure \ref{results_fig}).
+We found that days with severe magnitude PSPS events and no wildfire smoke were associated with an elevated same-day odds of a respiratory hospital or emergency department encounter (absolute: OR = \respabsor{}, 95\% CI: \respabscilow{}, \respabscihigh{}) (figure \ref{results_fig}).
 
 A 10 ug/m3 increase in 5-day average wildfire PM2.5, when no PSPS events occurred on the event day, was associated with a \wfsabsperc\% (95\% CI: \wfsabscilow, \wfsabscihigh) higher odds of a respiratory hospital or emergency department encounter (figure \ref{results_fig}).
 
-Considering co-exposure, compared to no PSPS event and no wildfire \PM exposure, we estimated that those exposed to a co-occurring PSPS event and \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher wildfire \PM had higher odds of a respiratory hospital or emergency department encounter (\respcombabsperc\% [95\% CI: \respcombabslow{}, \respcombabshigh{}]) (figure \ref{results_fig}). We found evidence that the relationship between co-occurring severe PSPS events and wildfire \PM on respiratory hospital or emergency department encounters was multiplicative (\respintabsor [95\% CI: \respintabscilow{}, \respintabscihigh{}]) (figure \ref{results_fig}). 
+Considering effect measure modification, compared to no PSPS event and no wildfire \PM exposure, we estimated that a severe PSPS event co-occurring with \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher wildfire \PM was associated with higher odds of a respiratory hospital or emergency department encounter (\respcombabsperc\% [95\% CI: \respcombabslow{}, \respcombabshigh{}]) (figure \ref{results_fig}). We found evidence of multiplicative interaction between severe PSPS events and wildfire \PM on respiratory hospital or emergency department encounters (\respintabsor [95\% CI: \respintabscilow{}, \respintabscihigh{}]) (figure \ref{results_fig}). 
 
-When we isolated COPD encounters, we saw stronger associations. We estimated that those exposed to a severe PSPS event had \copdabsor{} (95\% CI: \copdabscilow{}, \copdabscihigh{}) times higher odds of a COPD-related hospital or emergency department encounter (figure \ref{results_fig}).
+When we isolated COPD encounters, we saw stronger associations. We estimated that those exposed to a severe magnitude PSPS event had \copdabsor{} (95\% CI: \copdabscilow{}, \copdabscihigh{}) times higher odds of a COPD-related hospital or emergency department encounter (figure \ref{results_fig}).
 
-For COPD encounters alone, compared to those exposed to neither a severe PSPS event nor wildfire \PM, we estimated that those exposed to a co-occurring PSPS event and \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher wildfire \PM had higher odds of COPD-related hospital or emergency department encounter were \copdcombabsor{} (95\% CI: \copdcombabslow{}, \copdcombabshigh{}) times higher (figure \ref{results_fig}). There was also potential evidence of multiplicative interaction between severe PSPS events and wildfire \PM exposure, but confidence interval was wide (absolute: \copdintabsor [95\% CI: \copdintabscilow{}, \copdintabscihigh{}]). 
+\begin{wraptable}{r}{0.55\textwidth}
+  \centering
+  \includegraphics[width=0.5\textwidth]{tables_figures/exposure_table.png}
+  \caption{Cases and controls by exposure status. PSPS event categories (mild/moderate/severe) are tertiles for each metric.}
+  \vspace{-2em}
+  \label{exposure_table}
+\end{wraptable}
+
+For COPD encounters alone, compared to those exposed to neither a severe magnitude PSPS event nor wildfire \PM, we estimated that those exposed to a co-occurring PSPS event and \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher wildfire \PM had higher odds of COPD-related hospital or emergency department encounter were \copdcombabsor{} (95\% CI: \copdcombabslow{}, \copdcombabshigh{}) times higher (figure \ref{results_fig}). There was also potential evidence of multiplicative interaction between severe PSPS events and wildfire \PM exposure, but confidence interval was wide (absolute: \copdintabsor [95\% CI: \copdintabscilow{}, \copdintabscihigh{}]). 
 
 
-
-Neither mild nor moderate PSPS event exposure, nor their interaction with wildfire \PM exposure, was associated with overall respiratory or COPD-specific hospital or emergency department encounters (figure \ref{zctas_included_map}).
+Neither mild nor moderate magnitude PSPS events, nor their interaction with wildfire \PM exposure, were associated with overall respiratory or COPD-specific hospital or emergency department encounters (figure \ref{zctas_included_map}).
 
 \subsection{Cardiovascular morbidity and psychiatric disorders}
-We did not observe an association between mild, moderate, or severe PSPS events alone, wildfire \PM exposure alone, or co-occurring PSPS events and wildfire \PM exposure and cardiovascular-related or psychiatric disorder-related hospitalizations or emergency department encounters (figures \ref{results_fig} and \ref{zctas_included_map}).   
+We did not observe an association between mild, moderate, or severe magnitude PSPS events alone, wildfire \PM exposure alone, or co-occurring PSPS events and wildfire \PM exposure and cardiovascular-related or psychiatric disorder-related hospitalizations or emergency department encounters (figures \ref{results_fig} and \ref{zctas_included_map}).   
 
 \subsection{Secondary analysis}
 In a secondary analysis, we assessed a relative metric of exposure to PSPS events and results were similar to the absolute exposure metric (figure \ref{results_fig_supplement}).
