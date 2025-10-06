@@ -21,17 +21,41 @@ Joan A. Casey
 % do methods then all figures then all tables, within each it should be in the order that they are cited in the manuscript. cite 'supplemental methods' in main manuscript. read journal requirements.
 
 \section{Supplemental methods.}
-relative v absolute
+\subsection{Circuit-level data description.}
+The PSPS dataset contains circuit-level information for each PSPS event across the three major utilities (Pacific Gas and Electric Company [PG\&E], San Diego Gas \& Electric [SDG\&E] or Southern California Edison [SCE]). A circuit is a network of electrical lines that deliver electricity from a power source to a defined service area of customers. A PSPS event may impact multiple circuits, so each circuit-event had a start time, end time, duration, and number of residential and commercial customers impacted. The circuits were provided as geospatial polygons with a 18 meter buffer around the circuit polyline that was approximated to include all customers potentially served by that circuit. The PSPS dataset contained the number of customers affected by each outage along the circuit. The data contained information on both commercial and residential customers, and we leveraged only residential customers. 
 
+We overlaid these circuits with high-resolution gridded estimates of population from the 2020 census in California to estimate the (1) the number of customers theoretically served by the circuit, and (2) the number of customers affected and the number of people served at the zip code-level. In the absence of more detailed information on customer distribution, we assumed an even distribution of customers across the circuit and performed two spatial overlays of the circuits with the gridded population data. The first used the number of customers impacted on a circuit and proportionally split them between zip codes. The second used the population pixels that intersected with each circuit to determine the population served by the circuit. By summing each of these metrics by zip code, we determined the number of customers impacted as well as the population served on each circuit, for each event. Of note, the denominator did not change from event to event, but the numerator did.
 
-Accordingly, we assessed exposure at the daily zip code-level using two metrics by determining (1) the number of customers without power in a given zip code, and (2) the product of the number of customers without power and the proportion of customers without power as a measure of severity. Given the variability in zip code size, these absolute and relative metrics allowed us to measure exposure to PSPS outages, both in terms of the actual number of households affected (absolute) as well as in terms of the portion of households affected (relative). 
+\subsection{Absolute (primary) and relative (secondary) PSPS exposure metrics.}
+We derived and included two daily-zip code exposure metrics  meant to capture different aspects of PSPS events. The first metric was the total number of customers impacted in each zip code. Because of highly variable population counts within zip codes, we also constructed a secondary relative metric meant to measure the severity of the PSPS event. The secondary metric was computed by multiplying the total number of customers without power by the proportion of customers affected in each zip code. Exposure for both metrics was categorized as no exposure or mild, moderate, or severe exposure based on rounded tertiles of the non-zero exposure values of each metric for each event-zip code. These tertiles were calculated at the event-zip code level to ensure equal weighting of longer and shorter events and retain the basis of the severity evaluation being on number of people rather than duration.  
 
-Supplemental methods
-The circuits were provided as geospatial polygons with a 18 meter buffer around the circuit polyline that was approximated to include all customers potentially served by that circuit. The PSPS dataset contained the number of people affected by each outage along the circuit. We overlaid these circuits with high-resolution gridded estimates of population from the 2020 census in California\citep{depsky2022high} to estimate the (1) the number of people theoretically served by the circuit, and (2) the number of people affected and the number of people served at the zip code-level. In the absence of more detailed information on customer distribution, we assumed an even distribution of customers across the circuit and performed two spatial overlays of the circuits with the gridded population data. The first used the number of customers impacted on a circuit and proportionally split them between zip codes. The second used the population pixels that intersected with each circuit to determine the population served by the circuit. By summing each of these metrics by zip code, we determined the number of customers impacted as well as the population served on each circuit, for each event. Of note, the denominator did not change from event to event, but the numerator did.
+Given the variability in zip code size, these absolute and relative metrics allowed us to measure exposure to PSPS outages, both in terms of the actual number of households affected (absolute) as well as in terms of the portion of households affected (relative). We leveraged the absolute metric for the primary analysis, and used our relative metric for a secondary.
 
-Accordingly, we derived and included two daily-zip code exposure metrics in these datasets meant to capture different aspects of PSPS events. The first metric was the total number of customers impacted in each zip code. Because of highly variable population counts within zip codes, we also constructed a secondary relative metric meant to measure the severity of the PSPS event. The secondary metric was computed by multiplying the total number of customers without power by the proportion of customers affected in each zip code. Exposure for both metrics was categorized as no exposure or mild, moderate, or severe exposure based on rounded tertiles of the non-zero exposure values of each metric for each event-zip code. These tertiles were calculated at the event-zip code level to ensure equal weighting of longer and shorter events and retain the basis of the severity evaluation being on number of people rather than duration.  
+The PSPS dataset includes customers rather than individual people impacted. Customers impacted include both commercial and residential customers, meaning businesses and residences (e.g., individual apartments, single family residences). This means that our primary exposure metric reflects the the number of customers affected, not the number of people affected. For our secondary relative metric, the numerator includes customers impacted while the denominator relies on gridded population data representing individual people. This means we consistently underestimate the proportion of people without power, but we do not expect this to be differential with respect to outcomes. 
 
-Add equation for model and definition of each beta + defintion of b1+b2+b3. 
+\subsection{Model equation.}
+
+\textbf{Regression Equation}
+
+\begin{equation}
+\text{logit}(P(Y=1)) = \beta_0 + \beta_1 \cdot \mathrm{PSPS} + \beta_2 \cdot \mathrm{PM_{2.5}} + \beta_3 \cdot (\mathrm{PSPS} \times \mathrm{PM_{2.5}}) + f(\mathrm{Temp_{max}})
+\end{equation}
+
+\vspace{1em}
+
+\textbf{Parameter Definitions}
+
+\begin{itemize}
+\item $\beta_0$: log odds of the health outcome for the matched stratum (case-control set)
+\item $\beta_1$: log odds ratio for hospital admission or emergency department visit associated with exposure to a PSPS event (binary indicator), assuming no wildfire PM$_{2.5}$ exposure and adjusted for temperature
+\item $\beta_2$: log odds ratio for hospital admission or emergency department visit per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} increase in 5-day average wildfire PM$_{2.5}$ concentration, assuming no PSPS event exposure and adjusted for temperature
+\item $\beta_3$: log odds ratio for the multiplicative interaction between PSPS event exposure and wildfire PM$_{2.5}$ (per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}), representing the deviation from multiplicative joint effects
+\item $f(\mathrm{Temp_{max}})$: natural cubic spline with 3 degrees of freedom for daily maximum temperature.
+\end{itemize}
+
+\vspace{1em}
+
+Multiplicative interaction between PSPS event and wildfire  \PM exposure was assessed using $log(\beta_3)$. Additive interaction was calculated as: $\exp(\beta_1 \cdot \mathrm{PSPS} + \beta_2 \cdot \mathrm{PM}_{2.5} + \beta_3 \cdot (\mathrm{PSPS} \times \mathrm{PM}_{2.5}))$. 
 
 \pagebreak
 \section{Supplemental tables.}
@@ -54,6 +78,17 @@ Psychiatric & 290-293, 295, 296, 298 & F06, F10-F16, F18-F21, F23, F25, F28-F33 
 \label{tab:icd_codes}
 \end{table}
 
+\begin{table}[htbp]
+    \includegraphics[width=\textwidth]{tables_figures/traditional_table1.png}
+    \caption{Demographic characteristics of individuals with a hospitalization or emergency department visit included in the study. Each observation is a visit, not a person, so individual people may be counted twice.}
+    \label{traditional_table1}
+\end{table}
+
+\begin{table}[htbp]
+    \includegraphics[width=.7\textwidth]{tables_figures/supp_exposure_table.png}
+    \caption{Cases by exposure status. PSPS event categories (mild/moderate/severe) are tertiles for both the absolute and relative metrics.}
+    \label{supp_exposure_table}
+\end{table}
 
 \pagebreak
 \section{Supplemental figures.}
@@ -63,27 +98,14 @@ Psychiatric & 290-293, 295, 296, 298 & F06, F10-F16, F18-F21, F23, F25, F28-F33 
 \end{figure}
 
 \begin{figure}[htbp]
-    \includegraphics[width=\textwidth]{tables_figures/results_fig_supplement.png}
-    \caption{Results for all severities.}
+    \includegraphics[width=.9\textwidth]{tables_figures/results_fig_supplement.png}
+    \caption{Odds ratios and 95\% confidence intervals for the association between zip code-level mild, moderate, and severe PSPS event and all respiratory-, COPD-, cardiovascular-, and psychiatric-related hospital and emergency department encounters in California from 2013 -- 2019. Estimates are from eight separate conditional logistic regression models, including one for each health endpoint -- metric combination. All models include PSPS event exposure, cumulative 0-4 day lagged wildfire \PM (wildfire smoke, WFS) exposure, an interaction term between PSPS event and wildfire \PM exposure, and a spline on daily temperature. The absolute metric reflects the number of individuals exposed to a PSPS event while the relative metric reflects the severity of the event.}
     \label{results_fig_supplement}
 \end{figure}
 
-
-\begin{table}[htbp]
-    \includegraphics[width=\textwidth]{tables_figures/traditional_table1.png}
-    \caption{Demographic characteristics of individuals with a hospitalization or emergency department visit included in the study. Each observation is a visit, not a person, so individual people may be counted twice.}
-    \label{traditional_table1}
-\end{table}
-
-\begin{table}[htbp]
-    \includegraphics[width=.5\textwidth]{tables_figures/supp_exposure_table.png}
-    % \caption{XXX.}
-    \label{supp_exposure_table}
-\end{table}
-
 \begin{figure}[htbp]
     \includegraphics[width=\textwidth]{tables_figures/seasonality_plot.png}
-    \caption{Seasonality of PSPS events.}
+    \caption{Number of zip code-event days of PSPS events and mean wildfire smoke exposure, by month, during the study period (2013 -- 2019). The number of zip code-event days of PSPS events reflects the sum over the 7-year period, while the mean wildfire smoke represents means for each month over the 7-year study period.}
     \label{seasonality_plot}
 \end{figure}
 
