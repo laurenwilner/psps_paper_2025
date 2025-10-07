@@ -34,6 +34,7 @@ zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>%
             select(c("zip_code", "geometry")) # no update needed 
 ca_zips <- zip_shp$zip_code %>% unique() # no update needed
 combined_exp_df <- read_csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv")) # updated
+zips_in_analysis <- read.csv(paste0(results_dir, "../zipcodes_in_analysis_by_endpoint.csv"))
 
 # run the process results function to get combined ORs 
 severe_df_abs <- process_results("Severe", results_abs_df, "abs", cov_matrices)
@@ -336,6 +337,15 @@ pspsexppsych <- exposure_summary_abs_df %>%
     filter(severity_customers != "none" & OOI == "psych" & case_indicator == 1) %>% 
     mutate(n = sum(count)) %>% 
     pull(n) %>% unique()
+
+# number of zip codes in analysis
+nzipcodesinanalysis <- length(unique(zips_in_analysis$ZIP_CODE))
+
+# zips by endpoint
+nzipcodesresp <- nzipcodesinanalysis - sum(zips_in_analysis$respmissing == "Yes", na.rm = TRUE)
+nzipcodescopd <- nzipcodesinanalysis - sum(zips_in_analysis$copdmissing == "Yes", na.rm = TRUE)
+nzipcodescardio <- nzipcodesinanalysis - sum(zips_in_analysis$cardiomissing == "Yes", na.rm = TRUE)
+nzipcodespsych <- nzipcodesinanalysis - sum(zips_in_analysis$psychmissing == "Yes", na.rm = TRUE)
 
 # write the numbers to a file -----------------------
 all_vars <- ls()

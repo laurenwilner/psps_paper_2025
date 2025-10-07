@@ -9,7 +9,7 @@ pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown, re
 
 pal <- met.brewer(name = "Hokusai2", n=2)
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results/case_crossover_results/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 
 exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv")) %>% 
