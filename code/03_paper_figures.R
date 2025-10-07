@@ -9,7 +9,7 @@ pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown,sf,
 pal <- c( '#6f9969', '#efc86e',"#0f7ba2")
 crs <- "EPSG:3310" # California Albers Equal Area Conic projection
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results/case_crossover_results/")
 exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
@@ -189,13 +189,18 @@ exp_data <- read.csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv"))
 
 # read in map data -------------------------------------------------
 # load data -------------------------------------------------
-zctas <- read.csv(paste0(results_dir, "list_zcta_in_analysis.csv")) %>% pull(x) 
-ca_shp <- tigris::states(cb = TRUE, year = 2020) %>% 
-  filter(NAME == "California") %>% 
-  st_transform(epsg = 3310)
+zips_all <- read.csv(paste0(results_dir, "../zipcodes_in_analysis_by_endpoint.csv"))
+zips <- zips_all$ZIP_CODE
+
+ca_shp <- st_read(paste0("~/Desktop/Desktop/epidemiology_PhD/01_data/raw/census_tiger/tl_2024_us_state.shp")) %>% 
+  filter(STUSPS == "CA") %>% 
+  st_transform(crs = 3310)
+# ca_shp <- tigris::states(cb = TRUE, year = 2020) %>% 
+#   filter(NAME == "California") %>% 
+#   st_transform(epsg = 3310)
 zcta_shp <- tigris::zctas(cb = TRUE, year = 2020) %>% 
     rename(zcta = ZCTA5CE20) %>% 
-    st_transform(epsg = 3310) %>% 
+    st_transform(crs = 3310) %>% 
     select(zcta, geometry) %>% 
     # filter to those that intersect with CA
     st_intersection(ca_shp) %>%
@@ -203,8 +208,15 @@ zcta_shp <- tigris::zctas(cb = TRUE, year = 2020) %>%
     mutate(fill_flag = zcta %in% zctas)
 zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>% 
             rename(zip_code = ZIP_CODE) %>%
-            select(c("zip_code", "geometry"))
-
+            select(c("zip_code", "geometry")) %>% 
+    st_transform(crs = 3310) %>% 
+    select(zip_code, geometry) %>% 
+    # filter to those that intersect with CA
+    st_intersection(ca_shp) %>%
+    select(zip_code, geometry) %>% 
+    mutate(fill_flag = zip_code %in% zips)
+# get rid of the water geometries
+ca_shp <- ca_shp %>% st_intersection(zip_shp)
 
 # make figs -------------------------------------------------
 
@@ -216,6 +228,7 @@ zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>%
 # fig 1 -------------------------------------------------
 # get the number of zipcode-days for each exposure type
 exp_summary <- exp_data %>% 
+    filter(zip_code %in% zips) %>% 
     mutate(year = lubridate::year(date),
         zip_code = as.character(zip_code),
         exposure_type = case_when(psps_event>0 & wf<=0 ~ "PSPS event only", 
@@ -425,9 +438,9 @@ results_fig <- create_results_fig_combined(severe_df_abs, NULL, "Severe", show_s
 # plot -------------------------------------------------
 color_mapping <- c(`TRUE` = pal[3], `FALSE` = "white")
 
-zctas_included_map <- ggplot() +
+zips_included_map <- ggplot() +
   geom_sf(data = ca_shp, fill = "white", color = alpha("black", 0.2), stroke = 0.1) +
-  geom_sf(data = zcta_shp, aes(fill = fill_flag), color = alpha("black", 0.2), stroke = 0.1) +
+  geom_sf(data = zip_shp, aes(fill = fill_flag), color = alpha("black", 0.2), stroke = 0.1) +
   scale_fill_manual(values = color_mapping) +
   theme_void() +
   theme(legend.position = "none") +
@@ -478,7 +491,7 @@ duration_hist <- og_psps_dataset %>%
 ########################
 ### SAVE ALL FIGURES ###
 ########################
-ggsave(paste0(out_dir, "zctas_included_map.pdf"), zctas_included_map, width = 4, height = 6, dpi = 100)
+ggsave(paste0(out_dir, "zips_included_map.pdf"), zips_included_map, width = 8, height = 10, dpi = 100)
 ggsave(paste0(out_dir, "map_violin_panel1.pdf"), map_violin_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "map_violin_panel2.pdf"), map_violin_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "map_violin_panel3.pdf"), map_violin_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
@@ -487,7 +500,7 @@ ggsave(paste0(out_dir, "results_fig_supplement.pdf"), results_fig_supplement, wi
 ggsave(paste0(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
 ggsave(paste0(out_dir, "seasonality_plot.pdf"), seasonality_plot_combined, width = 15, height = 9, dpi = 100)
 
-ggsave(paste0(out_dir, "zctas_included_map.png"), zctas_included_map, width = 4, height = 5, dpi = 100)
+ggsave(paste0(out_dir, "zips_included_map.png"), zips_included_map, width = 8, height = 10, dpi = 100)
 ggsave(paste0(out_dir, "map_violin_panel1.png"), map_violin_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "map_violin_panel2.png"), map_violin_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "map_violin_panel3.png"), map_violin_panel3, width = 5, height = 10, dpi = 100, bg="transparent")

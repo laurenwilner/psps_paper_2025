@@ -7,7 +7,7 @@
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
 pacman::p_load(tidyverse, ggforce, MetBrewer)
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results/case_crossover_results")
 exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
@@ -15,8 +15,9 @@ analysis_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_ca_analysis/d
 
 # read in and concat results to visualize -----------------------------
 # pull directories of results and construct file names
-files <- list.files(results_dir, full.names = TRUE)
+files <- list.files(results_dir, full.names = TRUE, recursive = TRUE)
 files <- str_subset(files, "results_.*\\.csv$")
+
 
 # read in and create a column for the file name
 results <- data.frame()
@@ -61,7 +62,7 @@ p <- ggplot(data = results, aes(x = exposure, y = or, color = cause)) +
         scale_y_continuous()
 
 # save the plot
-pdf("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/psps_results_jun2025.pdf", height = 13, width = 10)
+pdf("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/psps_results_oct2025.pdf", height = 13, width = 10)
 p
 dev.off()
 
