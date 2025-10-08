@@ -44,8 +44,8 @@ The PSPS dataset includes customers rather than individual people impacted. Cust
 
 \begin{itemize}
 \item $\beta_0$: log odds of the health outcome for the matched stratum (case-control set)
-\item $\beta_1$: log odds ratio for hospital admission or emergency department visit associated with exposure to a PSPS event (binary indicator), assuming no wildfire PM$_{2.5}$ exposure and adjusted for temperature
-\item $\beta_2$: log odds ratio for hospital admission or emergency department visit per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} increase in 5-day average wildfire PM$_{2.5}$ concentration, assuming no PSPS event exposure and adjusted for temperature
+\item $\beta_1$: log odds ratio for emergency department visit or hospital admission associated with exposure to a PSPS event (binary indicator), assuming no wildfire PM$_{2.5}$ exposure and adjusted for temperature
+\item $\beta_2$: log odds ratio for emergency department visit or hospital admission per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} increase in 5-day average wildfire PM$_{2.5}$ concentration, assuming no PSPS event exposure and adjusted for temperature
 \item $\beta_3$: log odds ratio for the multiplicative interaction between PSPS event exposure and wildfire PM$_{2.5}$ (per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}), representing the deviation from multiplicative joint effects
 \item $f(\mathrm{Temp_{max}})$: natural cubic spline with 3 degrees of freedom for daily maximum temperature.
 \end{itemize}
@@ -77,7 +77,7 @@ Psychiatric & 290-293, 295, 296, 298 & F06, F10-F16, F18-F21, F23, F25, F28-F33 
 
 \begin{table}[htbp]
     \includegraphics[width=\textwidth]{tables_figures/traditional_table1.png}
-    \caption{Demographic characteristics of individuals with a hospitalization or emergency department visit included in the study. Each observation is a visit, not a person, so individual people may be counted twice.}
+    \caption{Demographic characteristics of individuals with an emergency department visit or hospitalization included in the study. Each observation is a visit, not a person, so individual people may be counted twice.}
     \label{traditional_table1}
 \end{table}
 
@@ -90,13 +90,13 @@ Psychiatric & 290-293, 295, 296, 298 & F06, F10-F16, F18-F21, F23, F25, F28-F33 
 \pagebreak
 \section{Supplemental figures.}
 \begin{figure}[h]
-\includegraphics[width=0.3\textwidth]{tables_figures/zctas_included_map.png}    \caption{Zip codes included in study.}
+\includegraphics[width=0.3\textwidth]{tables_figures/zctas_included_map.png}    \caption{There were \nzipcodesinanalysis zip codes in California included in this study. There were \nzipcodesresp, \nzipcodescopd, \nzipcodescardio, \nzipcodespsych zip codes included for respiratory-, COPD-, cardiovascular-, and psychiatric-related emergency department visits and hospital admissions.}
     \label{zctas_included_map}
 \end{figure}
 
 \begin{figure}[htbp]
     \includegraphics[width=.9\textwidth]{tables_figures/results_fig_supplement.png}
-    \caption{Odds ratios and 95\% confidence intervals for the association between zip code-level mild, moderate, and severe PSPS event and all respiratory-, COPD-, cardiovascular-, and psychiatric-related hospital and emergency department encounters in California from 2013 -- 2019. Estimates are from eight separate conditional logistic regression models, including one for each health endpoint -- metric combination. All models include PSPS event exposure, cumulative 0-4 day lagged wildfire \PM (wildfire smoke, WFS) exposure, an interaction term between PSPS event and wildfire \PM exposure, and a spline on daily temperature. The absolute metric reflects the number of individuals exposed to a PSPS event while the relative metric reflects the severity of the event.}
+    \caption{Odds ratios and 95\% confidence intervals for the association between zip code-level mild, moderate, and severe PSPS event and all respiratory-, COPD-, cardiovascular-, and psychiatric-related emergency department visits and hospital admissions in California from 2013 -- 2019. Estimates are from eight separate conditional logistic regression models, including one for each health endpoint -- metric combination. All models include PSPS event exposure, cumulative 0-4 day lagged wildfire \PM (wildfire smoke, WFS) exposure, an interaction term between PSPS event and wildfire \PM exposure, and a spline on daily temperature. The absolute metric reflects the number of individuals exposed to a PSPS event while the relative metric reflects the severity of the event.}
     \label{results_fig_supplement}
 \end{figure}
 
