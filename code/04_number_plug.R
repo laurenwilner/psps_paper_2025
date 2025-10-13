@@ -21,7 +21,7 @@ source(paste0(code_dir, "00_helper_functions.R"))
 
 # load data -------------------------------------------------
 psps_exp_df <- read_csv(paste0(data_dir, 'ca_ZIP_daily_psps_no_washout_wf_classified_2013-2022.csv')) # updated
-psps_exp_summary <- read.csv(paste0(analysis_dir, "daily_psps_binary.csv")) # updated
+psps_exp_summary <- read_csv(paste0(analysis_dir, "daily_psps_binary.csv")) # updated
 wf_exp_df <- read_csv(paste0(exp_dir, "zip_wfpm20132019.csv")) # no updates needed
 results_abs_df <- read_csv(paste0(results_dir, "all_lag0_abs.csv")) # updated
 results_hyb_df <- read_csv(paste0(results_dir, "all_lag0_hyb.csv")) # updated
@@ -38,6 +38,7 @@ zips_in_analysis <- read.csv(paste0(results_dir, "../zipcodes_in_analysis_by_end
 # exp_hyb_sm_df <- read.csv(paste0(results_dir, "hybexp_summary.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
 exp_summary <- read_csv(paste0(results_dir, "../psps_among_casedays.csv"))
 ha_ed_table_df <- read_csv(paste0(results_dir, "../summary\ of\ events\ across\ data\ cleaning\ process_all_years.csv"))
+wf_among_casedays <- read_csv(paste0(results_dir, "../wf_among_casedays.csv"))
 
 
 # run the process results function to get combined ORs 
@@ -375,6 +376,26 @@ overalltotal <- ha_ed_table_df %>%
     pull(total_nonmissing_zip) %>% unique()
 
 percmissingzip <- round((missingzipcases / overalltotal) * 100, 2)
+
+# The mean daily wildfire \PM concentration across the study period was \meanwfpm{} \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}: 
+# mean wf during psps event, mean wf during no psps event
+meanwfduringpsps <- wf_exp_df %>% 
+    left_join(psps_exp_summary, by = c("date", "zip_code")) %>% 
+    mutate(wf = ifelse(is.na(wf), 0, wf)) %>% 
+    select(c("psps_abs", "mean_lag05_per10", "date", "zip_code")) %>% 
+    filter(psps_abs == 1) %>% 
+    mutate(meanwfduringpsps = mean(mean_lag05_per10, na.rm = TRUE)) %>% 
+    pull(meanwfduringpsps) %>% unique()
+
+meanwfduringnopsps <- wf_exp_df %>% 
+    left_join(psps_exp_summary, by = c("date", "zip_code")) %>% 
+    mutate(wf = ifelse(is.na(wf), 0, wf)) %>% 
+    select(c("psps_abs", "mean_lag05_per10", "date", "zip_code")) %>% 
+    filter(is.na(psps_abs)) %>% 
+    mutate(meanwfduringnopsps = mean(mean_lag05_per10, na.rm = TRUE)) %>% 
+    pull(meanwfduringnopsps) %>% unique()
+
+
 
 # write the numbers to a file -----------------------
 all_vars <- ls()

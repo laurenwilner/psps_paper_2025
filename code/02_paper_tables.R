@@ -36,6 +36,7 @@ table1s_df_updated <- read_csv(paste0(results_dir, "final\ dataset\ events\ by\ 
           ifelse(category == "other + multiracial", "Other or Multiracial",
           ifelse(category == "unknown, invalid, missing", "Unknown", category))))))))
         )
+wf_among_casedays <- read_csv(paste0(results_dir, "wf_among_casedays.csv"))
         
         
 
@@ -301,6 +302,65 @@ pretty_ha_ed_table <- ha_ed_table %>%
     zoom = 7,         # apparently this is approx 300 DPI
     selector = "table"  # only capture the table
   )
+
+# make table of mean wf for case days by outcome -------------------------------------------
+pretty_wf_by_outcome <- data.frame(
+  row_name = "Mean (SD) WFS",
+  Respiratory = paste0(round(wf_among_casedays$mean_lag0_lag5_mean[1], 2), " (", round(wf_among_casedays$mean_lag0_lag5_SD[1], 2), ")"),
+  COPD = paste0(round(wf_among_casedays$mean_lag0_lag5_mean[2], 2), " (", round(wf_among_casedays$mean_lag0_lag5_SD[2], 2), ")"),
+  Cardiovascular = paste0(round(wf_among_casedays$mean_lag0_lag5_mean[3], 2), " (", round(wf_among_casedays$mean_lag0_lag5_SD[3], 2), ")"),
+  Psychiatric = paste0(round(wf_among_casedays$mean_lag0_lag5_mean[4], 2), " (", round(wf_among_casedays$mean_lag0_lag5_SD[4], 2), ")")
+) %>%
+  gt(rowname_col = "row_name") %>%
+  # Set column labels
+  cols_label(
+    Respiratory = "Respiratory",
+    COPD = "COPD",
+    Cardiovascular = "Cardiovascular", 
+    Psychiatric = "Psychiatric"
+  ) %>%
+  # Set column widths
+  cols_width(
+    stub() ~ px(200),
+    Respiratory ~ px(175),
+    COPD ~ px(175),
+    Cardiovascular ~ px(175),
+    Psychiatric ~ px(175)
+  ) %>%
+  # Make the table wider overall
+  tab_options(
+    table.width = pct(100),
+    container.width = pct(100)
+  ) %>%
+  # Style the table
+  tab_style(
+    style = cell_fill(color = pal[1]),
+    locations = cells_column_labels(columns = everything())
+  ) %>%
+  tab_style(
+    style = cell_text(color = "black", weight = "bold"),
+    locations = cells_column_labels(columns = everything())
+  ) %>%
+  # Add borders
+  tab_options(
+    table.border.top.style = "solid",
+    table.border.top.width = px(1),
+    table.border.top.color = "black",
+    table.border.bottom.style = "solid",
+    table.border.bottom.width = px(1),
+    table.border.bottom.color = "black",
+    column_labels.border.bottom.style = "solid",
+    column_labels.border.bottom.width = px(1),
+    column_labels.border.bottom.color = "black"
+  )
+
+pretty_wf_by_outcome %>% 
+  as_raw_html() %>% 
+  cat(file = paste0(out_dir, "wf_by_outcome.html"))
+
+# Save as PNG using gtsave instead
+pretty_wf_by_outcome %>% 
+  gtsave(filename = "wf_by_outcome.png", path = out_dir)
 
 ###########################
 ### SUPPLEMENTAL TABLES ###
