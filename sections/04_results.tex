@@ -8,7 +8,14 @@
 
 \subsection{Health data description}
 
-This study included 7,656,684, 591,315, 3,303,133, and 2,248,161 emergency department visits and hospital admissions among individuals $\geq$ 20 years old for a respiratory, COPD, cardiovascular, or psychiatric endpoint between 2013 -- 2019 in California (table \ref{traditional_table1}). Respiratory visits were most commonly observed (n = 7,656,684), followed by cardiovascular and psychiatric visits. X\% of overall visits were ED and Y\% were hospital admissions (Table INSERT TABLE ONCE I HAVE THEM). 
+This study included 7,656,684, 591,315, 3,303,133, and 2,248,161 emergency department visits and hospital admissions among individuals $\geq$ 20 years old for a respiratory, COPD, cardiovascular, or psychiatric endpoint between 2013 -- 2019 in California (table \ref{traditional_table1}). Respiratory visits were most commonly observed (n = 7,656,684), followed by cardiovascular and psychiatric visits. \edperc{}\% of overall visits (\overalltotal{}) were emergency department encounters, while \haperc{}\% were hospital admissions (\ref{ha_ed_table}). 
+
+\begin{table}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{tables_figures/ha_ed_table.png}
+  \caption{Visits broken down by type of encounter -- emergency department or hospital admission.}
+  \label{ha_ed_table}
+\end{table}
 
 During the 7-year study period, there were \zipdays{} zip code-days with PSPS events (figure \ref{map_violin}), and most were classified as '\mostcommonsevabs{}'. Overall, \zipcodeswithevents{} of the \cazipcodes{} zip codes in California experienced at least one PSPS event in the study period (figure \ref{zctas_included_map}). Most PSPS events occurred in the summer and fall \ref{seasonality_plot}.
 
