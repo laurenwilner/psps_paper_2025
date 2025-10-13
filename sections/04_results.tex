@@ -8,7 +8,7 @@
 
 \subsection{Health data description}
 
-This study included 7,656,684, 591,315, 3,303,133, and 2,248,161 emergency department visits and hospital admissions among individuals $\geq$ 20 years old for a respiratory, COPD, cardiovascular, or psychiatric endpoint between 2013 -- 2019 in California (table \ref{traditional_table1}). Respiratory visits were most commonly observed (n = 7,656,684), followed by cardiovascular and psychiatric visits. \edperc{}\% of overall visits (\overalltotal{}) were emergency department encounters, while \haperc{}\% were hospital admissions (\ref{ha_ed_table}). 
+This study included 7,656,684, 591,315, 3,303,133, and 2,248,161 emergency department visits and hospital admissions among individuals $\geq$ 20 years old for a respiratory, COPD, cardiovascular, or psychiatric endpoint between 2013 -- 2019 in California (table \ref{traditional_table1}). Respiratory visits were most commonly observed (n = 7,656,684), followed by cardiovascular and psychiatric visits. \edperc{}\% of overall visits (\overalltotal{}) were emergency department encounters, while \haperc{}\% were hospital admissions (table \ref{ha_ed_table}). 
 
 \begin{table}[htbp]
   \centering
@@ -17,16 +17,16 @@ This study included 7,656,684, 591,315, 3,303,133, and 2,248,161 emergency depar
   \label{ha_ed_table}
 \end{table}
 
-During the 7-year study period, there were \zipdays{} zip code-days with PSPS events (figure \ref{map_violin}), and most were classified as '\mostcommonsevabs{}'. Overall, \zipcodeswithevents{} of the \cazipcodes{} zip codes in California experienced at least one PSPS event in the study period (figure \ref{zctas_included_map}). Most PSPS events occurred in the summer and fall \ref{seasonality_plot}.
+During the 7-year study period, there were \zipdays{} zip code-days with PSPS events (figure \ref{map_violin}), and most were classified as '\mostcommonsevabs{}'. Overall, \zipcodeswithevents{} of the \cazipcodes{} zip codes in California experienced at least one PSPS event in the study period (figure \ref{zctas_included_map}). Most PSPS events occurred in the summer and fall (figure \ref{seasonality_plot}).
 
 \begin{table}[htbp]
   \centering
   \includegraphics[width=\textwidth]{tables_figures/wf_by_outcome.png}
-  \caption{Mean wildfire \PM on case-days by cause category.}
+  \caption{Mean wildfire \PM on index days by cause category.}
   \label{wf_by_outcome_table}
 \end{table}
 
-We examined our secondary exposure, wildfire \PM, independent from and concurrent with PSPS events. The mean daily wildfire \PM concentration across the study period was \meanwfpm{} \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}. Among case days, the mean wildfire \PM during a PSPS event was \meanwfduringpsps{}, while the mean wildfire \PM on non-PSPS days was \meanwfduringnopsps{}. The average wildfire \PM concentration during case days among all four cause categories was generally similar (\ref{wf_by_outcome_table}). There were \zipcodedayswf{} (\percentzipcodedayswf\%) zip code-days where there was any wildfire \PM from 2013 -- 2019 and \zipdaysdualexp{} zip code-days with any wildfire \PM and a PSPS event (figure \ref{map_violin}). 
+We examined our secondary exposure, wildfire \PM, independent from and concurrent with PSPS events. The mean daily wildfire \PM concentration across the study period was \meanwfpm{} \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}. Among case days, the mean wildfire \PM during a PSPS event was \meanwfduringpsps{}, while the mean wildfire \PM on non-PSPS days was \meanwfduringnopsps{}. The average wildfire \PM concentration during case days among all four cause categories was generally similar (table \ref{wf_by_outcome_table}). There were \zipcodedayswf{} (\percentzipcodedayswf\%) zip code-days where there was any wildfire \PM from 2013 -- 2019 and \zipdaysdualexp{} zip code-days with any wildfire \PM and a PSPS event (figure \ref{map_violin}). 
 
 We identified \pspsexpresp{} respiratory, \pspsexpcopd{} COPD, \pspsexpcardio{} cardiovascular, \pspsexppsych{} psychiatric index days exposed to a PSPS event (mild, moderate, or severe) (table \ref{exposure_table}). 
 
@@ -45,22 +45,23 @@ We identified \pspsexpresp{} respiratory, \pspsexpcopd{} COPD, \pspsexpcardio{} 
 \subsection{Respiratory morbidity}
 We found that days with severe magnitude PSPS events and no wildfire smoke were associated with an elevated same-day odds of a respiratory emergency department visit or hospital admission (absolute: OR = \respabsor{}, 95\% CI: \respabscilow{}, \respabscihigh{}) (figure \ref{results_fig}).
 
+
+\begin{wraptable}{r}{0.45\textwidth}
+  \centering
+  \includegraphics[width=0.45\textwidth]{tables_figures/exposure_table.png}
+  \caption{Cases by exposure status. PSPS event categories (mild/moderate/severe) are tertiles for each metric.}
+  \vspace{-2em}
+  \label{exposure_table}
+\end{wraptable}
+
+
 A 10 ug/m3 increase in 5-day average wildfire PM2.5, when no PSPS events occurred on the event day, was associated with a \wfsabsperc\% (95\% CI: \wfsabscilow, \wfsabscihigh) higher odds of a respiratory emergency department visit or hospital admission (figure \ref{results_fig}).
 
 Considering effect measure modification, compared to no PSPS event and no wildfire \PM exposure, we estimated that a severe PSPS event co-occurring with \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher wildfire \PM was associated with higher odds of a respiratory emergency department visit or hospital admission (\respcombabsperc\% [95\% CI: \respcombabslow{}, \respcombabshigh{}]) (figure \ref{results_fig}). We found evidence of multiplicative interaction between severe PSPS events and wildfire \PM on respiratory emergency department visits or hospital admissions (\respintabsor [95\% CI: \respintabscilow{}, \respintabscihigh{}]) (figure \ref{results_fig}). 
 
 When we isolated COPD encounters, we saw stronger associations. We estimated that those exposed to a severe magnitude PSPS event had \copdabsor{} (95\% CI: \copdabscilow{}, \copdabscihigh{}) times higher odds of a COPD-related emergency department visit or hospital admission (figure \ref{results_fig}).
 
-\begin{wraptable}{r}{0.55\textwidth}
-  \centering
-  \includegraphics[width=0.5\textwidth]{tables_figures/exposure_table.png}
-  \caption{Cases by exposure status. PSPS event categories (mild/moderate/severe) are tertiles for each metric.}
-  \vspace{-2em}
-  \label{exposure_table}
-\end{wraptable}
-
 For COPD encounters alone, compared to those exposed to neither a severe magnitude PSPS event nor wildfire \PM, we estimated that those exposed to a co-occurring PSPS event and \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher wildfire \PM had higher odds of COPD-related emergency department visit or hospital admission were \copdcombabsor{} (95\% CI: \copdcombabslow{}, \copdcombabshigh{}) times higher (figure \ref{results_fig}). There was also potential evidence of multiplicative interaction between severe PSPS events and wildfire \PM exposure, but confidence interval was wide (absolute: \copdintabsor [95\% CI: \copdintabscilow{}, \copdintabscihigh{}]). 
-
 
 Neither mild nor moderate magnitude PSPS events, nor their interaction with wildfire \PM exposure, were associated with overall respiratory or COPD-specific emergency department visits or hospital admissions (figure \ref{zctas_included_map}).
 
@@ -68,7 +69,7 @@ Neither mild nor moderate magnitude PSPS events, nor their interaction with wild
 We did not observe an association between mild, moderate, or severe magnitude PSPS events alone, wildfire \PM exposure alone, or co-occurring PSPS events and wildfire \PM exposure and cardiovascular-related or psychiatric disorder-related emergency department visits or hospitalizations (figures \ref{results_fig} and \ref{zctas_included_map}).   
 
 \subsection{Secondary analysis}
-In a secondary analysis, we assessed a relative metric of exposure to PSPS events and results were similar to the absolute exposure metric (figure \ref{results_fig_supplement}).
+In a secondary analysis, we assessed a relative metric of exposure to PSPS events (table \ref{supp_exposure_table}) and results were similar to the absolute exposure metric (figure \ref{results_fig_supplement}).
 
 \begin{figure}[H]
     \centering
