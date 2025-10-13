@@ -4,6 +4,8 @@
 \usepackage[super, comma, sort&compress]{natbib}
 \usepackage{lineno}
 \usepackage{authblk}
+\usepackage{setspace}
+
 \linenumbers
 
 \begin{document}
@@ -16,29 +18,36 @@
 \author[2]{Caitlin G. Jones-Ngo}
 \author[3]{Bethany Kwoka} 
 \author[4]{Vivian Do}
-\author[5]{Chen Chen}
-\author[1,6,7] {Joel D. Kaufman}
-\author[2, 8]{Tarik Benmahrnia}
-\author[1,4,6]{Joan A. Casey}
+\author[2,5,6]{Chen Chen}
+\author[1,7,8] {Joel D. Kaufman}
+\author[2, 9]{Tarik Benmahrnia}
+\author[1,4,7]{Joan A. Casey}
 \affil[1]{Department of Epidemiology, University of Washington School of Public Health, Seattle, WA 98105}
 \affil[2]{Scripps Institution of Oceanography, University of California, San Diego, CA 92093}
 \affil[3]{Physicians, Scientists and Engineers for Healthy Energy}
 \affil[4]{Columbia University Mailman School of Public Health, Department of Environmental Health Sciences, NY, NY 10032}
-\affil[5]{XXX}
-\affil[6]{Department of Environmental and Occupational Health Sciences, University of Washington School of Public Health, Seattle, WA 98105}
-\affil[7]{Department of Medicine, University of Washington, Seattle, WA 98195}
-\affil[8]{Irset Institut de Recherche en Santé, Environnement et Travail, UMR-S 1085, Inserm, University of Rennes, EHESP, Rennes, France}
+\affil[5]{Department of Population Health Sciences, University of Utah, Salt Lake City, UT 84108}
+\affil[6]{Huntsman Cancer Institute, University of Utah, Salt Lake City, UT 84112}
+\affil[7]{Department of Environmental and Occupational Health Sciences, University of Washington School of Public Health, Seattle, WA 98105}
+\affil[8]{Department of Medicine, University of Washington, Seattle, WA 98195}
+\affil[9]{Irset Institut de Recherche en Santé, Environnement et Travail, UMR-S 1085, Inserm, University of Rennes, EHESP, Rennes, France}
 
 \maketitle
 \clearpage
 % \subfile{sections/01_abstract}
 \clearpage
+\doublespacing
 \subfile{sections/02_introduction}
 \subfile{sections/03_methods}
 \subfile{sections/04_results}
 \subfile{sections/05_discussion}
 \clearpage
-% \subfile{sections/06_appendix}
+\appendix
+\renewcommand{\thetable}{E\arabic{table}}
+\renewcommand{\thefigure}{E\arabic{figure}}
+\setcounter{table}{0}
+\setcounter{figure}{0}
+\subfile{sections/06_online_data_supplement}
 % \subfile{sections/00_outline} % remove when finished
 \bibliographystyle{unsrtnat}
 \bibliography{refs.bib}
