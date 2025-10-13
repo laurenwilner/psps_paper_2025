@@ -402,7 +402,7 @@ val_to_tex <- sapply(all_vars, function(var_name) {
     }
 
     # special handling for one percent value that i want just 1 decimal place for! 
-    if (var_name == "percentlongoutages" | var_name == "percmissingzip") {
+    if (var_name == "percentlongoutages") {
       formatted_value <- rounded_value %>% round(1)
     }
     
