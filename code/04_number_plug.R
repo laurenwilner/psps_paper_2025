@@ -9,6 +9,7 @@ if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
 pacman::p_load(dplyr, readr, sf)
 
 results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results/case_crossover_results/")
 exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/")
 data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
@@ -25,16 +26,19 @@ wf_exp_df <- read_csv(paste0(exp_dir, "zip_wfpm20132019.csv")) # no updates need
 results_abs_df <- read_csv(paste0(results_dir, "all_lag0_abs.csv")) # updated
 results_hyb_df <- read_csv(paste0(results_dir, "all_lag0_hyb.csv")) # updated
 cov_matrices <- readRDS("cov_matrices.rds") # updated
-exposure_summary_abs_df <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv")) # updated
-exposure_summary_hybrid_df <- read.csv(paste0(results_dir, "hybexp_summary_byOOI.csv")) # updated
-exp_abs_sm_df <- read.csv(paste0(results_dir, "absexp_summary.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
-exp_hyb_sm_df <- read.csv(paste0(results_dir, "hybexp_summary.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
 zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>% 
             rename(zip_code = ZIP_CODE) %>%
             select(c("zip_code", "geometry")) # no update needed 
 ca_zips <- zip_shp$zip_code %>% unique() # no update needed
 combined_exp_df <- read_csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv")) # updated
 zips_in_analysis <- read.csv(paste0(results_dir, "../zipcodes_in_analysis_by_endpoint.csv"))
+# exposure_summary_abs_df <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv")) # updated
+# exposure_summary_hybrid_df <- read.csv(paste0(results_dir, "hybexp_summary_byOOI.csv")) # updated
+# exp_abs_sm_df <- read.csv(paste0(results_dir, "absexp_summary.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
+# exp_hyb_sm_df <- read.csv(paste0(results_dir, "hybexp_summary.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
+exp_summary <- read_csv(paste0(results_dir, "../psps_among_casedays.csv"))
+ha_ed_table_df <- read_csv(paste0(results_dir, "../summary\ of\ events\ across\ data\ cleaning\ process_all_years.csv"))
+
 
 # run the process results function to get combined ORs 
 severe_df_abs <- process_results("Severe", results_abs_df, "abs", cov_matrices)
@@ -110,62 +114,62 @@ meanwfpm <- wf_exp_df %>%
   pull(mean_pm)
   
 # XXX case-days (absolute, all severities)
-casedaysabs <- exp_abs_sm_df %>% 
-    filter(case_indicator == 1 & severity_customers != 'none') %>%
-    mutate(n = sum(count)) %>% 
+casedaysabs <- exp_summary %>% 
+    filter(severity_customers != 'none') %>%
+    mutate(n = sum(severity_customers_N)) %>% 
     pull(n) %>% unique()
 
 # XXX control-days (absolute, all severities)
-controldaysabs <- exp_abs_sm_df %>% 
-    filter(case_indicator == 0 & severity_customers != 'none') %>%
-    mutate(n = sum(count)) %>% 
-    pull(n) %>% unique()
+# controldaysabs <- exp_abs_sm_df %>% 
+#     filter(case_indicator == 0 & severity_customers != 'none') %>%
+#     mutate(n = sum(count)) %>% 
+#     pull(n) %>% unique()
 
 # XXX case-days (hybrid, all severities)
-casedayshyb <- exp_hyb_sm_df %>% 
-    filter(case_indicator == 1 & severity_hybrid != 'none') %>%
-    mutate(n = sum(count)) %>% 
+casedayshyb <- exp_summary %>% 
+    filter(severity_hybrid != 'none') %>%
+    mutate(n = sum(severity_hybrid_N)) %>% 
     pull(n) %>% unique()
 
 # XXX control-days (hybrid, all severities)
-controldayshyb <- exp_hyb_sm_df %>% 
-    filter(case_indicator == 0 & severity_hybrid != 'none') %>%
-    mutate(n = sum(count)) %>% 
-    pull(n) %>% unique()
+# controldayshyb <- exp_hyb_sm_df %>% 
+#     filter(case_indicator == 0 & severity_hybrid != 'none') %>%
+#     mutate(n = sum(count)) %>% 
+#     pull(n) %>% unique()
 
 # XXXX cardiovascular case-days during a severe outage and XXXX respiratory case-days
-casedaysabssevcvd <- exposure_summary_abs_df %>% 
-    filter(severity_customers == "Severe" & OOI == "cardio") %>% 
-    mutate(n = sum(count)) %>% 
+casedaysabssevcvd <- exp_summary %>% 
+    filter(severity_customers == "Severe" & outcome == "adult_cardio") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
     pull(n) %>% unique()
 
-casedaysabssevresp <- exposure_summary_abs_df %>%
-    filter(severity_customers == "Severe" & OOI == "resp") %>% 
-    mutate(n = sum(count)) %>% 
+casedaysabssevresp <- exp_summary %>%
+    filter(severity_customers == "Severe" & outcome == "adult_resp") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
     pull(n) %>% unique()
 
 # greatest number of encounters associated with the XXX exposure level, with XXXX {cause} case-days during a severe outage and XXXX {cause} case-days
- highestencountersexplevel <- exposure_summary_abs_df %>% 
+ highestencountersexplevel <- exp_summary %>% 
     filter(severity_customers != "none") %>%
     group_by(severity_customers) %>% 
-    summarise(n = sum(count)) %>% 
+    summarise(n = sum(severity_customers_N)) %>% 
     arrange(desc(n)) %>% 
     slice(1) %>% 
     pull(severity_customers)
 
-respcasedayssev <- exposure_summary_abs_df %>% 
-    filter(severity_customers == highestencountersexplevel & OOI == "resp") %>% 
-    mutate(n = sum(count)) %>% 
+respcasedayssev <- exp_summary %>% 
+    filter(severity_customers == highestencountersexplevel & outcome == "adult_resp") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
     pull(n) %>% unique()
 
-cvdcasedayssev <- exposure_summary_abs_df %>%
-    filter(severity_customers == highestencountersexplevel & OOI == "cardio") %>% 
-    mutate(n = sum(count)) %>% 
+cvdcasedayssev <- exp_summary %>%
+    filter(severity_customers == highestencountersexplevel & outcome == "adult_cardio") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
     pull(n) %>% unique()
 
-psychcasedayssev <- exposure_summary_abs_df %>%
-    filter(severity_customers == highestencountersexplevel & OOI == "psych") %>% 
-    mutate(n = sum(count)) %>% 
+psychcasedayssev <- exp_summary %>%
+    filter(severity_customers == highestencountersexplevel & outcome == "adult_psych") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
     pull(n) %>% unique()
 
 
@@ -321,21 +325,21 @@ wfsabscihigh <- results_abs_df %>%
 percentlongoutages <- ((nrow(psps_exp_df %>% filter(duration > 8))/nrow(psps_exp_df)) * 100 )%>% round(1)
 
 # We identified \pspsexpresp respiratory, \pspsexpcopd COPD, \pspsexpcardio cardiovascular, \pspsexppsych psychiatric index days exposed to a PSPS event (mild, moderate, or severe) (table \ref{exposure_table}). 
-pspsexpresp <- exposure_summary_abs_df %>% 
-    filter(severity_customers != "none" & OOI == "resp" & case_indicator == 1) %>% 
-    mutate(n = sum(count)) %>% 
+pspsexpresp <- exp_summary %>% 
+    filter(severity_customers != "none" & outcome == "adult_resp") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
     pull(n) %>% unique()
-pspsexpcopd <- exposure_summary_abs_df %>% 
-    filter(severity_customers != "none" & OOI == "copd" & case_indicator == 1) %>% 
-    mutate(n = sum(count)) %>% 
+pspsexpcopd <- exp_summary %>% 
+    filter(severity_customers != "none" & outcome == "adult_copd") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
     pull(n) %>% unique()
-pspsexpcardio <- exposure_summary_abs_df %>% 
-    filter(severity_customers != "none" & OOI == "cardio" & case_indicator == 1) %>% 
-    mutate(n = sum(count)) %>% 
+pspsexpcardio <- exp_summary %>% 
+    filter(severity_customers != "none" & outcome == "adult_cardio") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
     pull(n) %>% unique()
-pspsexppsych <- exposure_summary_abs_df %>% 
-    filter(severity_customers != "none" & OOI == "psych" & case_indicator == 1) %>% 
-    mutate(n = sum(count)) %>% 
+pspsexppsych <- exp_summary %>% 
+    filter(severity_customers != "none" & outcome == "adult_psych") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
     pull(n) %>% unique()
 
 # number of zip codes in analysis
@@ -346,6 +350,31 @@ nzipcodesresp <- nzipcodesinanalysis - sum(zips_in_analysis$respmissing == "Yes"
 nzipcodescopd <- nzipcodesinanalysis - sum(zips_in_analysis$copdmissing == "Yes", na.rm = TRUE)
 nzipcodescardio <- nzipcodesinanalysis - sum(zips_in_analysis$cardiomissing == "Yes", na.rm = TRUE)
 nzipcodespsych <- nzipcodesinanalysis - sum(zips_in_analysis$psychmissing == "Yes", na.rm = TRUE)
+
+# X\% of overall visits were ED and Y\% were hospital admissions
+ha_ed_table_calc <- ha_ed_table_df %>% 
+    mutate(total_ed = sum(ed_final, na.rm = TRUE)) %>% 
+    mutate(total_ha = sum(pdd_final, na.rm = TRUE))
+edperc <- ha_ed_table_calc %>% 
+    mutate(ed_perc = (total_ed / (total_ed + total_ha)) * 100) %>% 
+    pull(ed_perc) %>% unique() %>% round(1)
+haperc <- ha_ed_table_calc %>% 
+    mutate(ha_perc = (total_ha / (total_ed + total_ha)) * 100) %>% 
+    pull(ha_perc) %>% unique() %>% round(1)
+
+# When a patient's zip code was missing, we used the zip code of the hospital (n=XX cases)
+missingzipcases <- ha_ed_table_df %>% 
+    mutate(total_missing_zip_pdd = sum(pdd_dif, na.rm = TRUE),
+            total_missing_zip_ed = sum(ed_dif, na.rm = TRUE),
+            total_missing_zip = total_missing_zip_pdd + total_missing_zip_ed) %>% 
+    pull(total_missing_zip) %>% unique()
+overalltotal <- ha_ed_table_df %>% 
+    mutate(total_nonmissing_zip_pdd = sum(pdd_final, na.rm = TRUE),
+            total_nonmissing_zip_ed = sum(ed_final, na.rm = TRUE),
+            total_nonmissing_zip = total_nonmissing_zip_pdd + total_nonmissing_zip_ed) %>% 
+    pull(total_nonmissing_zip) %>% unique()
+
+percmissingzip <- round((missingzipcases / overalltotal) * 100, 2)
 
 # write the numbers to a file -----------------------
 all_vars <- ls()
@@ -373,7 +402,7 @@ val_to_tex <- sapply(all_vars, function(var_name) {
     }
 
     # special handling for one percent value that i want just 1 decimal place for! 
-    if (var_name == "percentlongoutages") {
+    if (var_name == "percentlongoutages" | var_name == "percmissingzip") {
       formatted_value <- rounded_value %>% round(1)
     }
     

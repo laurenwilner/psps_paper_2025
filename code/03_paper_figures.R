@@ -198,14 +198,14 @@ ca_shp <- st_read(paste0("~/Desktop/Desktop/epidemiology_PhD/01_data/raw/census_
 # ca_shp <- tigris::states(cb = TRUE, year = 2020) %>% 
 #   filter(NAME == "California") %>% 
 #   st_transform(epsg = 3310)
-zcta_shp <- tigris::zctas(cb = TRUE, year = 2020) %>% 
-    rename(zcta = ZCTA5CE20) %>% 
-    st_transform(crs = 3310) %>% 
-    select(zcta, geometry) %>% 
-    # filter to those that intersect with CA
-    st_intersection(ca_shp) %>%
-    select(zcta, geometry) %>% 
-    mutate(fill_flag = zcta %in% zctas)
+# zcta_shp <- tigris::zctas(cb = TRUE, year = 2020) %>% 
+#     rename(zcta = ZCTA5CE20) %>% 
+#     st_transform(crs = 3310) %>% 
+#     select(zcta, geometry) %>% 
+#     # filter to those that intersect with CA
+#     st_intersection(ca_shp) %>%
+#     select(zcta, geometry) %>% 
+#     mutate(fill_flag = zcta %in% zctas)
 zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>% 
             rename(zip_code = ZIP_CODE) %>%
             select(c("zip_code", "geometry")) %>% 
