@@ -9,67 +9,105 @@ pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown, re
 
 pal <- met.brewer(name = "Hokusai2", n=2)
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results/case_crossover_results/")
+# results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
+# exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv")) %>% 
+#     mutate(severity_customers = ifelse(severity_customers == "none", "None", severity_customers))
+# exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "hybexp_summary_byOOI.csv")) %>% 
+#     mutate(severity_hybrid = ifelse(severity_hybrid == "none", "None", severity_hybrid))
+# table1s_df <- read_excel(paste0(results_dir, "PSPSTable1_demo_V3.xlsx"), sheet = "Sheet2")
+
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 
-exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv")) %>% 
-    mutate(severity_customers = ifelse(severity_customers == "none", "None", severity_customers))
-exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "hybexp_summary_byOOI.csv")) %>% 
-    mutate(severity_hybrid = ifelse(severity_hybrid == "none", "None", severity_hybrid))
-
-table1s_df <- read_excel(paste0(results_dir, "PSPSTable1_demo_V3.xlsx"), sheet = "Sheet2")
+exp_summary <- read_csv(paste0(results_dir, "psps_among_casedays.csv"))
+ha_ed_table_df <- read_csv(paste0(results_dir, "/summary\ of\ events\ across\ data\ cleaning\ process_all_years.csv"))
+table1s_df_updated <- read_csv(paste0(results_dir, "final\ dataset\ events\ by\ subgroup_all_years.csv")) %>% 
+    mutate(out = paste0(format(events, big.mark = ","), " (", proportion, "%)")) %>% 
+    # remake race categories 
+    mutate(category = ifelse(category == "female", "Female", category),
+        category = ifelse(category == "male", "Male", category),
+        category = ifelse(category == "other, invalid, unknown or missing", "Unknown, missing, or invalid", category),
+        category = ifelse(category == "black", "Non-Hispanic Black",
+          ifelse(category == "hispanic", "Hispanic",
+          ifelse(category == "white", "Non-Hispanic White",
+          ifelse(category == "asian", "Non-Hispanic Asian",
+          ifelse(category == "Asian / Pacific Islander / Native Hawaiian", "Native Hawaiian or Other Pacific Islander",
+          ifelse(category == "Native American / American Indian/Alaska Native/ Eskimo / Aleut", "American Indian or Alaska Native",
+          ifelse(category == "other + multiracial", "Other or Multiracial",
+          ifelse(category == "unknown, invalid, missing", "Unknown", category))))))))
+        )
+        
+        
 
 ## NOTE: table of icd codes is made in the appendix in latex. 
 
-####################
-### MAIN TABLES ####
-####################
-# exposure table just for absolute -------------------------------------------
-abs_table <- exposure_summary_abs_by_ooi %>% 
-    select(c("OOI", "severity_customers", "case_indicator", "count")) %>%
-    group_by(OOI, severity_customers, case_indicator) %>%
+# process exposure summaries -------------------------------------------
+abs_table <- exp_summary %>%
+    select(c("severity_customers", "severity_customers_N", "outcome")) %>%
+    group_by(severity_customers, outcome) %>%
     summarize(
-        count = sum(count)
-    ) %>% 
-    # label ooi as "Cause" and severity_customers as "Exposure"
+        count = sum(severity_customers_N)
+    ) %>%
     rename(
-        Cause = OOI,
+        Cause = outcome,
         Exposure = severity_customers
     ) %>%
-    # make 2 vars for "Case" and "Control"
-    dplyr::mutate(case_indicator = ifelse(case_indicator==1, "Index days", "Referent days")) %>%
+    mutate(case_indicator = "Index days") %>%
     pivot_wider(
         names_from = case_indicator,
         values_from = count) %>% 
     # rename causes 
     mutate(Cause = ifelse(
-        Cause == "cardio", "Cardiovascular",
-        ifelse(Cause == "resp", "Respiratory",
-        ifelse(Cause == "psych", "Psychiatric",
+        Cause == "adult_cardio", "Cardiovascular",
+        ifelse(Cause == "adult_resp", "Respiratory",
+        ifelse(Cause == "adult_psych", "Psychiatric",
         "COPD"))), 
-        Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")), 
-        # rename exposure ==0 to unexposed
-        Exposure = ifelse(
-            Exposure == 0, "Unexposed", Exposure
-        )) %>% ungroup() %>% distinct()
+        Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")),
+        Exposure = ifelse(Exposure == "none", "None", Exposure)) %>%
+    ungroup() %>%
+    distinct()  %>% 
+    mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
+    mutate(Exposure = factor(Exposure, levels = c("Mild", "Moderate", "Severe", "None"))) %>%
+    arrange(Cause, Exposure)
+hyb_table <- exp_summary %>%
+    select(c("severity_hybrid", "severity_hybrid_N", "outcome")) %>%
+    group_by(severity_hybrid, outcome) %>%
+    summarize(
+        count = sum(severity_hybrid_N)
+    ) %>%
+    rename(
+        Cause = outcome,
+        Exposure = severity_hybrid
+    ) %>%
+    mutate(case_indicator = "Index days") %>%
+    pivot_wider(
+        names_from = case_indicator,
+        values_from = count) %>% 
+    # rename causes 
+    mutate(Cause = ifelse(
+        Cause == "adult_cardio", "Cardiovascular",
+        ifelse(Cause == "adult_resp", "Respiratory",
+        ifelse(Cause == "adult_psych", "Psychiatric",
+        "COPD"))), 
+        Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")),
+        Exposure = ifelse(Exposure == "none", "None", Exposure)) %>%
+    ungroup() %>%
+    distinct()  %>% 
+    mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
+    mutate(Exposure = factor(Exposure, levels = c("Mild", "Moderate", "Severe", "None"))) %>%
+    arrange(Cause, Exposure)
 
-# rename columns in both tables to avoid conflicts when joining
-exposure_table <- abs_table %>%
-  rename(
-    Abs_Case = `Index days`
-  ) %>%
-  select(-`Referent days`) %>%  # Remove the referent days column
-  mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
-  mutate(Exposure = factor(Exposure, levels = c("Mild", "Moderate", "Severe", "None"))) %>%
-  arrange(Cause, Exposure)
-
+####################
+### MAIN TABLES ####
+####################
+# exposure table just for absolute -------------------------------------------
 # pretty table 2
-pretty_exposure_table <- exposure_table %>%
+pretty_exposure_table <- abs_table %>%
   # Add indentation to the Exposure values
   mutate(Exposure = paste0("\u00A0\u00A0\u00A0\u00A0", Exposure)) %>%  # Add 2 spaces for indentation
   gt() %>%
   fmt_number(
-    columns = c(Abs_Case),
+    columns = c(`Index days`),
     decimals = 0,
     use_seps = TRUE
   ) %>%
@@ -80,7 +118,7 @@ pretty_exposure_table <- exposure_table %>%
   # add spanner headers
   tab_spanner(
     label = "Absolute (primary)",
-    columns = c(Abs_Case)
+    columns = c(`Index days`)
   ) %>%
   # create row groups in REVERSE order
   tab_row_group(
@@ -103,7 +141,7 @@ pretty_exposure_table <- exposure_table %>%
   cols_hide(columns = Cause) %>%
   cols_label(
     Exposure = "Disease endpoint\nExposure (PSPS)", # can't do an enter and PSPS goes onto the line above so have to do psps after
-    Abs_Case = "Index days"
+    `Index days` = "Index days"
   ) %>%
   tab_options(
     row_group.font.weight = "bold",
@@ -174,6 +212,95 @@ pretty_exposure_table <- exposure_table %>%
   )
 
 
+#-------------------------------------------------
+# make table of ha and ed counts by endpoint -------------------------------------------
+ha_ed_table <- ha_ed_table_df %>%
+  select(c("ed_final", "pdd_final", "outcome"))
+
+# Helper function to format count and percentage
+format_count_pct <- function(count, total) {
+  paste0(format(count, big.mark = ","), " (", round(count / total * 100, 1), "%)")
+}
+
+# Create the table structure
+pretty_ha_ed_table <- ha_ed_table %>%
+  # Calculate totals for each outcome
+  mutate(total = ed_final + pdd_final) %>%
+  # Create formatted strings for each outcome
+  mutate(
+    ed_formatted = format_count_pct(ed_final, total),
+    ha_formatted = format_count_pct(pdd_final, total)
+  ) %>%
+  # Pivot to wide format
+  select(outcome, ed_formatted, ha_formatted) %>%
+  pivot_wider(names_from = outcome, values_from = c(ed_formatted, ha_formatted)) %>%
+  # Create final table structure - extract values properly
+  {data.frame(
+    row_name = c("Emergency department visit", "Hospital admission"),
+    Respiratory = c(.$ed_formatted_resp, .$ha_formatted_resp),
+    COPD = c(.$ed_formatted_copd, .$ha_formatted_copd),
+    Cardiovascular = c(.$ed_formatted_cardio, .$ha_formatted_cardio),
+    Psychiatric = c(.$ed_formatted_psych, .$ha_formatted_psych)
+  )} %>%
+  gt(rowname_col = "row_name") %>%
+  # Set column labels
+  cols_label(
+    Respiratory = "Respiratory",
+    COPD = "COPD",
+    Cardiovascular = "Cardiovascular", 
+    Psychiatric = "Psychiatric"
+  ) %>%
+  # Set column widths
+  cols_width(
+    Respiratory ~ px(200),
+    COPD ~ px(200),
+    Cardiovascular ~ px(200),
+    Psychiatric ~ px(200)
+  ) %>%
+  # Make the table wider overall
+  tab_options(
+    table.width = pct(100),
+    container.width = pct(100)
+  ) %>%
+  # Style the table
+  tab_style(
+    style = cell_fill(color = pal[1]),
+    locations = cells_column_labels(columns = everything())
+  ) %>%
+  tab_style(
+    style = cell_text(color = "black", weight = "bold"),
+    locations = cells_column_labels(columns = everything())
+  ) %>%
+  # Add borders
+  tab_options(
+    table.border.top.style = "solid",
+    table.border.top.width = px(1),
+    table.border.top.color = "black",
+    table.border.bottom.style = "solid",
+    table.border.bottom.width = px(1),
+    table.border.bottom.color = "black",
+    column_labels.border.bottom.style = "solid",
+    column_labels.border.bottom.width = px(1),
+    column_labels.border.bottom.color = "black"
+  )
+
+# save table 
+  # this is something webshot needs to work...
+  options(chromote.headless = "new")
+
+  # save the table as html using cat 
+   pretty_ha_ed_table %>% 
+    as_raw_html() %>% 
+    cat(file = paste0(out_dir, "ha_ed_table.html"))
+  
+  # save the table as png
+    # doing it this way becuase i couldnt get the dpi high enough with gtsave
+  webshot2::webshot(
+    url = paste0(out_dir, "ha_ed_table.html"),
+    file = paste0(out_dir, "ha_ed_table.png"),
+    zoom = 7,         # apparently this is approx 300 DPI
+    selector = "table"  # only capture the table
+  )
 
 ###########################
 ### SUPPLEMENTAL TABLES ###
@@ -181,10 +308,18 @@ pretty_exposure_table <- exposure_table %>%
 
 #-------------------------------------------------
 # make traditional table 1 for supplement -------------------------------------------
-create_traditional_table1 <- function(data) {
-  categories <- unique(data$category)
+create_traditional_table1_updated <- function(data) {
+  # Debug: print column names
+  print("Available columns:")
+  print(colnames(data))
   
-  # create an empty data frame with the structure we need
+  # First, reshape the data to wide format
+  wide_data <- data %>%
+    select(outcome, subgroup, category, out) %>%
+    # Pivot to wide format
+    pivot_wider(names_from = outcome, values_from = out, values_fill = "0 (0.0%)")
+  
+  # Create the table structure
   combined_data <- data.frame(
     Group = character(0),
     Respiratory = character(0),
@@ -192,95 +327,74 @@ create_traditional_table1 <- function(data) {
     Cardiovascular = character(0),
     Psychiatric = character(0),
     stringsAsFactors = FALSE,
-    row_type = character(0)  # add a row type identifier column
+    row_type = character(0)
   )
   
-  # process each category
-  for (cat in categories) {
-    # skip processing if this is the Total category - we'll handle it separately
-    if (cat == "Total") {
-      next
-    }
+  # Get unique subgroups
+  subgroups <- unique(wide_data$subgroup)
+  
+  # Process each subgroup
+  for (subgrp in subgroups) {
+    subgrp_data <- wide_data %>% filter(subgroup == subgrp)
     
-    cat_data <- data %>% filter(category == cat)
-    
-    # add a header row for the category
+    # Add header row for subgroup
     header_row <- data.frame(
-      Group = cat,
-      Respiratory = "", 
+      Group = case_when(
+        subgrp == "agecat" ~ "Age Group",
+        subgrp == "sex" ~ "Sex", 
+        subgrp == "race_grp" ~ "Race/Ethnicity"
+      ),
+      Respiratory = "",
       COPD = "",
-      Cardiovascular = "",  # blank instead of NA
+      Cardiovascular = "",
       Psychiatric = "",
       stringsAsFactors = FALSE,
-      row_type = "header"  # mark as header row
+      row_type = "header"
     )
     
-    # create rows for the subgroups
-    subgroup_rows <- data.frame(
-      Group = cat_data$group,  # group names directly in the Group column
-      Respiratory = cat_data$Respiratory,
-      COPD = cat_data$COPD,
-      Cardiovascular = cat_data$Cardiovascular,
-      Psychiatric = cat_data$Psychiatric,
+    # Create rows for categories within this subgroup
+    category_rows <- data.frame(
+      Group = subgrp_data$category,
+      Respiratory = subgrp_data$resp %||% "0 (0.0%)",
+      COPD = subgrp_data$copd %||% "0 (0.0%)", 
+      Cardiovascular = subgrp_data$cardio %||% "0 (0.0%)",
+      Psychiatric = subgrp_data$psych %||% "0 (0.0%)",
       stringsAsFactors = FALSE,
-      row_type = "subgroup" 
+      row_type = "subgroup"
     )
     
-    # combine header row with subgroup rows
-    section <- rbind(header_row, subgroup_rows)
-    
-    # add this section to our combined data
+    # Combine header and category rows
+    section <- rbind(header_row, category_rows)
     combined_data <- rbind(combined_data, section)
   }
   
-  # add the Total row
-  total_data <- data %>% filter(category == "Total")
-  if (nrow(total_data) > 0) {
-    total_row <- data.frame(
-      Group = "Total",
-      Respiratory = total_data$Respiratory[1],
-      COPD = total_data$COPD[1],
-      Cardiovascular = total_data$Cardiovascular[1],
-      Psychiatric = total_data$Psychiatric[1],
-      stringsAsFactors = FALSE,
-      row_type = "total"  # label as total row
-    )
-    combined_data <- rbind(combined_data, total_row)
-  }
-  
-  # create gt table - remove the row_type column before creating the table
+  # Create gt table
   visible_data <- combined_data %>% select(-row_type)
   gt_table <- gt(visible_data)
   
-  # apply styles based on the row_type in the original data
+  # Get row indices for styling
   header_rows <- which(combined_data$row_type == "header")
   subgroup_rows <- which(combined_data$row_type == "subgroup")
-  total_rows <- which(combined_data$row_type == "total")
   
   gt_table <- gt_table %>%
     cols_label(
       Group = "",
-      Respiratory = "Respiratory", 
-      COPD = "COPD",
+      Respiratory = "Respiratory",
+      COPD = "COPD", 
       Cardiovascular = "Cardiovascular",
       Psychiatric = "Psychiatric"
     ) %>%
-    # category headers bold
+    # Style header rows
     tab_style(
       style = cell_text(weight = "bold"),
       locations = cells_body(columns = "Group", rows = header_rows)
     ) %>%
-    # Total row bold
-    tab_style(
-      style = cell_text(weight = "bold"),
-      locations = cells_body(columns = "Group", rows = total_rows)
-    ) %>%
-    # indentation to subgroup values
+    # Indent subgroup rows
     tab_style(
       style = cell_text(indent = px(15)),
       locations = cells_body(columns = "Group", rows = subgroup_rows)
     ) %>%
-    # header row style
+    # Style column headers
     tab_style(
       style = cell_fill(color = pal[1]),
       locations = cells_column_labels(columns = everything())
@@ -288,27 +402,14 @@ create_traditional_table1 <- function(data) {
     tab_style(
       style = cell_text(color = "black", weight = "bold"),
       locations = cells_column_labels(columns = everything())
-    ) %>% 
-    # add a border under the column headers
+    ) %>%
+    # Add borders
     tab_style(
       style = cell_borders(
         sides = "bottom",
-        color = "black",
+        color = "black", 
         weight = px(1),
         style = "solid"
-      ),
-      locations = cells_column_labels(columns = everything())
-    ) %>%
-    tab_options(
-      column_labels.padding = px(15)  # Increase this value to make the header taller
-    ) %>%
-    tab_style(
-      style = cell_text(weight = "bold"),
-      locations = cells_body(rows = total_rows)  # Remove the columns = "Group" to apply to all columns
-    ) %>%
-    tab_style(
-      style = list(
-        cell_text(align = "center")
       ),
       locations = cells_column_labels(columns = everything())
     ) %>%
@@ -316,32 +417,35 @@ create_traditional_table1 <- function(data) {
       table.border.top.style = "solid",
       table.border.top.width = px(1),
       table.border.top.color = "black",
-      table.border.bottom.style = "solid",
+      table.border.bottom.style = "solid", 
       table.border.bottom.width = px(1),
       table.border.bottom.color = "black",
       column_labels.border.top.style = "none",
       column_labels.border.bottom.style = "solid",
       column_labels.border.bottom.width = px(1),
       column_labels.border.bottom.color = "black",
-      row_group.border.top.style = "none",
-      row_group.border.bottom.style = "none",
-      table_body.border.top.style = "none",
-      table_body.border.bottom.style = "none",
-      table_body.hlines.style = "none",
-      table_body.vlines.style = "none"
+      # Make table wider
+      table.width = pct(100),
+      container.width = pct(100)
     ) %>%
-    # add alternating row colors
-    opt_row_striping() %>%
-    # right-align the numeric columns
+    # Set column widths to ensure everything fits on one line
+    cols_width(
+      Group ~ px(280),
+      Respiratory ~ px(150),
+      COPD ~ px(150), 
+      Cardiovascular ~ px(150),
+      Psychiatric ~ px(150)
+    ) %>%
+    # Right-align numeric columns
     cols_align(align = "right", columns = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")) %>%
-    # left-align the category and subgroup columns
+    # Left-align group column
     cols_align(align = "left", columns = "Group")
   
   return(gt_table)
 }
 
 # create and display the table
-pretty_traditional_table1 <- create_traditional_table1(table1s_df)
+pretty_traditional_table1 <- create_traditional_table1_updated(table1s_df_updated)
 
 # save table 
   # this is something webshot needs to work...
@@ -365,74 +469,20 @@ pretty_traditional_table1 <- create_traditional_table1(table1s_df)
 
 #-------------------------------------------------
 # make table summarizing exposure by cause and exposure -------------------------------------------
-abs_table <- exposure_summary_abs_by_ooi %>% 
-    select(c("OOI", "severity_customers", "case_indicator", "count")) %>%
-    group_by(OOI, severity_customers, case_indicator) %>%
-    summarize(
-        count = sum(count)
-    ) %>% 
-    # label ooi as "Cause" and severity_customers as "Exposure"
-    rename(
-        Cause = OOI,
-        Exposure = severity_customers
-    ) %>%
-    # make 2 vars for "Case" and "Control"
-    dplyr::mutate(case_indicator = ifelse(case_indicator==1, "Index days", "Referent days")) %>%
-    pivot_wider(
-        names_from = case_indicator,
-        values_from = count) %>% 
-    # rename causes 
-    mutate(Cause = ifelse(
-        Cause == "cardio", "Cardiovascular",
-        ifelse(Cause == "resp", "Respiratory",
-        ifelse(Cause == "psych", "Psychiatric",
-        "COPD"))), 
-        Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")), 
-        # rename exposure ==0 to unexposed
-        Exposure = ifelse(
-            Exposure == 0, "Unexposed", Exposure
-        )) %>% ungroup() %>% distinct()
-hyb_table <- exposure_summary_hybrid_by_ooi %>% 
-    select(c("OOI", "severity_hybrid", "case_indicator", "count")) %>%
-    group_by(OOI, severity_hybrid, case_indicator) %>%
-    summarize(
-        count = sum(count)
-    ) %>% 
-    # label ooi as "Cause" and severity_customers as "Exposure"
-    rename(
-        Cause = OOI,
-        Exposure = severity_hybrid
-    ) %>%
-    # make 2 vars for "Case" and "Control"
-    dplyr::mutate(case_indicator = ifelse(case_indicator==1, "Index days", "Referent days")) %>%
-    pivot_wider(
-        names_from = case_indicator,
-        values_from = count) %>% 
-    # rename causes 
-    mutate(Cause = ifelse(
-        Cause == "cardio", "Cardiovascular",
-        ifelse(Cause == "resp", "Respiratory",
-        ifelse(Cause == "psych", "Psychiatric",
-        "COPD"))), 
-        # rename exposure ==0 to unexposed
-        Exposure = ifelse(
-            Exposure == 0, "Unexposed", Exposure
-        )) %>% ungroup() %>% distinct()
+# have abs table above! 
 
 # rename columns in both tables to avoid conflicts when joining
-abs_table <- abs_table %>%
+abs_table_mod <- abs_table %>%
   rename(
     Abs_Case = `Index days`
-  ) %>%
-  select(-`Referent days`)  # Remove the referent days column
-hyb_table <- hyb_table %>%
+  )
+hyb_table_mod <- hyb_table %>%
   rename(
     Hyb_Case = `Index days`
-  ) %>%
-  select(-`Referent days`)  # Remove the referent days column
+  )
 # join the tables
-supp_combined_table <- abs_table %>%
-  full_join(hyb_table, by = c("Cause", "Exposure")) %>%
+supp_combined_table <- abs_table_mod %>%
+  full_join(hyb_table_mod, by = c("Cause", "Exposure")) %>%
   mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
   mutate(Exposure = factor(Exposure, levels = c("Mild", "Moderate", "Severe", "None"))) %>%
   arrange(Cause, Exposure)

@@ -71,32 +71,32 @@ dev.off()
 
 # read in model results and covariance matrices ---------------------------------
 # resp
-resp_lag0 <- read.csv(paste0(results_dir, "results_adult_resp.csv")) %>% 
+resp_lag0 <- read.csv(paste0(results_dir, "/results_adult_resp.csv")) %>% 
                 mutate(across(everything(), ~str_replace_all(., ":", ".")))
-resp_abs_cov <- read.csv(paste0(results_dir, "vcov_absmodel_adult_resp.csv")) %>% 
+resp_abs_cov <- read.csv(paste0(results_dir, "/vcov_absmodel_adult_resp.csv")) %>% 
   mutate(across(everything(), ~str_replace_all(., ":", ".")))
-resp_hyb_cov <- read.csv(paste0(results_dir, "vcov_hybmodel_adult_resp.csv")) %>% 
+resp_hyb_cov <- read.csv(paste0(results_dir, "/vcov_hybmodel_adult_resp.csv")) %>% 
   mutate(across(everything(), ~str_replace_all(., ":", ".")))
 # cardio
-cardio_lag0 <- read.csv(paste0(results_dir, "results_adult_cardio.csv")) %>% 
+cardio_lag0 <- read.csv(paste0(results_dir, "/results_adult_cardio.csv")) %>% 
                 mutate(across(everything(), ~str_replace_all(., ":", ".")))
-cardio_abs_cov <- read.csv(paste0(results_dir, "vcov_absmodel_adult_cardio.csv")) %>% 
+cardio_abs_cov <- read.csv(paste0(results_dir, "/vcov_absmodel_adult_cardio.csv")) %>% 
   mutate(across(everything(), ~str_replace_all(., ":", ".")))
-cardio_hyb_cov <- read.csv(paste0(results_dir, "vcov_hybmodel_adult_cardio.csv")) %>% 
+cardio_hyb_cov <- read.csv(paste0(results_dir, "/vcov_hybmodel_adult_cardio.csv")) %>% 
                   mutate(across(everything(), ~str_replace_all(., ":", ".")))
 # psych
-psych_lag0 <- read.csv(paste0(results_dir, "results_adult_psych.csv")) %>% 
+psych_lag0 <- read.csv(paste0(results_dir, "/results_adult_psych.csv")) %>% 
                 mutate(across(everything(), ~str_replace_all(., ":", ".")))
-psych_abs_cov <- read.csv(paste0(results_dir, "vcov_absmodel_adult_psych.csv")) %>% 
+psych_abs_cov <- read.csv(paste0(results_dir, "/vcov_absmodel_adult_psych.csv")) %>% 
   mutate(across(everything(), ~str_replace_all(., ":", ".")))
-psych_hyb_cov <- read.csv(paste0(results_dir, "vcov_hybmodel_adult_psych.csv")) %>% 
+psych_hyb_cov <- read.csv(paste0(results_dir, "/vcov_hybmodel_adult_psych.csv")) %>% 
                  mutate(across(everything(), ~str_replace_all(., ":", ".")))
 # copd
-copd_lag0 <- read.csv(paste0(results_dir, "results_adult_copd.csv")) %>% 
+copd_lag0 <- read.csv(paste0(results_dir, "/results_adult_copd.csv")) %>% 
                 mutate(across(everything(), ~str_replace_all(., ":", ".")))
-copd_abs_cov <- read.csv(paste0(results_dir, "vcov_absmodel_adult_copd.csv")) %>% 
+copd_abs_cov <- read.csv(paste0(results_dir, "/vcov_absmodel_adult_copd.csv")) %>% 
   mutate(across(everything(), ~str_replace_all(., ":", ".")))
-copd_hyb_cov <- read.csv(paste0(results_dir, "vcov_hybmodel_adult_copd.csv")) %>% 
+copd_hyb_cov <- read.csv(paste0(results_dir, "/vcov_hybmodel_adult_copd.csv")) %>% 
                 mutate(across(everything(), ~str_replace_all(., ":", ".")))
 
 # store all covariance matrices
@@ -152,11 +152,11 @@ copd_lag0_hyb <- copd_lag0 %>%
 all_lag0_abs <- bind_rows(resp_lag0_abs, cardio_lag0_abs, psych_lag0_abs, copd_lag0_abs) %>% 
   # make or, ci_lower, ci_upper numeric
   mutate(across(c("OR", "CI_Lower", "CI_Upper"), as.numeric))
-write.csv(all_lag0_abs, paste0(results_dir, "all_lag0_abs.csv"), row.names = FALSE)
+write.csv(all_lag0_abs, paste0(results_dir, "/all_lag0_abs.csv"), row.names = FALSE)
 all_lag0_hyb <- bind_rows(resp_lag0_hyb, cardio_lag0_hyb, psych_lag0_hyb, copd_lag0_hyb) %>% 
   # make or, ci_lower, ci_upper numeric
   mutate(across(c("OR", "CI_Lower", "CI_Upper"), as.numeric))
-write.csv(all_lag0_hyb, paste0(results_dir, "all_lag0_hyb.csv"), row.names = FALSE)
+write.csv(all_lag0_hyb, paste0(results_dir, "/all_lag0_hyb.csv"), row.names = FALSE)
 
 # generate exposure dataset for fig2 -------------------------------
 # we need the number of zip-days for PSPS exp, WF exp, and dual exp
