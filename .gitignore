@@ -2,7 +2,7 @@ main.fdb_latexmk
 main.fls
 main.log
 
-tables_figures/*.pdf
+# tables_figures/*.pdf
 tables_figures/*.html
 exposure_data/
 results/
