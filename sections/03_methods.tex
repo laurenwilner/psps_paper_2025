@@ -3,6 +3,8 @@
 \usepackage[super, comma, sort&compress]{natbib}
 
 \begin{document}
+\input{analysis-values.tex}
+
 \section{Methods}
 \subsection{Study population}
 In this zip code-level time-stratified case-crossover\citep{lumley2000bias} study in California, we used data on emergency department visits and hospital admissions among adults $\geq$ 20 years of age from 2013 -- 2019 from the California Department of Health Care Access and Information (HCAI), \citep{hcai_datasets} across \nzipcodesinanalysis California zip codes where we had access to power outage data and at least one healthcare encounter occurred (97\% of zip codes) (figure \ref{fig1}). Based on prior power outage and wildfire literature, we studied all respiratory, COPD, cardiovascular, and psychiatric healthcare encounters.\citep{casey2020power, casey2024measuring} This study was approved by the California Health and Human Services Agency’s Committee for the Protection of Human Subjects (project number 2021-116).
@@ -25,7 +27,7 @@ We used daily wildfire \PM estimates at the zip code level.\citep{aguilera2023no
 We leveraged gridded (4km grid) daily temperature data extracted at the location of population-weighted centroids for zip codes from gridMET.\citep{abatzoglou2013development} 
 
 \subsection{Outcomes}
-Our outcome data relied on HCAI individual-level emergency department visits and unscheduled (unplanned/emergency) hospital admissions from 2013--2019, which included date of admission, associated diagnoses based on \textit{International Classification of Disease, Ninth Edition} (\textit{ICD}-9) and Tenth Edition (\textit{ICD}-10) codes, hospital zip code, and patient’s residential zip code. When a patient's zip code was missing, we used the zip code of the hospital (n=XX cases). 
+Our outcome data relied on HCAI individual-level emergency department visits and unscheduled (unplanned/emergency) hospital admissions from 2013--2019, which included date of admission, associated diagnoses based on \textit{International Classification of Disease, Ninth Edition} (\textit{ICD}-9) and Tenth Edition (\textit{ICD}-10) codes, hospital zip code, and patient’s residential zip code. When a patient's zip code was missing, we used the zip code of the hospital (n = \missingzipcases{} [ \percmissingzip{}\%] cases). 
 
 Using primary diagnosis codes, we identified combined daily counts of emergency department visits and unscheduled hospital admissions for the following causes: all respiratory, COPD, cardiovascular, and psychiatric (table \ref{tab:icd_codes}). Diagnostic codes outside the primary position were not used. We chose these cause groups based on previous research of power outages and health.\citep{casey2020power} We excluded scheduled hospitalizations (e.g., planned/elective admissions) and visits among those 19 years and younger. 
 
