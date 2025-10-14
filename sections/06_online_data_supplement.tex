@@ -35,8 +35,10 @@ The PSPS dataset includes customers rather than individual people impacted. Cust
 \textbf{Regression Equation}
 
 \begin{equation}
-\text{logit}(P(Y=1)) = \beta_0 + \beta_1 \cdot \mathrm{PSPS} + \beta_2 \cdot \mathrm{PM_{2.5}} + \beta_3 \cdot (\mathrm{PSPS} \times \mathrm{PM_{2.5}}) + f(\mathrm{Temp_{max}})
+\log\left(\frac{p_{ij}}{1-p_{ij}}\right) = \alpha_i + \beta_1 \cdot PSPS_{ij} + \beta_2 \cdot PM_{2.5,ij} + \beta_3 \cdot (PSPS_{ij} \times PM_{2.5,ij}) + f(Temp_{max,ij})
 \end{equation}
+
+where: $p_{ij} = P(Y_{ij} = 1 | X_{ij}, C_{ij})$ for a case $(j = 1)$ or a control $(j = 0)$ in stratum $ij$
 
 \vspace{1em}
 
@@ -46,13 +48,13 @@ The PSPS dataset includes customers rather than individual people impacted. Cust
 \item $\beta_0$: log odds of the health outcome for the matched stratum (case-control set)
 \item $\beta_1$: log odds ratio for emergency department visit or hospital admission associated with exposure to a PSPS event (binary indicator), assuming no wildfire PM$_{2.5}$ exposure and adjusted for temperature
 \item $\beta_2$: log odds ratio for emergency department visit or hospital admission per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} increase in 5-day average wildfire PM$_{2.5}$ concentration, assuming no PSPS event exposure and adjusted for temperature
-\item $\beta_3$: log odds ratio for the multiplicative interaction between PSPS event exposure and wildfire PM$_{2.5}$ (per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}), representing the deviation from multiplicative joint effects
+\item $\beta_3$: log odds ratio for the multiplicative interaction between PSPS event exposure and wildfire \PM (per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}). This is the additional effect of \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher \PM in the presence of a PSPS event. 
 \item $f(\mathrm{Temp_{max}})$: natural cubic spline with 3 degrees of freedom for daily maximum temperature.
 \end{itemize}
 
 \vspace{1em}
 
-Multiplicative interaction between PSPS event and wildfire  \PM exposure was assessed using $log(\beta_3)$. Additive interaction was calculated as: $\exp(\beta_1 \cdot \mathrm{PSPS} + \beta_2 \cdot \mathrm{PM}_{2.5} + \beta_3 \cdot (\mathrm{PSPS} \times \mathrm{PM}_{2.5}))$. 
+The joint effect of a PSPS event and wildfire \PM exposure was calculated as: $\beta_1 + \beta_2 + \beta_3$. 
 
 \pagebreak
 \section{Supplemental tables.}
@@ -98,7 +100,7 @@ Psychiatric & 290-293, 295, 296, 298 & F06, F10-F16, F18-F21, F23, F25, F28-F33 
 
 
 \begin{figure}[h]
-\includegraphics[width=0.3\textwidth]{tables_figures/zips_included_map.pdf}    \caption{There were \nzipcodesinanalysis zip codes in California included in this study. There were \nzipcodesresp, \nzipcodescopd, \nzipcodescardio, \nzipcodespsych zip codes included for respiratory-, COPD-, cardiovascular-, and psychiatric-related emergency department visits and hospital admissions.}
+\includegraphics[width=.6\textwidth]{tables_figures/zips_included_map.pdf}    \caption{There were \nzipcodesinanalysis zip codes in California included in this study. There were \nzipcodesresp, \nzipcodescopd, \nzipcodescardio, \nzipcodespsych zip codes included for respiratory-, COPD-, cardiovascular-, and psychiatric-related emergency department visits and hospital admissions.}
     \label{zctas_included_map}
 \end{figure}
 
