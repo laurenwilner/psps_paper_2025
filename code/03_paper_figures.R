@@ -33,13 +33,13 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
       mutate(
         Exposure = case_when(
           Exposure == "WF smoke" ~ "WFS (per 10 μg/m³)",
-          grepl("combined", Exposure) ~ "Additive interaction",
+          grepl("combined", Exposure) ~ "Joint effect",
           grepl("interaction only", Exposure) ~ "Multiplicative interaction",
           TRUE ~ "PSPS"
         ),
         analysis_type = "Absolute"
       ) %>%
-      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WFS (per 10 μg/m³)", "Multiplicative interaction", "Additive interaction")))
+      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WFS (per 10 μg/m³)", "Multiplicative interaction", "Joint effect")))
   }
   
   # Process Relative data if provided
@@ -48,13 +48,13 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
       mutate(
         Exposure = case_when(
           Exposure == "WF smoke" ~ "WFS (per 10 μg/m³)",
-          grepl("combined", Exposure) ~ "Additive interaction",
+          grepl("combined", Exposure) ~ "Joint effect",
           grepl("interaction only", Exposure) ~ "Multiplicative interaction",
           TRUE ~ "PSPS"
         ),
         analysis_type = "Relative"
       ) %>%
-      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WFS (per 10 μg/m³)", "Multiplicative interaction", "Additive interaction")))
+      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WFS (per 10 μg/m³)", "Multiplicative interaction", "Joint effect")))
   }
   
   # Combine the datasets based on what's provided
@@ -96,7 +96,7 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
     "WFS (per 10 μg/m³)" = pal[3],           # blue
     "PSPS" = pal[2],          # yellow  
     "Multiplicative interaction" = pal[1],    # green
-    "Additive interaction" = "#013220"    
+    "Joint effect" = "#013220"    
   )
   
   # base plot - conditional aesthetics based on number of datasets
@@ -495,8 +495,8 @@ ggsave(paste0(out_dir, "zips_included_map.pdf"), zips_included_map, width = 8, h
 ggsave(paste0(out_dir, "map_violin_panel1.pdf"), map_violin_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "map_violin_panel2.pdf"), map_violin_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "map_violin_panel3.pdf"), map_violin_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "results_fig.pdf"), results_fig, width = 10, height = 10, dpi = 100)
-ggsave(paste0(out_dir, "results_fig_supplement.pdf"), results_fig_supplement, width = 10, height = 13, dpi = 100)
+ggsave(paste0(out_dir, "results_fig.pdf"), results_fig, width = 10, height = 10, dpi = 100, device = cairo_pdf)
+ggsave(paste0(out_dir, "results_fig_supplement.pdf"), results_fig_supplement, width = 10, height = 13, dpi = 100, device = cairo_pdf)
 ggsave(paste0(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
 ggsave(paste0(out_dir, "seasonality_plot.pdf"), seasonality_plot_combined, width = 15, height = 9, dpi = 100)
 

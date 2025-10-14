@@ -1,6 +1,0 @@
-PWD /Users/laurenwilner/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/sections
-INPUT /Users/laurenwilner/Library/TinyTeX/texmf.cnf
-INPUT /Users/laurenwilner/Library/TinyTeX/texmf-dist/web2c/texmf.cnf
-INPUT /Users/laurenwilner/Library/TinyTeX/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT /Users/laurenwilner/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/sections/01_abstract.tex
-OUTPUT 01_abstract.log
