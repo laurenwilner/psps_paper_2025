@@ -511,5 +511,4 @@ ggsave(paste0(out_dir, "results_fig.png"), results_fig, width = 10, height = 10,
 ggsave(paste0(out_dir, "results_fig_supplement.png"), results_fig_supplement, width = 10, height = 15, dpi = 100)
 ggsave(paste0(out_dir, "seasonality_plot.png"), seasonality_plot_combined, width = 15, height = 9, dpi = 100)
 
-
-## NOTE: INCREASE DPIS WHEN WE ARE DONE! 
+# NOTE: by saving to PDFs, we get around the DPI issue with PNGs! Doing that for now, unless it is an issue for the journal. 
