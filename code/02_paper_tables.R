@@ -19,9 +19,9 @@ pal <- met.brewer(name = "Hokusai2", n=2)
 results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 
-exp_summary <- read_csv(paste0(results_dir, "psps_among_casedays.csv"))
+exp_summary <- read_csv(paste0(results_dir, "/psps_among_casedays.csv"))
 ha_ed_table_df <- read_csv(paste0(results_dir, "/summary\ of\ events\ across\ data\ cleaning\ process_all_years.csv"))
-table1s_df_updated <- read_csv(paste0(results_dir, "final\ dataset\ events\ by\ subgroup_all_years.csv")) %>% 
+table1s_df_updated <- read_csv(paste0(results_dir, "/final\ dataset\ events\ by\ subgroup_all_years.csv")) %>% 
     mutate(out = paste0(format(events, big.mark = ","), " (", proportion, "%)")) %>% 
     # remake race categories 
     mutate(category = ifelse(category == "female", "Female", category),
@@ -36,8 +36,7 @@ table1s_df_updated <- read_csv(paste0(results_dir, "final\ dataset\ events\ by\ 
           ifelse(category == "other + multiracial", "Other or Multiracial",
           ifelse(category == "unknown, invalid, missing", "Unknown", category))))))))
         )
-wf_among_casedays <- read_csv(paste0(results_dir, "wf_among_casedays.csv"))
-        
+wf_among_casedays <- read_csv(paste0(results_dir, "/wf_among_casedays.csv"))
         
 
 ## NOTE: table of icd codes is made in the appendix in latex. 
@@ -102,15 +101,38 @@ hyb_table <- exp_summary %>%
 ### MAIN TABLES ####
 ####################
 # exposure table just for absolute -------------------------------------------
+# Add "Exposure (PSPS)" rows under each cause for the single-metric table
+abs_table_with_exposure <- abs_table %>%
+  # Add "Exposure (PSPS)" rows under each cause
+  group_by(Cause) %>%
+  group_modify(~ {
+    # Get the first row for this cause
+    first_row <- .x[1, ]
+    # Create the "Exposure (PSPS)" row with NA values
+    exposure_row <- first_row %>%
+      mutate(Exposure = "Exposure (PSPS)",
+             `Index days` = NA_real_)
+    # Combine the exposure row with the original data
+    bind_rows(exposure_row, .x)
+  }) %>%
+  ungroup()
+
 # pretty table 2
-pretty_exposure_table <- abs_table %>%
-  # Add indentation to the Exposure values
-  mutate(Exposure = paste0("\u00A0\u00A0\u00A0\u00A0", Exposure)) %>%  # Add 2 spaces for indentation
+pretty_exposure_table <- abs_table_with_exposure %>%
+  # Add indentation to the Exposure values (but not for "Exposure (PSPS)" rows)
+  mutate(Exposure = ifelse(Exposure == "Exposure (PSPS)", 
+                           "Exposure (PSPS)", 
+                           paste0("\u00A0\u00A0\u00A0\u00A0", Exposure))) %>%  # Add 2 spaces for indentation
   gt() %>%
   fmt_number(
-    columns = c(`Index days`),
+    columns = c("Index days"),
     decimals = 0,
     use_seps = TRUE
+  ) %>%
+  # Format missing values as blank instead of "NA"
+  fmt_missing(
+    columns = c("Index days"),
+    missing_text = ""
   ) %>%
   # make first col wider
   cols_width(
@@ -119,7 +141,7 @@ pretty_exposure_table <- abs_table %>%
   # add spanner headers
   tab_spanner(
     label = "Absolute (primary)",
-    columns = c(`Index days`)
+    columns = c("Index days")
   ) %>%
   # create row groups in REVERSE order
   tab_row_group(
@@ -141,8 +163,8 @@ pretty_exposure_table <- abs_table %>%
   # hide the original Cause column
   cols_hide(columns = Cause) %>%
   cols_label(
-    Exposure = "Disease endpoint\nExposure (PSPS)", # can't do an enter and PSPS goes onto the line above so have to do psps after
-    `Index days` = "Index days"
+    Exposure = "Disease endpoint",
+    "Index days" = "Index days"
   ) %>%
   tab_options(
     row_group.font.weight = "bold",
@@ -193,6 +215,11 @@ pretty_exposure_table <- abs_table %>%
       cell_text(weight = "bold")
     ),
     locations = cells_stubhead()
+  ) %>%
+  # Style the "Exposure (PSPS)" rows to match the indented rows
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(rows = Exposure == "Exposure (PSPS)")
   )
 
   # this is something webshot needs to work...
@@ -209,7 +236,8 @@ pretty_exposure_table <- abs_table %>%
     url = paste0(out_dir, "exposure_table.html"),
     file = paste0(out_dir, "exposure_table.png"),
     zoom = 7,         # apparently this is approx 300 DPI
-    selector = "table"  # only capture the table
+    selector = "table",
+    expand = c(1, 10, 1, 1)  # add padding around the table
   )
 
 
@@ -545,23 +573,44 @@ supp_combined_table <- abs_table_mod %>%
   full_join(hyb_table_mod, by = c("Cause", "Exposure")) %>%
   mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
   mutate(Exposure = factor(Exposure, levels = c("Mild", "Moderate", "Severe", "None"))) %>%
-  arrange(Cause, Exposure)
+  arrange(Cause, Exposure) %>%
+  # Add "Exposure (PSPS)" rows under each cause
+  group_by(Cause) %>%
+  group_modify(~ {
+    # Get the first row for this cause
+    first_row <- .x[1, ]
+    # Create the "Exposure (PSPS)" row with NA values (not empty strings)
+    exposure_row <- first_row %>%
+      mutate(Exposure = "Exposure (PSPS)",
+             Abs_Case = NA_real_,
+             Hyb_Case = NA_real_)
+    # Combine the exposure row with the original data
+    bind_rows(exposure_row, .x)
+  }) %>%
+  ungroup()
 
 # pretty table 2
 supp_pretty_exposure_table <- supp_combined_table %>%
-  # Add indentation to the Exposure values
-  mutate(Exposure = paste0("\u00A0\u00A0\u00A0\u00A0", Exposure)) %>%  # Add 2 spaces for indentation
+  # Add indentation to the Exposure values (but not for "Exposure (PSPS)" rows)
+  mutate(Exposure = ifelse(Exposure == "Exposure (PSPS)", 
+                           "Exposure (PSPS)", 
+                           paste0("\u00A0\u00A0\u00A0\u00A0", Exposure))) %>%  # Add 2 spaces for indentation
   gt() %>%
   fmt_number(
-    columns = c(Abs_Case, Hyb_Case),
+    columns = c("Abs_Case", "Hyb_Case"),
     decimals = 0,
     use_seps = TRUE
+  ) %>%
+  # Format missing values as blank instead of "NA"
+  fmt_missing(
+    columns = c("Abs_Case", "Hyb_Case"),
+    missing_text = ""
   ) %>%
   # make first col wider
   cols_width(
     Exposure ~ px(200)  # adjust the pixel value as needed
   ) %>%
-  # Create the hierarchical header structure - add sub-spanners first, then top-level
+  # Create the hierarchical header structure - only sub-spanners
   tab_spanner(
     label = "Absolute (primary)",
     columns = c(Abs_Case)
@@ -570,10 +619,6 @@ supp_pretty_exposure_table <- supp_combined_table %>%
     label = "Relative (secondary)",
     columns = c(Hyb_Case)
   ) %>%
-  tab_spanner(
-    label = "Exposure (PSPS)",
-    columns = c(Abs_Case, Hyb_Case)
-  ) %>%   
   # create row groups in REVERSE order
   tab_row_group(
     label = "Psychiatric",
@@ -591,13 +636,13 @@ supp_pretty_exposure_table <- supp_combined_table %>%
     label = "Respiratory",
     rows = Cause == "Respiratory"
   ) %>%
-  # hide the original Cause column
-  cols_hide(columns = Cause) %>%
   cols_label(
     Exposure = "Disease endpoint",
     Abs_Case = "Index days",
     Hyb_Case = "Index days"
   ) %>%
+  # hide the original Cause column
+  cols_hide(columns = Cause) %>%
   tab_options(
     row_group.font.weight = "bold",
     row_group.background.color = "#f7f7f7",
@@ -647,6 +692,11 @@ supp_pretty_exposure_table <- supp_combined_table %>%
       cell_text(weight = "bold")
     ),
     locations = cells_stubhead()
+  ) %>%
+  # Style the "Exposure (PSPS)" rows to match the indented rows
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(rows = Exposure == "Exposure (PSPS)")
   )
 
   # this is something webshot needs to work...
@@ -663,6 +713,7 @@ supp_pretty_exposure_table <- supp_combined_table %>%
     url = paste0(out_dir, "supp_exposure_table.html"),
     file = paste0(out_dir, "supp_exposure_table.png"),
     zoom = 7,         # apparently this is approx 300 DPI
-    selector = "table"  # only capture the table
+    selector = "table",
+    expand = c(1,10,1,1)  # add padding around the table
   )
 
