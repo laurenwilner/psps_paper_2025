@@ -232,7 +232,7 @@ exp_summary <- exp_data %>%
     mutate(year = lubridate::year(date),
         zip_code = as.character(zip_code),
         exposure_type = case_when(psps_event>0 & wf<=0 ~ "PSPS event only", 
-                            psps_event<=0 & wf>0 ~ "WF smoke only",
+                            psps_event<=0 & wf>0 ~ "WF smoke only", 
                             psps_event>0 & wf>0 ~ "WF smoke + PSPS event", 
                             TRUE ~ "No exposure")) %>% 
     group_by(zip_code, exposure_type, year) %>% 
@@ -277,7 +277,10 @@ for (i in seq_along(exposure_types)) {
       labels = scales::comma_format(accuracy = 1)
     ) +
     theme_minimal() +
-    labs(title = exp_type) +
+    labs(title = switch(exp_type,
+                      "WF smoke only" = expression("Wildfire "~PM[2.5]~"only"),
+                      "PSPS event only" = "PSPS event only", 
+                      "WF smoke + PSPS event" = expression("Wildfire "~PM[2.5]~"+ PSPS event"))) +
     theme(
       axis.text.x = element_blank(),
       axis.text.y = element_blank(),
@@ -401,7 +404,7 @@ seasonality_plot_wf <- ggplot(monthly_summary_wf, aes(x = month, y = mean_wf)) +
   ) +
   labs(
     x = "",
-    y = "Mean WFS"
+    y = expression("Mean wildfire PM"[2.5]* " (μg/m³)")
   ) +
   scale_y_continuous(
     expand = expansion(mult = c(0, 0.1)),
@@ -498,7 +501,7 @@ ggsave(paste0(out_dir, "map_violin_panel3.pdf"), map_violin_panel3, width = 5, h
 ggsave(paste0(out_dir, "results_fig.pdf"), results_fig, width = 10, height = 10, dpi = 100, device = cairo_pdf)
 ggsave(paste0(out_dir, "results_fig_supplement.pdf"), results_fig_supplement, width = 10, height = 13, dpi = 100, device = cairo_pdf)
 ggsave(paste0(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
-ggsave(paste0(out_dir, "seasonality_plot.pdf"), seasonality_plot_combined, width = 15, height = 9, dpi = 100)
+ggsave(paste0(out_dir, "seasonality_plot.pdf"), seasonality_plot_combined, width = 15, height = 9, dpi = 100, device = cairo_pdf)
 
 ggsave(paste0(out_dir, "zips_included_map.png"), zips_included_map, width = 8, height = 10, dpi = 100)
 ggsave(paste0(out_dir, "map_violin_panel1.png"), map_violin_panel1, width = 5, height = 10, dpi = 100, bg="transparent")

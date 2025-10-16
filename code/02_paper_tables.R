@@ -5,7 +5,7 @@
 
 # setup -------------------------------------------------
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
-pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown, readxl, gt)
+pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown, readxl, gt, readr)
 
 pal <- met.brewer(name = "Hokusai2", n=2)
 
@@ -16,7 +16,7 @@ pal <- met.brewer(name = "Hokusai2", n=2)
 #     mutate(severity_hybrid = ifelse(severity_hybrid == "none", "None", severity_hybrid))
 # table1s_df <- read_excel(paste0(results_dir, "PSPSTable1_demo_V3.xlsx"), sheet = "Sheet2")
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results/")
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 
 exp_summary <- read_csv(paste0(results_dir, "psps_among_casedays.csv"))
@@ -561,7 +561,7 @@ supp_pretty_exposure_table <- supp_combined_table %>%
   cols_width(
     Exposure ~ px(200)  # adjust the pixel value as needed
   ) %>%
-  # add spanner headers
+  # Create the hierarchical header structure - add sub-spanners first, then top-level
   tab_spanner(
     label = "Absolute (primary)",
     columns = c(Abs_Case)
@@ -569,6 +569,10 @@ supp_pretty_exposure_table <- supp_combined_table %>%
   tab_spanner(
     label = "Relative (secondary)",
     columns = c(Hyb_Case)
+  ) %>%
+  tab_spanner(
+    label = "Exposure (PSPS)",
+    columns = c(Abs_Case, Hyb_Case)
   ) %>%   
   # create row groups in REVERSE order
   tab_row_group(
@@ -590,7 +594,7 @@ supp_pretty_exposure_table <- supp_combined_table %>%
   # hide the original Cause column
   cols_hide(columns = Cause) %>%
   cols_label(
-    Exposure = "Disease endpoint\nExposure (PSPS)", # can't do an enter and PSPS goes onto the line above so have to do psps after
+    Exposure = "Disease endpoint",
     Abs_Case = "Index days",
     Hyb_Case = "Index days"
   ) %>%
