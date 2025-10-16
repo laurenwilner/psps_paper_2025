@@ -278,9 +278,9 @@ for (i in seq_along(exposure_types)) {
     ) +
     theme_minimal() +
     labs(title = switch(exp_type,
-                      "WF smoke only" = expression("Wildfire "~PM[2.5]~"only"),
-                      "PSPS event only" = "PSPS event only", 
-                      "WF smoke + PSPS event" = expression("Wildfire "~PM[2.5]~"+ PSPS event"))) +
+                      "WF smoke only" = expression("B. Wildfire "~PM[2.5]~"only"),
+                      "PSPS event only" = "A. PSPS event only", 
+                      "WF smoke + PSPS event" = expression("C. Wildfire "~PM[2.5]~"+ PSPS event"))) +
     theme(
       axis.text.x = element_blank(),
       axis.text.y = element_blank(),
@@ -314,18 +314,18 @@ for (i in seq_along(exposure_types)) {
   violin_plots[[i]] <- violin_plot
 }
 
-# make each panel separately
-map_violin_panel1 <- map_plots[[1]] / violin_plots[[1]]  & 
+# make each panel separately with labels
+map_violin_panel1 <- map_plots[[1]] / violin_plots[[1]] + 
   theme(
     plot.background = element_rect(fill = "transparent", color = NA),
     panel.background = element_rect(fill = "transparent", color = NA)
   )
-map_violin_panel2 <- map_plots[[2]] / violin_plots[[2]] & 
+map_violin_panel2 <- map_plots[[2]] / violin_plots[[2]] + 
   theme(
     plot.background = element_rect(fill = "transparent", color = NA),
     panel.background = element_rect(fill = "transparent", color = NA)
   )
-map_violin_panel3 <- map_plots[[3]] / violin_plots[[3]] & 
+map_violin_panel3 <- map_plots[[3]] / violin_plots[[3]] + 
   theme(
     plot.background = element_rect(fill = "transparent", color = NA),
     panel.background = element_rect(fill = "transparent", color = NA)
