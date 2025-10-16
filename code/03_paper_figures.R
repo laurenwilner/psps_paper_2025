@@ -286,7 +286,7 @@ for (i in seq_along(exposure_types)) {
       axis.text.y = element_blank(),
       axis.ticks = element_blank(),
       panel.grid = element_blank(),
-      plot.title = element_text(size = 16, face = "bold", hjust = 0),
+      plot.title = element_text(size = 16, hjust = 0),
       legend.title = element_blank(),
       legend.text = element_text(size = 12),
       legend.position = "bottom",
