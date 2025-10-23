@@ -34,12 +34,12 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
         Exposure = case_when(
           Exposure == "WF smoke" ~ "WF PM₂.₅ (per 10 μg/m³)",
           grepl("combined", Exposure) ~ "Joint effect",
-          grepl("interaction only", Exposure) ~ "Multiplicative interaction",
+          grepl("interaction only", Exposure) ~ "Multiplicative interaction*",
           TRUE ~ "PSPS"
         ),
         analysis_type = "Absolute"
       ) %>%
-      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WF PM₂.₅ (per 10 μg/m³)", "Multiplicative interaction", "Joint effect")))
+      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WF PM₂.₅ (per 10 μg/m³)", "Multiplicative interaction*", "Joint effect")))
   }
   
   # Process Relative data if provided
@@ -49,12 +49,12 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
         Exposure = case_when(
           Exposure == "WF smoke" ~ "WF PM₂.₅ (per 10 μg/m³)",
           grepl("combined", Exposure) ~ "Joint effect",
-          grepl("interaction only", Exposure) ~ "Multiplicative interaction",
+          grepl("interaction only", Exposure) ~ "Multiplicative interaction*",
           TRUE ~ "PSPS"
         ),
         analysis_type = "Relative"
       ) %>%
-      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WF PM₂.₅ (per 10 μg/m³)", "Multiplicative interaction", "Joint effect")))
+      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WF PM₂.₅ (per 10 μg/m³)", "Multiplicative interaction*", "Joint effect")))
   }
   
   # Combine the datasets based on what's provided
@@ -95,7 +95,7 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
   exposure_colors <- c(
     "WF PM₂.₅ (per 10 μg/m³)" = pal[3],           # blue
     "PSPS" = pal[2],          # yellow  
-    "Multiplicative interaction" = pal[1],    # green
+    "Multiplicative interaction*" = pal[1],    # green
     "Joint effect" = "#013220"    
   )
   
@@ -114,7 +114,7 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
       scale_color_manual(values = exposure_colors, name = "Exposure Type") +
       scale_x_discrete(labels = c("PSPS" = "PSPS",
                                  "WF PM₂.₅ (per 10 μg/m³)" = expression("WF PM"[2.5]*"  (per 10 μg/m³)"),
-                                 "Multiplicative interaction" = "Multiplicative interaction",
+                                 "Multiplicative interaction*" = "Multiplicative interaction*",
                                  "Joint effect" = "Joint effect")) +
       alpha_scale +
       shape_scale +
@@ -148,7 +148,7 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
       scale_color_manual(values = exposure_colors, name = "Exposure Type") +
       scale_x_discrete(labels = c("PSPS" = "PSPS",
                                  "WF PM₂.₅ (per 10 μg/m³)" = expression("WF PM"[2.5]*"  (per 10 μg/m³)"),
-                                 "Multiplicative interaction" = "Multiplicative interaction",
+                                 "Multiplicative interaction*" = "Multiplicative interaction*",
                                  "Joint effect" = "Joint effect")) +
       labs(
         x = "",
