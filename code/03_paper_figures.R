@@ -32,14 +32,14 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
     data_abs_processed <- data_abs %>%
       mutate(
         Exposure = case_when(
-          Exposure == "WF smoke" ~ "WFS (per 10 μg/m³)",
+          Exposure == "WF smoke" ~ "WF PM₂.₅ (per 10 μg/m³)",
           grepl("combined", Exposure) ~ "Joint effect",
           grepl("interaction only", Exposure) ~ "Multiplicative interaction",
           TRUE ~ "PSPS"
         ),
         analysis_type = "Absolute"
       ) %>%
-      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WFS (per 10 μg/m³)", "Multiplicative interaction", "Joint effect")))
+      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WF PM₂.₅ (per 10 μg/m³)", "Multiplicative interaction", "Joint effect")))
   }
   
   # Process Relative data if provided
@@ -47,14 +47,14 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
     data_hyb_processed <- data_hyb %>%
       mutate(
         Exposure = case_when(
-          Exposure == "WF smoke" ~ "WFS (per 10 μg/m³)",
+          Exposure == "WF smoke" ~ "WF PM₂.₅ (per 10 μg/m³)",
           grepl("combined", Exposure) ~ "Joint effect",
           grepl("interaction only", Exposure) ~ "Multiplicative interaction",
           TRUE ~ "PSPS"
         ),
         analysis_type = "Relative"
       ) %>%
-      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WFS (per 10 μg/m³)", "Multiplicative interaction", "Joint effect")))
+      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WF PM₂.₅ (per 10 μg/m³)", "Multiplicative interaction", "Joint effect")))
   }
   
   # Combine the datasets based on what's provided
@@ -93,11 +93,12 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
   
   # color mapping
   exposure_colors <- c(
-    "WFS (per 10 μg/m³)" = pal[3],           # blue
+    "WF PM₂.₅ (per 10 μg/m³)" = pal[3],           # blue
     "PSPS" = pal[2],          # yellow  
     "Multiplicative interaction" = pal[1],    # green
     "Joint effect" = "#013220"    
   )
+  
   
   # base plot - conditional aesthetics based on number of datasets
   if (all(datasets_provided)) {
@@ -111,6 +112,10 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
                     position = position_dodge(width = 0.6)) +
       geom_hline(yintercept = 1, linetype = "dashed") + 
       scale_color_manual(values = exposure_colors, name = "Exposure Type") +
+      scale_x_discrete(labels = c("PSPS" = "PSPS",
+                                 "WF PM₂.₅ (per 10 μg/m³)" = expression("WF PM"[2.5]*"  (per 10 μg/m³)"),
+                                 "Multiplicative interaction" = "Multiplicative interaction",
+                                 "Joint effect" = "Joint effect")) +
       alpha_scale +
       shape_scale +
       labs(
@@ -141,6 +146,10 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
                     position = position_dodge(width = 0.6)) +
       geom_hline(yintercept = 1, linetype = "dashed") + 
       scale_color_manual(values = exposure_colors, name = "Exposure Type") +
+      scale_x_discrete(labels = c("PSPS" = "PSPS",
+                                 "WF PM₂.₅ (per 10 μg/m³)" = expression("WF PM"[2.5]*"  (per 10 μg/m³)"),
+                                 "Multiplicative interaction" = "Multiplicative interaction",
+                                 "Joint effect" = "Joint effect")) +
       labs(
         x = "",
         y = if(show_severity) substitute(atop(bold(sev), "Odds Ratio"), list(sev = severity)) else "Odds Ratio"
