@@ -13,7 +13,7 @@ This study included 7,656,684, 591,315, 3,303,133, and 2,248,161 emergency depar
 \begin{table}[htbp]
   \centering
   \includegraphics[width=\textwidth]{tables_figures/ha_ed_table.png}
-  \caption{Emergency department visits or hospital admissions by type of encounter. COPD, chronic obstructive pulmonary disease}
+  \caption{Emergency department visits or hospital admissions by type of encounter from California Department of Health Care Access and Information from 2013--2019. COPD, chronic obstructive pulmonary disease}
   \label{ha_ed_table}
 \end{table}
 
@@ -22,7 +22,7 @@ During the 7-year study period, there were \zipdays{} zip code-days with PSPS ev
 \begin{table}[htbp]
   \centering
   \includegraphics[width=\textwidth]{tables_figures/wf_by_outcome.png}
-  \caption{Mean wildfire \PM concentration on index days by cause of encounter category.}
+  \caption{Mean wildfire \PM concentration on index days by cause of encounter category in California from 2013--2019.}
   \label{wf_by_outcome_table}
 \end{table}
 
@@ -37,7 +37,7 @@ We identified \pspsexpresp{} respiratory, \pspsexpcopd{} COPD, \pspsexpcardio{} 
     \includegraphics[width=.3\textwidth]{tables_figures/map_violin_panel1.pdf}
     \hfill
     \includegraphics[width=.3\textwidth]{tables_figures/map_violin_panel3.pdf}
-    \caption{Number of days with (A) PSPS events only, (B) wildfire \PM only, and (C) joint PSPS--wildfire \PM exposure from 2013 -- 2019 by California zip code. These maps are mutually exclusive, meaning that the left panel shows number of days with \textit{only} PSPS events, the middle panel shows number of days with \textit{only} wildfire \PM, and the right panel shows days when joint exposure occurred.  Zip-days were defined as having wildfire \PM when wildire \PM was $>$ 0 {\micro\gram\per\cubic\metre}. This study included zip codes served by the three major energy providers in California -- PG\&E, SDG\&E, and SCE,\citep{cpuc_psps_reports} comprising approximately 75\% of California electrical customers.}
+    \caption{Number of days with (A) PSPS events only, (B) wildfire \PM only, and (C) joint PSPS--wildfire \PM exposure from 2013 -- 2019 by California zip code. These maps are mutually exclusive, meaning that the left panel shows number of days with \textit{only} PSPS events, the middle panel shows number of days with \textit{only} wildfire \PM, and the right panel shows days when joint exposure occurred.  Zip-days were defined as having wildfire \PM when wildire \PM was $>$ 0 {\micro\gram\per\cubic\metre}. This study included zip codes served by the three major energy providers in California -- PG\&E, SDG\&E, and SCE,\citep{cpuc_psps_reports} comprising approximately 75\% of California electrical customers. PSPS, public safety power shutoff}
     \label{map_violin}
 \end{figure}
 
@@ -48,7 +48,7 @@ We found that days with severe magnitude PSPS events and no wildfire smoke were 
 \begin{wraptable}{r}{0.45\textwidth}
   \centering
   \includegraphics[width=0.45\textwidth]{tables_figures/exposure_table.png}
-  \caption{Cases by exposure status. PSPS event categories (mild/moderate/severe) are tertiles for each metric. PSPS events were defined as mild for those events affecting $\leq$ 47 people, moderate for those where the number of customers without power was $>$ 47 and $\leq$ 468, and severe for those where $>$ 468 customers were without power.}
+  \caption{Index days by exposure status. Index days are days when a healthcare encounter for all-cause respiratory, COPD, cardiovascular, or psychiatric endpoints occurred. PSPS event magnitude (mild/moderate/severe) were classified using tertiles. PSPS events were defined as mild for those events affecting $\leq$ 47 people, moderate for those where the number of customers without power was $>$ 47 and $\leq$ 468, and severe for those where $>$ 468 customers were without power. COPD, chronic obstructive pulmonary disease; PSPS, public safety power shutoff}
   \vspace{-2em}
   \label{exposure_table}
 \end{wraptable}
@@ -73,7 +73,7 @@ In a secondary analysis, we assessed a relative metric of exposure to PSPS event
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{tables_figures/results_fig.pdf}
-    \caption{Odds ratios and 95\% confidence intervals for the association between zip code-level severe PSPS events and all respiratory-, COPD-, cardiovascular-, and psychiatric-related emergency department visits and hospital admissions in California from 2013 -- 2019. Estimates are from eight separate conditional logistic regression models, including one for each health endpoint -- metric combination. All models include PSPS event exposure, cumulative 0-4 day lagged wildfire \PM exposure, an interaction term between PSPS event and wildfire \PM exposure, and a spline on mean daily temperature. COPD, chronic obstructive pulmonary disease. \newline \textit{*Note: The estimate for the interaction effect represents the additional multiplicative effect of joint exposure to wildfire \PM and PSPS event on the outcome of interest. It should not be interpreted as an odds ratio in isolation, but is rather a ratio of odds ratios.}}
+    \caption{Odds ratios and 95\% confidence intervals for the association between zip code-level severe PSPS events and all-cause respiratory-, COPD-, cardiovascular-, and psychiatric-related emergency department visits and hospital admissions in California from 2013 -- 2019. Estimates are from four separate conditional logistic regression models. All models include PSPS event exposure, cumulative 0-4 day lagged wildfire \PM exposure, an interaction term between PSPS event and wildfire \PM exposure, and a spline on mean daily temperature. COPD, chronic obstructive pulmonary disease; PSPS, public safety power shutoff \newline \textit{*Note: The estimate for the interaction effect represents the additional multiplicative effect of joint exposure to wildfire \PM and PSPS event on the outcome of interest. It should not be interpreted as an odds ratio in isolation, but is rather a ratio of odds ratios.}}
     \label{results_fig}
 \end{figure}
 
