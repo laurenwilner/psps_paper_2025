@@ -157,7 +157,7 @@ pretty_exposure_table <- abs_table_with_exposure %>%
     rows = Cause == "COPD"
   ) %>%
   tab_row_group(
-    label = "Respiratory",
+    label = "All-cause respiratory",
     rows = Cause == "Respiratory"
   ) %>%
   # hide the original Cause column
@@ -272,12 +272,12 @@ pretty_ha_ed_table <- ha_ed_table %>%
     Psychiatric = c(.$ed_formatted_psych, .$ha_formatted_psych)
   )} %>%
   gt(rowname_col = "row_name") %>%
-  # Set column labels
+  # Set column labels with n (%) underneath
   cols_label(
-    Respiratory = "Respiratory",
-    COPD = "COPD",
-    Cardiovascular = "Cardiovascular", 
-    Psychiatric = "Psychiatric"
+    Respiratory = md("All-cause respiratory<br><span style='font-style: italic; font-weight: normal;'>n (%)</span>"),
+    COPD = md("COPD<br><span style='font-style: italic; font-weight: normal;'>n (%)</span>"),
+    Cardiovascular = md("Cardiovascular<br><span style='font-style: italic; font-weight: normal;'>n (%)</span>"), 
+    Psychiatric = md("Psychiatric<br><span style='font-style: italic; font-weight: normal;'>n (%)</span>")
   ) %>%
   # Set column widths
   cols_width(
@@ -331,9 +331,11 @@ pretty_ha_ed_table <- ha_ed_table %>%
     selector = "table"  # only capture the table
   )
 
+
+
 # make table of mean wf for case days by outcome -------------------------------------------
 pretty_wf_by_outcome <- data.frame(
-  row_name = "Mean (SD) WFS",
+  row_name = "Mean (SD) wildfire PM₂.₅ (per 10 μg/m³)",
   Respiratory = paste0(round(wf_among_casedays$mean_lag0_lag5_mean[1], 2), " (", round(wf_among_casedays$mean_lag0_lag5_SD[1], 2), ")"),
   COPD = paste0(round(wf_among_casedays$mean_lag0_lag5_mean[2], 2), " (", round(wf_among_casedays$mean_lag0_lag5_SD[2], 2), ")"),
   Cardiovascular = paste0(round(wf_among_casedays$mean_lag0_lag5_mean[3], 2), " (", round(wf_among_casedays$mean_lag0_lag5_SD[3], 2), ")"),
@@ -342,7 +344,7 @@ pretty_wf_by_outcome <- data.frame(
   gt(rowname_col = "row_name") %>%
   # Set column labels
   cols_label(
-    Respiratory = "Respiratory",
+    Respiratory = "All-cause respiratory",
     COPD = "COPD",
     Cardiovascular = "Cardiovascular", 
     Psychiatric = "Psychiatric"
@@ -467,7 +469,7 @@ create_traditional_table1_updated <- function(data) {
   gt_table <- gt_table %>%
     cols_label(
       Group = "",
-      Respiratory = "Respiratory",
+      Respiratory = "All-cause respiratory",
       COPD = "COPD", 
       Cardiovascular = "Cardiovascular",
       Psychiatric = "Psychiatric"
@@ -519,7 +521,7 @@ create_traditional_table1_updated <- function(data) {
     # Set column widths to ensure everything fits on one line
     cols_width(
       Group ~ px(280),
-      Respiratory ~ px(150),
+      Respiratory ~ px(170),
       COPD ~ px(150), 
       Cardiovascular ~ px(150),
       Psychiatric ~ px(150)
@@ -633,7 +635,7 @@ supp_pretty_exposure_table <- supp_combined_table %>%
     rows = Cause == "COPD"
   ) %>%
   tab_row_group(
-    label = "Respiratory",
+    label = "All-cause respiratory",
     rows = Cause == "Respiratory"
   ) %>%
   cols_label(
