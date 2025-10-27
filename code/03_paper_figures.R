@@ -62,7 +62,11 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
     # Both datasets provided
     combined_data <- bind_rows(data_abs_processed, data_hyb_processed) %>%
       mutate(analysis_type = factor(analysis_type, levels = c("Absolute", "Relative")),
-             Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")))
+             Cause = case_when(
+               Cause == "Respiratory" ~ "All-cause respiratory",
+               TRUE ~ Cause
+             ),
+             Cause = factor(Cause, levels = c("All-cause respiratory", "COPD", "Cardiovascular", "Psychiatric")))
     
     # Set up scales for both types
     alpha_scale <- scale_alpha_manual(values = c("Absolute" = 1.0, "Relative" = 0.6), 
@@ -74,7 +78,11 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
   } else if (datasets_provided[1]) {
     # Only absolute data provided
     combined_data <- data_abs_processed %>%
-      mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")))
+      mutate(Cause = case_when(
+               Cause == "Respiratory" ~ "All-cause respiratory",
+               TRUE ~ Cause
+             ),
+             Cause = factor(Cause, levels = c("All-cause respiratory", "COPD", "Cardiovascular", "Psychiatric")))
     
     # No need for alpha or shape scales
     alpha_scale <- NULL
@@ -82,7 +90,11 @@ create_results_fig_combined <- function(data_abs = NULL, data_hyb = NULL, severi
   } else if (datasets_provided[2]) {
     # Only relative data provided
     combined_data <- data_hyb_processed %>%
-      mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")))
+      mutate(Cause = case_when(
+               Cause == "Respiratory" ~ "All-cause respiratory",
+               TRUE ~ Cause
+             ),
+             Cause = factor(Cause, levels = c("All-cause respiratory", "COPD", "Cardiovascular", "Psychiatric")))
     
     # No need for alpha or shape scales
     alpha_scale <- NULL
