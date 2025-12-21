@@ -360,8 +360,7 @@ map_violin_panel3 <- map_plots[[3]] / violin_plots[[3]] +
 ########################
 ### SEASONALITY FIG ###
 ########################
-# PSPS seasonality plot -------------------------------------------------
-# Create monthly summary of PSPS events (collapsed across years)
+# PSPS seasonality with co-exposure ------------------------------------
 monthly_summary <- exp_data %>%
   mutate(
     date = as.Date(date),
@@ -369,51 +368,82 @@ monthly_summary <- exp_data %>%
   ) %>%
   group_by(month) %>%
   summarise(
-    n_events = sum(psps_event),
+    n_coexposure = sum(psps_event == 1 & wf > 0, na.rm = TRUE),
+    n_psps_only = sum(psps_event == 1, na.rm = TRUE) - n_coexposure,
     .groups = "drop"
-  )
+  ) %>%
+  pivot_longer(
+    cols = c(n_coexposure, n_psps_only),
+    names_to = "type",
+    values_to = "n_events"
+  ) %>%
+  mutate(type = factor(type, levels = c("n_psps_only", "n_coexposure")))
 
-# Create seasonality plot
-seasonality_plot <- ggplot(monthly_summary, aes(x = month, y = n_events)) +
-  geom_col(fill = pal[2], alpha = 0.8, width = 1) +
-  geom_text(aes(label = n_events), vjust = -0.5, size = 6) + 
+monthly_totals <- monthly_summary %>%
+  group_by(month) %>%
+  summarise(total = sum(n_events))
+
+seasonality_plot <- ggplot(monthly_summary, aes(x = month, y = n_events, fill = type)) +
+  geom_col(alpha = 0.8, width = 1) +
+  geom_text(data = monthly_totals, aes(x = month, y = total, label = total), 
+            vjust = -0.5, size = 6, inherit.aes = FALSE) + 
+  scale_fill_manual(
+    values = c("n_psps_only" = pal[2], "n_coexposure" = pal[3]),
+    labels = c("PSPS only", "PSPS + WFS co-exposure")
+  ) +
   theme_minimal() +
   theme(
     axis.text = element_text(size = 18),
-    axis.text.x = element_blank(),  # Remove x-axis labels from top plot
+    axis.text.x = element_blank(),
     axis.title = element_text(size = 20),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     panel.grid.major.y = element_line(color = "grey90", size = 0.5),
-    plot.margin = margin(20, 20, 5, 20)  # Reduce bottom margin
+    plot.margin = margin(20, 20, 5, 20),
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.text = element_text(size = 14)
   ) +
-  labs(
-    x = "",
-    y = "Number of zip code-event days"
-  ) +
-  scale_y_continuous(
-    expand = expansion(mult = c(0, 0.1)),
-    breaks = scales::pretty_breaks(n = 6)
-  ) 
+  labs(x = "", y = "Number of zip code-event days") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)), breaks = scales::pretty_breaks(n = 6))
 
-# WFS seasonality plot -------------------------------------------------
-# Create monthly summary of WFS events (collapsed across years)
+# WFS seasonality with co-exposure -------------------------------------
 monthly_summary_wf <- exp_data %>%
   mutate(
-    date = as.Date(date)
+    date = as.Date(date),
+    month = lubridate::month(date, label = TRUE, abbr = TRUE)
   ) %>%
-  group_by(date) %>%
-  summarise(mean_wf = mean(wf, na.rm=TRUE)) %>%
-  mutate(month = lubridate::month(date, label = TRUE, abbr = TRUE)) %>%
+  group_by(date, month) %>%
+  summarise(
+    mean_wf_with_psps = mean(ifelse(psps_event == 1, wf, 0), na.rm = TRUE),
+    mean_wf_only = mean(ifelse(psps_event == 0 | is.na(psps_event), wf, 0), na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
   group_by(month) %>%
   summarise(
-    mean_wf = mean(mean_wf, na.rm=TRUE)
-  )
+    wf_with_psps = mean(mean_wf_with_psps, na.rm = TRUE),
+    wf_only = mean(mean_wf_only, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = c(wf_with_psps, wf_only),
+    names_to = "type",
+    values_to = "mean_wf"
+  ) %>%
+  mutate(type = factor(type, levels = c("wf_only", "wf_with_psps")))
 
-# Create seasonality plot
-seasonality_plot_wf <- ggplot(monthly_summary_wf, aes(x = month, y = mean_wf)) +
-  geom_col(fill = pal[3], alpha = 0.8, width = 1) +
-  geom_text(aes(label = round(mean_wf, 4)), vjust = -0.5, size = 6) + 
+monthly_totals_wf <- monthly_summary_wf %>%
+  group_by(month) %>%
+  summarise(total = sum(mean_wf))
+
+seasonality_plot_wf <- ggplot(monthly_summary_wf, aes(x = month, y = mean_wf, fill = type)) +
+  geom_col(alpha = 0.8, width = 1) +
+  geom_text(data = monthly_totals_wf, aes(x = month, y = total, label = round(total, 2)), 
+            vjust = -0.5, size = 6, inherit.aes = FALSE) + 
+  scale_fill_manual(
+    values = c("wf_only" = pal[3], "wf_with_psps" = pal[2]),
+    labels = c("WFS only", "WFS + PSPS co-exposure")
+  ) +
   theme_minimal() +
   theme(
     axis.text = element_text(size = 18),
@@ -421,20 +451,22 @@ seasonality_plot_wf <- ggplot(monthly_summary_wf, aes(x = month, y = mean_wf)) +
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     panel.grid.major.y = element_line(color = "grey90", size = 0.5),
-    plot.margin = margin(20, 20, 20, 20)
+    plot.margin = margin(20, 20, 20, 20),
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.text = element_text(size = 14)
   ) +
-  labs(
-    x = "",
-    y = expression("Mean wildfire PM"[2.5]* " (μg/m³)")
-  ) +
-  scale_y_continuous(
-    expand = expansion(mult = c(0, 0.1)),
-    breaks = scales::pretty_breaks(n = 6)
-  ) 
+  labs(x = "", y = expression("Mean wildfire PM"[2.5]* " (μg/m³)")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)), breaks = scales::pretty_breaks(n = 6))
+
 
 # patchwork with common x axis and common title 
 seasonality_plot_combined <- seasonality_plot / seasonality_plot_wf + 
   plot_layout(ncol = 1)
+
+
+# 2. Figure E1: make these stacked bar charts so that both show the overall number of days of psps and wf, respecitvely, but also a subset of the bars show the amount with co-exposure. so the psps panel shows the overall number of psps days but also the number of psps days with cooccurring wf as the bottom of the stacked bar. 
+
   
 ####################    
 ### RESULTS FIG ###
@@ -448,6 +480,8 @@ severe_df_abs <- process_results("Severe", all_lag0_abs, "abs", cov_matrices)
 # make results figure -------------------------------------------
 results_fig <- create_results_fig_combined(severe_df_abs, NULL, "Severe", show_severity = FALSE)
 
+# write out numbers for table 
+write.csv(severe_df_abs, paste0(results_dir, "severe_df_abs.csv"), row.names = FALSE)
 
 # make results figure for supplement -------------------------------------------
 # results_fig_supplement <- create_results_fig_combined(severe_df_abs, severe_df_hyb, "severe", show_severity = FALSE)
@@ -522,7 +556,7 @@ ggsave(paste0(out_dir, "map_violin_panel3.pdf"), map_violin_panel3, width = 5, h
 ggsave(paste0(out_dir, "results_fig.pdf"), results_fig, width = 10, height = 10, dpi = 100, device = cairo_pdf)
 ggsave(paste0(out_dir, "results_fig_supplement.pdf"), results_fig_supplement, width = 10, height = 13, dpi = 100, device = cairo_pdf)
 ggsave(paste0(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
-ggsave(paste0(out_dir, "seasonality_plot.pdf"), seasonality_plot_combined, width = 15, height = 9, dpi = 100, device = cairo_pdf)
+ggsave(paste0(out_dir, "seasonality_plot.pdf"), seasonality_plot_combined, width = 15, height = 11, dpi = 100, device = cairo_pdf)
 
 ggsave(paste0(out_dir, "zips_included_map.png"), zips_included_map, width = 8, height = 10, dpi = 100)
 ggsave(paste0(out_dir, "map_violin_panel1.png"), map_violin_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
@@ -530,6 +564,6 @@ ggsave(paste0(out_dir, "map_violin_panel2.png"), map_violin_panel2, width = 5, h
 ggsave(paste0(out_dir, "map_violin_panel3.png"), map_violin_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(paste0(out_dir, "results_fig.png"), results_fig, width = 10, height = 10, dpi = 100)
 ggsave(paste0(out_dir, "results_fig_supplement.png"), results_fig_supplement, width = 10, height = 15, dpi = 100)
-ggsave(paste0(out_dir, "seasonality_plot.png"), seasonality_plot_combined, width = 15, height = 9, dpi = 100)
+ggsave(paste0(out_dir, "seasonality_plot.png"), seasonality_plot_combined, width = 15, height = 11, dpi = 100)
 
 # NOTE: by saving to PDFs, we get around the DPI issue with PNGs! Doing that for now, unless it is an issue for the journal. 

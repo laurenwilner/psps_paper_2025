@@ -9,6 +9,9 @@ pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown, re
 
 pal <- met.brewer(name = "Hokusai2", n=2)
 
+# load functions -------------------------------------------------
+source(paste0(code_dir, "00_helper_functions.R"))
+
 # results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
 # exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv")) %>% 
 #     mutate(severity_customers = ifelse(severity_customers == "none", "None", severity_customers))
@@ -391,6 +394,98 @@ pretty_wf_by_outcome %>%
 # Save as PNG using gtsave instead
 pretty_wf_by_outcome %>% 
   gtsave(filename = "wf_by_outcome.png", path = out_dir)
+
+
+
+#-------------------------------------------------
+# make results table for just absolute results
+
+severe_df_abs <- process_results("Severe", all_lag0_abs, "abs", cov_matrices)
+
+pretty_severe_df_abs <- severe_df_abs %>%
+  select(c("Exposure", "odds_ratio", "lower_ci", "upper_ci", "Cause")) %>%
+  mutate(
+    OR_CI = paste0(
+      sprintf("%.2f", odds_ratio), 
+      " (", 
+      sprintf("%.2f", lower_ci), 
+      ", ", 
+      sprintf("%.2f", upper_ci), 
+      ")"
+    ),
+    Cause = case_when(
+      Cause == "Respiratory" ~ "All-cause respiratory",
+      Cause == "COPD" ~ "COPD",
+      Cause == "Cardiovascular" ~ "Cardiovascular",
+      Cause == "Psychiatric" ~ "Psychiatric",
+      TRUE ~ Cause
+    ),
+    Exposure = case_when(
+      Exposure == "WF smoke" ~ "WF_PM25",
+      grepl("combined", Exposure) ~ "Joint_effect",
+      grepl("interaction only", Exposure) ~ "Interaction",
+      TRUE ~ "PSPS"
+    )
+  ) %>%
+  mutate(Cause = factor(Cause, levels = c("All-cause respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
+  select(Cause, Exposure, OR_CI) %>%
+  pivot_wider(names_from = Exposure, values_from = OR_CI) %>%
+  arrange(Cause) %>%
+  gt() %>%
+  cols_label(
+    Cause = "Outcome",
+    PSPS = "PSPS",
+    WF_PM25 = html("WF PM<sub>2.5</sub><br>(per 10 \u03BCg/m\u00B3)"),
+    Joint_effect = "Joint effect",
+    Interaction = "Multiplicative interaction*"
+  ) %>%
+  tab_spanner(
+    label = "Effect estimates, OR (95% CI)",
+    columns = c(PSPS, WF_PM25, Joint_effect, Interaction)
+  ) %>%
+  sub_missing(columns = everything(), missing_text = "") %>%
+  cols_width(
+    Cause ~ px(180),
+    PSPS ~ px(150),
+    WF_PM25 ~ px(200),
+    Joint_effect ~ px(150),
+    Interaction ~ px(200)
+  ) %>%
+  cols_align(align = "left", columns = Cause) %>%
+  cols_align(align = "center", columns = c(PSPS, WF_PM25, Joint_effect, Interaction)) %>%
+  tab_options(
+    table.width = pct(100),
+    container.width = pct(100),
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(1)
+  ) %>%
+  tab_style(
+    style = list(cell_fill(color = pal[1]), cell_text(weight = "bold")),
+    locations = cells_column_labels()
+  ) %>%
+  tab_style(
+    style = list(cell_fill(color = pal[1]), cell_text(weight = "bold"), cell_borders(sides = "bottom", color = "black", weight = px(1))),
+    locations = cells_column_spanners()
+  )
+
+# save table 
+  # this is something webshot needs to work...
+  options(chromote.headless = "new")
+
+  # save the table as html using cat 
+   pretty_severe_df_abs %>% 
+    as_raw_html() %>% 
+    cat(file = paste0(out_dir, "results_table.html"))
+  
+  # save the table as png
+    # doing it this way becuase i couldnt get the dpi high enough with gtsave
+  webshot2::webshot(
+    url = paste0(out_dir, "tables_figures/results_table.html"),
+    file = paste0(out_dir, "tables_figures/results_table.png"),
+    zoom = 7,         # apparently this is approx 300 DPI
+    selector = "table"  # only capture the table
+  )
+
 
 ###########################
 ### SUPPLEMENTAL TABLES ###
