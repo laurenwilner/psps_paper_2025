@@ -1,0 +1,90 @@
+Coding to dos
+1. percentzipcodedayswf is 10,665.72 -- this is wrong bc its a percent
+2. Figure E1: make these stacked bar charts so that both show the overall number of days of psps and wf, respecitvely, but also a subset of the bars show the amount with co-exposure. so the psps panel shows the overall number of psps days but also the number of psps days with cooccurring wf as the bottom of the stacked bar. 
+3. create new exposure dataset with weekly variable for exposure that has the number of hours without power in the week and send to chen to run the sensitivity analysis using duration [run sensitivity analysis using duration -- create weekly mean wildfire pm and # of hours without power in the week and then run model using those vars. lbw make new exposure dataset, then ask chen to run]
+4. add a table showing the coefficients plotted in the main figure of results
+
+to do 
+1. when we talk about the new results and the 3 day average, we can say "Most COPD exacerbations occur quickly (same-day), however some may be gradual (median of 4 days). cite aaron paper. For this reason, as well as the long duration of PSPS events, we look at exposure over a 4 day period." https://pubmed.ncbi.nlm.nih.gov/22008189/
+
+
+
+
+
+
+
+
+
+
+\textbf{Comments from the Stats Editor}
+1.      The assumption that customers are evenly distributed across electrical circuits (lines 114-115) may introduce substantial exposure misclassification. Circuits often serve heterogeneous areas with varying population d ensities, and attributing exposures proportionally could lead to a systematic misassignment of exposure status. Could the authors provide any validation of this assumption or sensitivity analyses examining how violations might affect results?
+
+[this is an issue but we need to highlight that what we've done is a major improvement on prior exposure classification for power outages. i think we should just list this as a limitation and talk about how linking with individual level household location information in future studies coudld reduce exposre misclassification]
+
+
+5.      The tertile-based categorization of PSPS severity (mild ≤47, moderate 47-468, severe >468 customers) appears data-driven, but the thresholds are not clearly justified on mechanistic grounds. Given the highly variable zip code populations in California, the same absolute customer count could represent vastly different proportions of the population affected. The secondary relative metric addresses this somewhat, but the primary interpretation relies on absolute counts.
+
+[state that for simplicity of interpretation we use these absolute thresholds; we look at the other one in sensitivity, seems non-problematic to me]
+
+6.      Combining emergency department visits with hospital admissions may obscure different care-seeking dynamics. As the authors acknowledge, patients choose to visit emergency departments while physicians decide on admissions. During PSPS events, access to care may be impaired (due to transportation, communication, or facility closures), potentially biasing ED visits differently than admissions. Presenting stratified results would be informative, I think.
+
+[lbw needs to change the language on this so it's clearer-- i'm not convinced they are correct about differences in the admission mechanism]
+
+
+
+11.     The wildfire-specific PM2.5 estimates rely on machine learning models with chained random forest imputation to separate wildfire from non-wildfire PM2.5. The uncertainty and potential error in this exposure assignment is not characterized. How validated are these estimates, and could exposure misclassification explain the relatively modest effect sizes for PM2.5 alone?
+
+[add R2 from rosanna's paper]
+
+12.     The study period (2013-2019) captures an era when PSPS events were relatively new and less frequent than in subsequent
+years. The authors note that PSPS implementation has expanded to other states since 2022—how generalizable are these findings to current practice, given that utilities may have improved notification systems and community preparedness has evolved?
+
+[don't capture more recent psps events -- add to limitations -- "Given that 4 of the last 5 largest wildfires (by acreage) in the state of California have occurred in the last 5 years and power lines are suspected to have played a role in both the Eaton (5th deadliest) and Dixie (2nd largest) fires" -- say that 4 of the last 5 fires have been caused by power lines but tehre were not psps events etc. something to mention in conclusion ]
+
+
+
+13.      The authors make the case that patients with COPD may be particularly affected by PSPS events because of their need for oxygen concentrators. The authors cite 10\% of those with COPD need supplemental oxygen, which I would not call a large proportion, and that number includes those that are not dependent on it and may use it intermittently or just at night. Additionally there does not seem to be any direct measurement of how many patients used supplemental oxygen or eDMEs otherwise. Lastly, I do wonder if having age data for these different groups would be helpful as COPD tends to affect more elderly patients (especially those that require oxygen) and as such is associated with more co-morbidities that could lead to the increased utilization reported here.
+
+[add age-stratified analyses -- <65 and 65+]
+    
+14.      More discussion of the potential electronic medical device mechanism would be useful. What are specific examples of devices that are used to treat the conditions considered and what does research say happens when access to this equipment is lost? This is discussed briefly in lines 61-66 but would be useful to expand on.
+
+[add sentence from casey2020power]
+
+15.      Authors should include air conditioning as a potential impact of PSPS and comment on the fact that this could contribute to more extreme temperature and smoke exposures.
+
+[mention ac]
+
+4.      Is there indeed a precedent for assuming customers were evenly spread out and had continuous PSPS? More justification is needed here and comments regarding the impact on the results and subsequent interpretations.
+
+[mention circuits are tiny and assuage their worries]
+
+5.      Were any sensitivity analyses conducted? I don’t see it in the main text or supplement. This is crucial to demonstrate the robustness of modeling choices involved in the analysis. This should consist of trying different variable combinations, different lag lengths, different tertiles of PSPS, etc.
+
+[maybe look at top decile?]
+
+7.      More justification is needed regarding the lack of evaluation by length of PSPS. Logically, if there is a true association, longer PSPS are likely to have much higher health impacts.
+
+[run sensitivity analysis using duration -- create weekly mean wildfire pm and # of hours without power in the week and then run model using those vars. lbw make new exposure dataset, then ask chen to run]
+
+8. COPD exacerbations generally take several days to evolve and resolve (3-7 days). The authors mentioned the limitation of a same-day exposure window. I would think a lagged-effect model would be more appropriate.
+
+[lbw read about copd onset time bc this could help us justify lags]
+
+9.   figure E1 it might be useful to show some of the joint exposures. For example could imagine two more panels one showing number of PSPS events when wildfire smoke is present and then one showing average wildfire smoke for the subset of zip-days when PSPSs were happening.
+
+[lbw make stacked bars so we can see the total number and then the number co-occurring on each]
+
+10.  Table 1- Are the hospital admissions admitted through the ED? How should we think about the distinctions in the types of health outcomes that are likely to present as (unplanned) hospital admissions vs ED visits?
+
+[lbw write a sentence about hosp vs ed]
+
+11.    There appears to be a typographical error in the Results section: "1,229,438 (10,665.72\%) zip code-days" with wildfire PM2.5 (line 203-204).
+
+12   It would be useful to show tables in the supplement showing coefficients plotted in all the main figures so the exact coefficients that are not directly discussed in the text could also be evaluated (and could also then be more easily applied by other researchers who may want to use these coefficients to model impacts for different scenarios).
+
+[lbw add a table]
+
+13       To what extend do PSPS events affect hospitals? Presumably PSPSs purposefully exclude hospitals from having power turned off?
+
+[lbw google this and add a sentence]
