@@ -54,7 +54,7 @@ npspsevents <- length(unique(psps_exp_df$psps_event_id))
 medianduration <- median(psps_exp_df$duration, na.rm = TRUE) %>% round(0)
 
 # XXXX zip code -days in our 7-year study period that experienced PSPS events
-zipdays <- nrow(psps_exp_summary)
+zipdays <- psps_exp_summary %>% group_by(zip_code) %>% summarise(n_days = n()) %>% pull(n_days) %>% sum()
 
 # each zip code experienced, on average, XXXX events
 zipevents <- psps_exp_summary %>% group_by(zip_code) %>% 
@@ -92,12 +92,11 @@ cazipcodes <- length(ca_zips)
 zipcodedayswf <- wf_exp_df %>% 
   filter(mean_lag05_per10 > 0) %>%
   group_by(zip_code) %>% 
-  summarise(n_days = n()) %>% 
-  summarise(total_days = sum(n_days, na.rm = TRUE)) %>% 
-  pull(total_days)
+  summarise(n_days = n()) %>% pull(n_days) %>% sum()
+zipdays_tot <- wf_exp_df %>% group_by(zip_code) %>% summarise(n_days = n()) %>% pull(n_days) %>% sum()
 
 # percent zip code-days with wildfire smoke \PM
-percentzipcodedayswf <- (zipcodedayswf / zipdays) * 100
+percentzipcodedayswf <- round((zipcodedayswf / zipdays_tot) * 100, 1)
 
 # YYY zip code-days of co-occurring wildfire smoke
 zipdaysdualexp <- combined_exp_df %>% 
