@@ -58,6 +58,13 @@ where: $p_{ij} = P(Y_{ij} = 1 | X_{ij}, C_{ij})$ for a case $(j = 1)$ or a contr
 
 The joint effect of a PSPS event and \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher \PM exposure was calculated as: $\beta_1 + \beta_2 + \beta_3$. 
 
+\subsection{Sensitivity analysis using outage durations.}
+While we omitted duration from our primary analysis, longer PSPS events are likely to have more health impacts. To assess this, we did a sensitivity analysis where we used number of hours without power in the prior week as our primary PSPS exposure.
+
+To calculate daily PSPS outage duration by zip code, we expanded each PSPS event to hourly intervals based on its start and end times. We rounded the start time down and the end time up to the nearest hour. We then de-duplicated overlapping hours across events within the same zip code to avoid double-counting hours when multiple PSPS events affected the same zip code during the same hour. Finally, we aggregated the unique outage hours to the daily level in order to generate the number of hours out per zip code-day (maximum 24 hours per day due to no double-counting hours). 
+
+Using this daily number of hours out by zip code, we used a 1-week lag to assess the effect of the duration of PSPS events on healthcare utilization.
+
 \pagebreak
 \section{Supplemental tables.}
 \begin{table}[h]
