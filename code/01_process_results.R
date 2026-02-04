@@ -1,179 +1,177 @@
 #-------------------------------------------------
-# PSPS: Process analytic results 
-# March 2025
+# PSPS: Process analytic results - January 2026
+# New results with lag and age group metadata
 #-------------------------------------------------
 
 # setup -------------------------------------------------
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
-pacman::p_load(tidyverse, ggforce, MetBrewer)
+pacman::p_load(tidyverse)
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results/case_crossover_results")
+results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/jan_2026_results/case_crossover_results")
 exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
 data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
 analysis_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_ca_analysis/data/")
 
-# read in and concat results to visualize -----------------------------
-# pull directories of results and construct file names
-files <- list.files(results_dir, full.names = TRUE, recursive = TRUE)
-files <- str_subset(files, "results_.*\\.csv$")
-
-
-# read in and create a column for the file name
-results <- data.frame()
-for(f in files){
-    print(f)
-    df <- read_csv(f)
-
-    # drop random row name cols
-    df <- df %>% 
-        select(c("Exposure", "OR", "CI_Lower", "CI_Upper", "p")) %>% 
-        rename_all(tolower)
-
-    # create names for the dfs
-        # first remove everything before the slash
-        f <- gsub(".*/", "", f)
-        # remove the file extension
-        f <- gsub(".csv", "", f)
-        # remove results prefix 
-        f <- gsub("results_", "", f)
-    # pull out the cause group by taking the letters after the last underscore in f
-        c <- gsub(".*_", "", f)
-
-    df$model <- f
-    df$cause <- c
-
-    results <- rbind(results, df)
+# Function to parse file name and extract metadata
+parse_filename <- function(filename) {
+  # Remove path and extension
+  f <- gsub(".*/", "", filename)
+  f <- gsub(".csv", "", f)
+  f <- gsub("results_", "", f)
+  
+  # Extract cause (first part before underscore)
+  cause <- str_extract(f, "^[^_]+")
+  
+  # Extract lag type (same_day or lag4)
+  lag_type <- ifelse(grepl("same_day", f), "same_day", 
+                     ifelse(grepl("lag4", f), "lag4", 
+                            ifelse(grepl("1week_duration", f), "1week_duration", NA)))
+  
+  # Extract age group
+  age_group <- ifelse(grepl("20-64 years", f), "20-64 years",
+                      ifelse(grepl("65 and older", f), "65 and older",
+                             ifelse(grepl("age 20 and older", f), "age 20 and older", NA)))
+  
+  # Map cause to display name
+  cause_display <- case_when(
+    cause == "cardio" ~ "Cardiovascular",
+    cause == "copd" ~ "COPD",
+    cause == "psych" ~ "Psychiatric",
+    cause == "resp" ~ "Respiratory",
+    TRUE ~ cause
+  )
+  
+  return(list(
+    cause = cause_display,
+    cause_code = cause,
+    lag_type = lag_type,
+    age_group = age_group
+  ))
 }
 
-# make a plot of each model --------------------------------
-# just making this for our own sanity to see the results
-p <- ggplot(data = results, aes(x = exposure, y = or, color = cause)) + 
-        geom_point() + 
-        geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper, color = cause)) + 
-        geom_hline(yintercept = 1, linetype = "dashed") + 
-        theme_minimal() + 
-        theme(legend.position = "bottom") + 
-        labs(x = "variable", y = "odds Ratio", color = "cause") + 
-        facet_wrap(~cause, scales = "free") + 
-        theme(axis.text.x = element_text(angle = 90, hjust = .5),   
-            legend.position = "none") +
-        scale_color_met_d("Hokusai3") + 
-        scale_y_continuous()
+#-------------------------------------------------
+# Process same_day and lag4 results (excluding 1week_duration)
+#-------------------------------------------------
 
-# save the plot
-pdf("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/psps_results_oct2025.pdf", height = 13, width = 10)
-p
-dev.off()
+# Get result files (excluding 1week_duration)
+result_files <- list.files(results_dir, full.names = TRUE, recursive = TRUE)
+result_files <- str_subset(result_files, "results_.*\\.csv$")
+result_files <- str_subset(result_files, "1week_duration", negate = TRUE)
 
-#######
-####### Now lets process the results for the tables/figs/number plugging in the paper! 
+# Get covariance files (excluding 1week_duration)
+cov_files_abs <- list.files(results_dir, full.names = TRUE, recursive = TRUE)
+cov_files_abs <- str_subset(cov_files_abs, "vcov_absmodel_.*\\.csv$")
+cov_files_abs <- str_subset(cov_files_abs, "1week_duration", negate = TRUE)
 
-# read in model results and covariance matrices ---------------------------------
-# resp
-resp_lag0 <- read.csv(paste0(results_dir, "/results_adult_resp.csv")) %>% 
-                mutate(across(everything(), ~str_replace_all(., ":", ".")))
-resp_abs_cov <- read.csv(paste0(results_dir, "/vcov_absmodel_adult_resp.csv")) %>% 
-  mutate(across(everything(), ~str_replace_all(., ":", ".")))
-resp_hyb_cov <- read.csv(paste0(results_dir, "/vcov_hybmodel_adult_resp.csv")) %>% 
-  mutate(across(everything(), ~str_replace_all(., ":", ".")))
-# cardio
-cardio_lag0 <- read.csv(paste0(results_dir, "/results_adult_cardio.csv")) %>% 
-                mutate(across(everything(), ~str_replace_all(., ":", ".")))
-cardio_abs_cov <- read.csv(paste0(results_dir, "/vcov_absmodel_adult_cardio.csv")) %>% 
-  mutate(across(everything(), ~str_replace_all(., ":", ".")))
-cardio_hyb_cov <- read.csv(paste0(results_dir, "/vcov_hybmodel_adult_cardio.csv")) %>% 
-                  mutate(across(everything(), ~str_replace_all(., ":", ".")))
-# psych
-psych_lag0 <- read.csv(paste0(results_dir, "/results_adult_psych.csv")) %>% 
-                mutate(across(everything(), ~str_replace_all(., ":", ".")))
-psych_abs_cov <- read.csv(paste0(results_dir, "/vcov_absmodel_adult_psych.csv")) %>% 
-  mutate(across(everything(), ~str_replace_all(., ":", ".")))
-psych_hyb_cov <- read.csv(paste0(results_dir, "/vcov_hybmodel_adult_psych.csv")) %>% 
-                 mutate(across(everything(), ~str_replace_all(., ":", ".")))
-# copd
-copd_lag0 <- read.csv(paste0(results_dir, "/results_adult_copd.csv")) %>% 
-                mutate(across(everything(), ~str_replace_all(., ":", ".")))
-copd_abs_cov <- read.csv(paste0(results_dir, "/vcov_absmodel_adult_copd.csv")) %>% 
-  mutate(across(everything(), ~str_replace_all(., ":", ".")))
-copd_hyb_cov <- read.csv(paste0(results_dir, "/vcov_hybmodel_adult_copd.csv")) %>% 
-                mutate(across(everything(), ~str_replace_all(., ":", ".")))
+cov_files_hyb <- list.files(results_dir, full.names = TRUE, recursive = TRUE)
+cov_files_hyb <- str_subset(cov_files_hyb, "vcov_hybmodel_.*\\.csv$")
+cov_files_hyb <- str_subset(cov_files_hyb, "1week_duration", negate = TRUE)
 
-# store all covariance matrices
-cov_matrices <- list(
-  resp_abs_cov = resp_abs_cov,
-  resp_hyb_cov = resp_hyb_cov,
-  cardio_abs_cov = cardio_abs_cov,
-  cardio_hyb_cov = cardio_hyb_cov,
-  psych_abs_cov = psych_abs_cov,
-  psych_hyb_cov = psych_hyb_cov,
-  copd_abs_cov = copd_abs_cov,
-  copd_hyb_cov = copd_hyb_cov
-)
+# Process results for each combination
+all_results_abs <- data.frame()
+all_results_hyb <- data.frame()
+cov_matrices_list <- list()
 
-# save covariance matrices as an RDS file
-saveRDS(cov_matrices, file = "cov_matrices.rds")
-
-# compile all results data
-resp_lag0_abs <- resp_lag0 %>% 
-  select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-  mutate(Cause = "Respiratory")%>% 
-  slice(1:10)     
-resp_lag0_hyb <- resp_lag0 %>% 
-  select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-  mutate(Cause = "Respiratory")%>% 
-  slice(11:20)
-cardio_lag0_abs <- cardio_lag0 %>%
+for(f in result_files) {
+  metadata <- parse_filename(f)
+  
+  # Read results file
+  df <- read.csv(f) %>%
+    mutate(across(everything(), ~str_replace_all(., ":", ".")))
+  
+  # Split into abs (rows 1-10) and hyb (rows 11-20)
+  df_abs <- df %>%
+    slice(1:10) %>%
     select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-    mutate(Cause = "Cardiovascular") %>% 
-    slice(1:10)
-cardio_lag0_hyb <- cardio_lag0 %>%
+    mutate(
+      Cause = metadata$cause,
+      lag_type = metadata$lag_type,
+      age_group = metadata$age_group,
+      cause_code = metadata$cause_code
+    )
+  
+  df_hyb <- df %>%
+    slice(11:20) %>%
     select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-    mutate(Cause = "Cardiovascular") %>% 
-    slice(11:20)
-psych_lag0_abs <- psych_lag0 %>%
-    select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-    mutate(Cause = "Psychiatric") %>% 
-    slice(1:10) 
-psych_lag0_hyb <- psych_lag0 %>%
-    select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-    mutate(Cause = "Psychiatric") %>% 
-    slice(11:20)
-copd_lag0_abs <- copd_lag0 %>%
-    select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-    mutate(Cause = "COPD") %>% 
-    slice(1:10) 
-copd_lag0_hyb <- copd_lag0 %>%
-    select(c("Exposure", "OR", "CI_Lower", "CI_Upper")) %>%
-    mutate(Cause = "COPD") %>% 
-    slice(11:20)
+    mutate(
+      Cause = metadata$cause,
+      lag_type = metadata$lag_type,
+      age_group = metadata$age_group,
+      cause_code = metadata$cause_code
+    )
+  
+  all_results_abs <- bind_rows(all_results_abs, df_abs)
+  all_results_hyb <- bind_rows(all_results_hyb, df_hyb)
+  
+  # Process covariance matrices
+  # Find matching covariance files - need to match cause, lag_type, and age_group
+  # Match on cause_code_lag_type pattern and exact age_group string
+  pattern_base <- paste0(metadata$cause_code, "_", metadata$lag_type)
+  
+  cov_file_abs <- cov_files_abs[
+    str_detect(cov_files_abs, pattern_base) &
+    str_detect(cov_files_abs, fixed(metadata$age_group))
+  ]
+  
+  cov_file_hyb <- cov_files_hyb[
+    str_detect(cov_files_hyb, pattern_base) &
+    str_detect(cov_files_hyb, fixed(metadata$age_group))
+  ]
+  
+  if(length(cov_file_abs) > 0) {
+    cov_abs <- read.csv(cov_file_abs[1]) %>%
+      mutate(across(everything(), ~str_replace_all(., ":", ".")))
+    cov_name_abs <- paste0(metadata$cause_code, "_", metadata$lag_type, "_", 
+                          gsub(" ", "_", metadata$age_group), "_abs_cov")
+    cov_matrices_list[[cov_name_abs]] <- cov_abs
+  }
+  
+  if(length(cov_file_hyb) > 0) {
+    cov_hyb <- read.csv(cov_file_hyb[1]) %>%
+      mutate(across(everything(), ~str_replace_all(., ":", ".")))
+    cov_name_hyb <- paste0(metadata$cause_code, "_", metadata$lag_type, "_", 
+                          gsub(" ", "_", metadata$age_group), "_hyb_cov")
+    cov_matrices_list[[cov_name_hyb]] <- cov_hyb
+  }
+}
 
-# combine data and write out
-all_lag0_abs <- bind_rows(resp_lag0_abs, cardio_lag0_abs, psych_lag0_abs, copd_lag0_abs) %>% 
-  # make or, ci_lower, ci_upper numeric
+# Make OR, CI_Lower, CI_Upper numeric
+all_results_abs <- all_results_abs %>%
   mutate(across(c("OR", "CI_Lower", "CI_Upper"), as.numeric))
-write.csv(all_lag0_abs, paste0(results_dir, "/all_lag0_abs.csv"), row.names = FALSE)
-all_lag0_hyb <- bind_rows(resp_lag0_hyb, cardio_lag0_hyb, psych_lag0_hyb, copd_lag0_hyb) %>% 
-  # make or, ci_lower, ci_upper numeric
+
+all_results_hyb <- all_results_hyb %>%
   mutate(across(c("OR", "CI_Lower", "CI_Upper"), as.numeric))
-write.csv(all_lag0_hyb, paste0(results_dir, "/all_lag0_hyb.csv"), row.names = FALSE)
 
-# generate exposure dataset for fig2 -------------------------------
-# we need the number of zip-days for PSPS exp, WF exp, and dual exp
-    # a left join should be fine since wf is daily, but outer just in case
+# Save covariance matrices
+if(length(cov_matrices_list) > 0) {
+  saveRDS(cov_matrices_list, file = paste0(results_dir, "/../cov_matrices_jan2026.rds"))
+}
 
-psps_exp_temp <- read.csv(paste0(analysis_dir, "daily_psps_binary.csv")) 
-psps_exp <- psps_exp_temp %>% 
-    mutate(date = as.Date(date, format = "%Y-%m-%d"),
-           psps_event = ifelse(psps_abs == 1 | psps_hybrid == 1, 1, 0)) %>%
-    select(c("date", "psps_event", "zip_code")) %>%
-    group_by(zip_code, date) %>%
-    reframe(psps_event = max(psps_event))
-wf_exp <- read.csv(paste0(exp_dir, "zip_wfpm20132019.csv")) %>% 
-    mutate(date = as.Date(date, format = "%Y-%m-%d")) %>%
-    select(c("date", "mean_lag05_per10", "zip_code"))
+# Save combined results files
+# Option 1: Save all together with metadata columns
+write.csv(all_results_abs, paste0(results_dir, "/../all_results_abs_jan2026.csv"), row.names = FALSE)
+write.csv(all_results_hyb, paste0(results_dir, "/../all_results_hyb_jan2026.csv"), row.names = FALSE)
 
-exp_data <- merge(wf_exp, psps_exp, by = c("date", "zip_code"), all = TRUE) %>% 
-    mutate(psps_event = ifelse(is.na(psps_event), 0, psps_event)) %>%
-    rename(wf = mean_lag05_per10)
-write.csv(exp_data, paste0(exp_dir, "zip_daily_psps_wf_exposure.csv"), row.names = FALSE)
+# Option 2: Also save separate files by lag_type and age_group for easier access
+for(lag in unique(all_results_abs$lag_type)) {
+  for(age in unique(all_results_abs$age_group)) {
+    age_clean <- gsub(" ", "_", age)
+    age_clean <- gsub("-", "_", age_clean)
+    
+    all_results_abs %>%
+      filter(lag_type == lag, age_group == age) %>%
+      select(-lag_type, -age_group, -cause_code) %>%
+      write.csv(paste0(results_dir, "/../all_", lag, "_", age_clean, "_abs.csv"), row.names = FALSE)
+    
+    all_results_hyb %>%
+      filter(lag_type == lag, age_group == age) %>%
+      select(-lag_type, -age_group, -cause_code) %>%
+      write.csv(paste0(results_dir, "/../all_", lag, "_", age_clean, "_hyb.csv"), row.names = FALSE)
+  }
+}
+
+cat("\nProcessed", length(result_files), "result files\n")
+cat("Lag types:", paste(unique(all_results_abs$lag_type), collapse = ", "), "\n")
+cat("Age groups:", paste(unique(all_results_abs$age_group), collapse = ", "), "\n")
+cat("Causes:", paste(unique(all_results_abs$Cause), collapse = ", "), "\n")
