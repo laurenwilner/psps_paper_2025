@@ -1,6 +1,8 @@
 main.fdb_latexmk
 main.fls
 main.log
+main.*
+main.aux
 
 # tables_figures/*.pdf
 tables_figures/*.html

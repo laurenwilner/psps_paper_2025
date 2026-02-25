@@ -20,11 +20,35 @@ source(paste0(code_dir, "00_helper_functions.R"))
 # table1s_df <- read_excel(paste0(results_dir, "PSPSTable1_demo_V3.xlsx"), sheet = "Sheet2")
 
 results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results")
+jan2026_results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/jan_2026_results/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
+code_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/code/")
 
-exp_summary <- read_csv(paste0(results_dir, "/psps_among_casedays.csv"))
-ha_ed_table_df <- read_csv(paste0(results_dir, "/summary\ of\ events\ across\ data\ cleaning\ process_all_years.csv"))
-table1s_df_updated <- read_csv(paste0(results_dir, "/final\ dataset\ events\ by\ subgroup_all_years.csv")) %>% 
+# Load data - using jan_2026_results for lag-specific data
+exp_summary_same_day <- read_csv(paste0(jan2026_results_dir, "psps_among_casedays_same_day.csv"), show_col_types = FALSE)
+exp_summary_lag4 <- read_csv(paste0(jan2026_results_dir, "psps_among_casedays_lag4.csv"), show_col_types = FALSE)
+
+# Standardize column names for lag4 data (it uses _lag4 suffix)
+exp_summary_lag4 <- exp_summary_lag4 %>%
+  rename(
+    severity_customers = severity_customers_lag4,
+    severity_customers_N = severity_customers_lag4_N,
+    severity_hybrid = severity_hybrid_lag4,
+    severity_hybrid_N = severity_hybrid_lag4_N
+  )
+wf_among_casedays_same_day <- read_csv(paste0(jan2026_results_dir, "wf_tmax_among_casedays_same_day.csv"), show_col_types = FALSE)
+wf_among_casedays_lag4 <- read_csv(paste0(jan2026_results_dir, "wf_tmax_among_casedays_lag4.csv"), show_col_types = FALSE)
+
+# Standardize column names for lag4 WF data (it uses mean_lag0_lag3_mean instead of wf_pm25_mean)
+wf_among_casedays_lag4 <- wf_among_casedays_lag4 %>%
+  rename(
+    wf_pm25_mean = mean_lag0_lag3_mean,
+    wf_pm25_SD = mean_lag0_lag3_SD
+  )
+
+# Load data that hasn't changed (copied to jan_2026_results)
+ha_ed_table_df <- read_csv(paste0(jan2026_results_dir, "summary\ of\ events\ across\ data\ cleaning\ process_all_years.csv"), show_col_types = FALSE)
+table1s_df_updated <- read_csv(paste0(jan2026_results_dir, "final\ dataset\ events\ by\ subgroup_all_years.csv"), show_col_types = FALSE) %>% 
     mutate(out = paste0(format(events, big.mark = ","), " (", proportion, "%)")) %>% 
     # remake race categories 
     mutate(category = ifelse(category == "female", "Female", category),
@@ -39,89 +63,121 @@ table1s_df_updated <- read_csv(paste0(results_dir, "/final\ dataset\ events\ by\
           ifelse(category == "other + multiracial", "Other or Multiracial",
           ifelse(category == "unknown, invalid, missing", "Unknown", category))))))))
         )
-wf_among_casedays <- read_csv(paste0(results_dir, "/wf_among_casedays.csv"))
         
 
 ## NOTE: table of icd codes is made in the appendix in latex. 
 
-# process exposure summaries -------------------------------------------
-abs_table <- exp_summary %>%
+# Helper function to process exposure summaries
+process_exp_summary <- function(exp_data) {
+  abs_table <- exp_data %>%
     select(c("severity_customers", "severity_customers_N", "outcome")) %>%
     group_by(severity_customers, outcome) %>%
     summarize(
-        count = sum(severity_customers_N)
+      count = sum(severity_customers_N),
+      .groups = "drop"
     ) %>%
     rename(
-        Cause = outcome,
-        Exposure = severity_customers
+      Cause = outcome,
+      Exposure = severity_customers
     ) %>%
     mutate(case_indicator = "Index days") %>%
     pivot_wider(
-        names_from = case_indicator,
-        values_from = count) %>% 
-    # rename causes 
+      names_from = case_indicator,
+      values_from = count
+    ) %>% 
+    # rename causes (new data uses: resp, copd, cardio, psych; old data uses: adult_resp, etc.)
     mutate(Cause = ifelse(
-        Cause == "adult_cardio", "Cardiovascular",
-        ifelse(Cause == "adult_resp", "Respiratory",
-        ifelse(Cause == "adult_psych", "Psychiatric",
-        "COPD"))), 
-        Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")),
-        Exposure = ifelse(Exposure == "none", "None", Exposure)) %>%
+      Cause == "cardio" | Cause == "adult_cardio", "Cardiovascular",
+      ifelse(Cause == "resp" | Cause == "adult_resp", "Respiratory",
+        ifelse(Cause == "psych" | Cause == "adult_psych", "Psychiatric",
+          "COPD"))), 
+      Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")),
+      Exposure = case_when(
+        Exposure == "none" ~ "None",
+        Exposure == "mild" ~ "Mild",
+        Exposure == "moderate" ~ "Moderate",
+        Exposure == "severe" ~ "Severe",
+        TRUE ~ Exposure
+      )
+    ) %>%
     ungroup() %>%
     distinct()  %>% 
     mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
     mutate(Exposure = factor(Exposure, levels = c("Mild", "Moderate", "Severe", "None"))) %>%
     arrange(Cause, Exposure)
-hyb_table <- exp_summary %>%
+  
+  hyb_table <- exp_data %>%
     select(c("severity_hybrid", "severity_hybrid_N", "outcome")) %>%
     group_by(severity_hybrid, outcome) %>%
     summarize(
-        count = sum(severity_hybrid_N)
+      count = sum(severity_hybrid_N),
+      .groups = "drop"
     ) %>%
     rename(
-        Cause = outcome,
-        Exposure = severity_hybrid
+      Cause = outcome,
+      Exposure = severity_hybrid
     ) %>%
     mutate(case_indicator = "Index days") %>%
     pivot_wider(
-        names_from = case_indicator,
-        values_from = count) %>% 
-    # rename causes 
+      names_from = case_indicator,
+      values_from = count
+    ) %>% 
+    # rename causes (new data uses: resp, copd, cardio, psych; old data uses: adult_resp, etc.)
     mutate(Cause = ifelse(
-        Cause == "adult_cardio", "Cardiovascular",
-        ifelse(Cause == "adult_resp", "Respiratory",
-        ifelse(Cause == "adult_psych", "Psychiatric",
-        "COPD"))), 
-        Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")),
-        Exposure = ifelse(Exposure == "none", "None", Exposure)) %>%
+      Cause == "cardio" | Cause == "adult_cardio", "Cardiovascular",
+      ifelse(Cause == "resp" | Cause == "adult_resp", "Respiratory",
+        ifelse(Cause == "psych" | Cause == "adult_psych", "Psychiatric",
+          "COPD"))), 
+      Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric")),
+      Exposure = case_when(
+        Exposure == "none" ~ "None",
+        Exposure == "mild" ~ "Mild",
+        Exposure == "moderate" ~ "Moderate",
+        Exposure == "severe" ~ "Severe",
+        TRUE ~ Exposure
+      )
+    ) %>%
     ungroup() %>%
     distinct()  %>% 
     mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
     mutate(Exposure = factor(Exposure, levels = c("Mild", "Moderate", "Severe", "None"))) %>%
     arrange(Cause, Exposure)
+  
+  return(list(abs = abs_table, hyb = hyb_table))
+}
+
+# Process exposure summaries for both lag types
+exp_same_day <- process_exp_summary(exp_summary_same_day)
+abs_table_same_day <- exp_same_day$abs
+hyb_table_same_day <- exp_same_day$hyb
+
+exp_lag4 <- process_exp_summary(exp_summary_lag4)
+abs_table_lag4 <- exp_lag4$abs
+hyb_table_lag4 <- exp_lag4$hyb
 
 ####################
 ### MAIN TABLES ####
 ####################
-# exposure table just for absolute -------------------------------------------
-# Add "Exposure (PSPS)" rows under each cause for the single-metric table
-abs_table_with_exposure <- abs_table %>%
-  # Add "Exposure (PSPS)" rows under each cause
-  group_by(Cause) %>%
-  group_modify(~ {
-    # Get the first row for this cause
-    first_row <- .x[1, ]
-    # Create the "Exposure (PSPS)" row with NA values
-    exposure_row <- first_row %>%
-      mutate(Exposure = "Exposure (PSPS)",
-             `Index days` = NA_real_)
-    # Combine the exposure row with the original data
-    bind_rows(exposure_row, .x)
-  }) %>%
-  ungroup()
-
-# pretty table 2
-pretty_exposure_table <- abs_table_with_exposure %>%
+# Helper function to create exposure table
+create_exposure_table <- function(abs_table_data, lag_label) {
+  # Add "Exposure (PSPS)" rows under each cause for the single-metric table
+  abs_table_with_exposure <- abs_table_data %>%
+    # Add "Exposure (PSPS)" rows under each cause
+    group_by(Cause) %>%
+    group_modify(~ {
+      # Get the first row for this cause
+      first_row <- .x[1, ]
+      # Create the "Exposure (PSPS)" row with NA values
+      exposure_row <- first_row %>%
+        mutate(Exposure = "Exposure (PSPS)",
+               `Index days` = NA_real_)
+      # Combine the exposure row with the original data
+      bind_rows(exposure_row, .x)
+    }) %>%
+    ungroup()
+  
+  # pretty table
+  pretty_exposure_table <- abs_table_with_exposure %>%
   # Add indentation to the Exposure values (but not for "Exposure (PSPS)" rows)
   mutate(Exposure = ifelse(Exposure == "Exposure (PSPS)", 
                            "Exposure (PSPS)", 
@@ -219,29 +275,43 @@ pretty_exposure_table <- abs_table_with_exposure %>%
     ),
     locations = cells_stubhead()
   ) %>%
-  # Style the "Exposure (PSPS)" rows to match the indented rows
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_body(rows = Exposure == "Exposure (PSPS)")
-  )
-
-  # this is something webshot needs to work...
-  options(chromote.headless = "new")
-
-  # save the table as html using cat 
-   pretty_exposure_table %>% 
-    as_raw_html() %>% 
-    cat(file = paste0(out_dir, "exposure_table.html"))
+    # Style the "Exposure (PSPS)" rows to match the indented rows
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = cells_body(rows = Exposure == "Exposure (PSPS)")
+    )
   
-  # save the table as png
-    # doing it this way becuase i couldnt get the dpi high enough with gtsave
-  webshot2::webshot(
-    url = paste0(out_dir, "exposure_table.html"),
-    file = paste0(out_dir, "exposure_table.png"),
-    zoom = 7,         # apparently this is approx 300 DPI
-    selector = "table",
-    expand = c(1, 10, 1, 1)  # add padding around the table
-  )
+  return(pretty_exposure_table)
+}
+
+# Create exposure tables for both lag types
+pretty_exposure_table_same_day <- create_exposure_table(abs_table_same_day, "Same day")
+pretty_exposure_table_lag4 <- create_exposure_table(abs_table_lag4, "4-day lag")
+
+# Save same_day exposure table
+options(chromote.headless = "new")
+pretty_exposure_table_same_day %>% 
+  as_raw_html() %>% 
+  cat(file = paste0(out_dir, "exposure_table_same_day.html"))
+webshot2::webshot(
+  url = paste0(out_dir, "exposure_table_same_day.html"),
+  file = paste0(out_dir, "exposure_table_same_day.png"),
+  zoom = 7,
+  selector = "table",
+  expand = c(1, 10, 1, 1)
+)
+
+# Save lag4 exposure table
+pretty_exposure_table_lag4 %>% 
+  as_raw_html() %>% 
+  cat(file = paste0(out_dir, "exposure_table_lag4.html"))
+webshot2::webshot(
+  url = paste0(out_dir, "exposure_table_lag4.html"),
+  file = paste0(out_dir, "exposure_table_lag4.png"),
+  zoom = 7,
+  selector = "table",
+  expand = c(1, 10, 1, 1)
+)
 
 
 #-------------------------------------------------
@@ -336,74 +406,115 @@ pretty_ha_ed_table <- ha_ed_table %>%
 
 
 
-# make table of mean wf for case days by outcome -------------------------------------------
-pretty_wf_by_outcome <- data.frame(
-  row_name = "Mean (SD) wildfire PM₂.₅ (per 10 μg/m³)",
-  Respiratory = paste0(round(wf_among_casedays$mean_lag0_lag5_mean[1], 2), " (", round(wf_among_casedays$mean_lag0_lag5_SD[1], 2), ")"),
-  COPD = paste0(round(wf_among_casedays$mean_lag0_lag5_mean[2], 2), " (", round(wf_among_casedays$mean_lag0_lag5_SD[2], 2), ")"),
-  Cardiovascular = paste0(round(wf_among_casedays$mean_lag0_lag5_mean[3], 2), " (", round(wf_among_casedays$mean_lag0_lag5_SD[3], 2), ")"),
-  Psychiatric = paste0(round(wf_among_casedays$mean_lag0_lag5_mean[4], 2), " (", round(wf_among_casedays$mean_lag0_lag5_SD[4], 2), ")")
-) %>%
-  gt(rowname_col = "row_name") %>%
-  # Set column labels
-  cols_label(
-    Respiratory = "All-cause respiratory",
-    COPD = "COPD",
-    Cardiovascular = "Cardiovascular", 
-    Psychiatric = "Psychiatric"
+# Helper function to create WF by outcome table
+create_wf_by_outcome_table <- function(wf_data) {
+  # Order: resp, copd, cardio, psych
+  pretty_wf_by_outcome <- data.frame(
+    row_name = "Mean (SD) wildfire PM₂.₅, μg/m³",
+    Respiratory = paste0(round(wf_data$wf_pm25_mean[wf_data$outcome == "resp"], 2), " (", round(wf_data$wf_pm25_SD[wf_data$outcome == "resp"], 2), ")"),
+    COPD = paste0(round(wf_data$wf_pm25_mean[wf_data$outcome == "copd"], 2), " (", round(wf_data$wf_pm25_SD[wf_data$outcome == "copd"], 2), ")"),
+    Cardiovascular = paste0(round(wf_data$wf_pm25_mean[wf_data$outcome == "cardio"], 2), " (", round(wf_data$wf_pm25_SD[wf_data$outcome == "cardio"], 2), ")"),
+    Psychiatric = paste0(round(wf_data$wf_pm25_mean[wf_data$outcome == "psych"], 2), " (", round(wf_data$wf_pm25_SD[wf_data$outcome == "psych"], 2), ")")
   ) %>%
-  # Set column widths
-  cols_width(
-    stub() ~ px(200),
-    Respiratory ~ px(175),
-    COPD ~ px(175),
-    Cardiovascular ~ px(175),
-    Psychiatric ~ px(175)
-  ) %>%
-  # Make the table wider overall
-  tab_options(
-    table.width = pct(100),
-    container.width = pct(100)
-  ) %>%
-  # Style the table
-  tab_style(
-    style = cell_fill(color = pal[1]),
-    locations = cells_column_labels(columns = everything())
-  ) %>%
-  tab_style(
-    style = cell_text(color = "black", weight = "bold"),
-    locations = cells_column_labels(columns = everything())
-  ) %>%
-  # Add borders
-  tab_options(
-    table.border.top.style = "solid",
-    table.border.top.width = px(1),
-    table.border.top.color = "black",
-    table.border.bottom.style = "solid",
-    table.border.bottom.width = px(1),
-    table.border.bottom.color = "black",
-    column_labels.border.bottom.style = "solid",
-    column_labels.border.bottom.width = px(1),
-    column_labels.border.bottom.color = "black"
-  )
+    gt(rowname_col = "row_name") %>%
+    # Set column labels
+    cols_label(
+      Respiratory = "All-cause respiratory",
+      COPD = "COPD",
+      Cardiovascular = "Cardiovascular", 
+      Psychiatric = "Psychiatric"
+    ) %>%
+    # Set column widths
+    cols_width(
+      stub() ~ px(200),
+      Respiratory ~ px(175),
+      COPD ~ px(175),
+      Cardiovascular ~ px(175),
+      Psychiatric ~ px(175)
+    ) %>%
+    # Make the table wider overall
+    tab_options(
+      table.width = pct(100),
+      container.width = pct(100)
+    ) %>%
+    # Style the table
+    tab_style(
+      style = cell_fill(color = pal[1]),
+      locations = cells_column_labels(columns = everything())
+    ) %>%
+    tab_style(
+      style = cell_text(color = "black", weight = "bold"),
+      locations = cells_column_labels(columns = everything())
+    ) %>%
+    # Add borders
+    tab_options(
+      table.border.top.style = "solid",
+      table.border.top.width = px(1),
+      table.border.top.color = "black",
+      table.border.bottom.style = "solid",
+      table.border.bottom.width = px(1),
+      table.border.bottom.color = "black",
+      column_labels.border.bottom.style = "solid",
+      column_labels.border.bottom.width = px(1),
+      column_labels.border.bottom.color = "black"
+    )
+  
+  return(pretty_wf_by_outcome)
+}
 
-pretty_wf_by_outcome %>% 
+# Create WF by outcome tables for both lag types
+pretty_wf_by_outcome_same_day <- create_wf_by_outcome_table(wf_among_casedays_same_day)
+pretty_wf_by_outcome_lag4 <- create_wf_by_outcome_table(wf_among_casedays_lag4)
+
+# Save same_day WF table
+pretty_wf_by_outcome_same_day %>% 
   as_raw_html() %>% 
-  cat(file = paste0(out_dir, "wf_by_outcome.html"))
+  cat(file = paste0(out_dir, "wf_by_outcome_same_day.html"))
+pretty_wf_by_outcome_same_day %>% 
+  gtsave(filename = "wf_by_outcome_same_day.png", path = out_dir)
 
-# Save as PNG using gtsave instead
-pretty_wf_by_outcome %>% 
-  gtsave(filename = "wf_by_outcome.png", path = out_dir)
+# Save lag4 WF table
+pretty_wf_by_outcome_lag4 %>% 
+  as_raw_html() %>% 
+  cat(file = paste0(out_dir, "wf_by_outcome_lag4.html"))
+pretty_wf_by_outcome_lag4 %>% 
+  gtsave(filename = "wf_by_outcome_lag4.png", path = out_dir)
 
 
 
 #-------------------------------------------------
 # make results table for just absolute results
+# Updated to include both same_day and lag4
 
-severe_df_abs <- process_results("Severe", all_lag0_abs, "abs", cov_matrices)
+# Load data and covariance matrices
+jan2026_results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/jan_2026_results/")
+cov_matrices <- readRDS(paste0(jan2026_results_dir, "cov_matrices_jan2026.rds"))
+all_results_abs <- read.csv(paste0(jan2026_results_dir, "all_results_abs_jan2026.csv"))
 
-pretty_severe_df_abs <- severe_df_abs %>%
-  select(c("Exposure", "odds_ratio", "lower_ci", "upper_ci", "Cause")) %>%
+# Filter for age 20 and older
+all_results_abs <- all_results_abs %>%
+  filter(age_group == "age 20 and older")
+
+# Process same_day data
+same_day_data <- all_results_abs %>%
+  filter(lag_type == "same_day") %>%
+  select(Exposure, OR, CI_Lower, CI_Upper, Cause)
+
+severe_df_same_day <- process_results("Severe", same_day_data, "abs", cov_matrices, lag_type = "same_day", age_group = "age 20 and older")
+
+# Process lag4 data
+lag4_data <- all_results_abs %>%
+  filter(lag_type == "lag4") %>%
+  select(Exposure, OR, CI_Lower, CI_Upper, Cause)
+
+severe_df_lag4 <- process_results("Severe", lag4_data, "abs", cov_matrices, lag_type = "lag4", age_group = "age 20 and older")
+
+# Combine both datasets
+severe_df_abs <- bind_rows(
+  severe_df_same_day %>% mutate(lag = "Same day"),
+  severe_df_lag4 %>% mutate(lag = "4-day lag")
+) %>%
+  select(c("Exposure", "odds_ratio", "lower_ci", "upper_ci", "Cause", "lag")) %>%
   mutate(
     OR_CI = paste0(
       sprintf("%.2f", odds_ratio), 
@@ -427,13 +538,20 @@ pretty_severe_df_abs <- severe_df_abs %>%
       TRUE ~ "PSPS"
     )
   ) %>%
-  mutate(Cause = factor(Cause, levels = c("All-cause respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
-  select(Cause, Exposure, OR_CI) %>%
+  mutate(
+    Cause = factor(Cause, levels = c("All-cause respiratory", "COPD", "Cardiovascular", "Psychiatric")),
+    lag = factor(lag, levels = c("Same day", "4-day lag"))
+  ) %>%
+  select(Cause, lag, Exposure, OR_CI) %>%
   pivot_wider(names_from = Exposure, values_from = OR_CI) %>%
-  arrange(Cause) %>%
-  gt() %>%
+  arrange(Cause, lag)
+
+# Create table with row grouping
+pretty_severe_df_abs <- severe_df_abs %>%
+  gt(groupname_col = "Cause") %>%
+  tab_stubhead(label = "Outcome") %>%
   cols_label(
-    Cause = "Outcome",
+    lag = "",
     PSPS = "PSPS",
     WF_PM25 = html("WF PM<sub>2.5</sub><br>(per 10 \u03BCg/m\u00B3)"),
     Joint_effect = "Joint effect",
@@ -444,14 +562,15 @@ pretty_severe_df_abs <- severe_df_abs %>%
     columns = c(PSPS, WF_PM25, Joint_effect, Interaction)
   ) %>%
   sub_missing(columns = everything(), missing_text = "") %>%
+  cols_hide(columns = Cause) %>%
   cols_width(
-    Cause ~ px(180),
+    lag ~ px(140),        # slightly wider to push PSPS over
     PSPS ~ px(150),
     WF_PM25 ~ px(200),
     Joint_effect ~ px(150),
     Interaction ~ px(200)
   ) %>%
-  cols_align(align = "left", columns = Cause) %>%
+  cols_align(align = "left", columns = lag) %>%
   cols_align(align = "center", columns = c(PSPS, WF_PM25, Joint_effect, Interaction)) %>%
   tab_options(
     table.width = pct(100),
@@ -466,6 +585,14 @@ pretty_severe_df_abs <- severe_df_abs %>%
   tab_style(
     style = list(cell_fill(color = pal[1]), cell_text(weight = "bold"), cell_borders(sides = "bottom", color = "black", weight = px(1))),
     locations = cells_column_spanners()
+  ) %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = cells_row_groups()
+  ) %>%
+  tab_style(
+    style = list(cell_fill(color = pal[1]), cell_text(weight = "bold")),
+    locations = cells_stubhead()
   )
 
 # save table 
@@ -480,8 +607,8 @@ pretty_severe_df_abs <- severe_df_abs %>%
   # save the table as png
     # doing it this way becuase i couldnt get the dpi high enough with gtsave
   webshot2::webshot(
-    url = paste0(out_dir, "tables_figures/results_table.html"),
-    file = paste0(out_dir, "tables_figures/results_table.png"),
+    url = paste0(out_dir, "results_table.html"),
+    file = paste0(out_dir, "results_table.png"),
     zoom = 7,         # apparently this is approx 300 DPI
     selector = "table"  # only capture the table
   )
@@ -653,41 +780,40 @@ pretty_traditional_table1 <- create_traditional_table1_updated(table1s_df_update
 
 
 #-------------------------------------------------
-# make table summarizing exposure by cause and exposure -------------------------------------------
-# have abs table above! 
-
-# rename columns in both tables to avoid conflicts when joining
-abs_table_mod <- abs_table %>%
-  rename(
-    Abs_Case = `Index days`
-  )
-hyb_table_mod <- hyb_table %>%
-  rename(
-    Hyb_Case = `Index days`
-  )
-# join the tables
-supp_combined_table <- abs_table_mod %>%
-  full_join(hyb_table_mod, by = c("Cause", "Exposure")) %>%
-  mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
-  mutate(Exposure = factor(Exposure, levels = c("Mild", "Moderate", "Severe", "None"))) %>%
-  arrange(Cause, Exposure) %>%
-  # Add "Exposure (PSPS)" rows under each cause
-  group_by(Cause) %>%
-  group_modify(~ {
-    # Get the first row for this cause
-    first_row <- .x[1, ]
-    # Create the "Exposure (PSPS)" row with NA values (not empty strings)
-    exposure_row <- first_row %>%
-      mutate(Exposure = "Exposure (PSPS)",
-             Abs_Case = NA_real_,
-             Hyb_Case = NA_real_)
-    # Combine the exposure row with the original data
-    bind_rows(exposure_row, .x)
-  }) %>%
-  ungroup()
-
-# pretty table 2
-supp_pretty_exposure_table <- supp_combined_table %>%
+# Helper function to create supplement exposure table (absolute and relative combined)
+create_supp_exposure_table <- function(abs_table_data, hyb_table_data) {
+  # rename columns in both tables to avoid conflicts when joining
+  abs_table_mod <- abs_table_data %>%
+    rename(
+      Abs_Case = `Index days`
+    )
+  hyb_table_mod <- hyb_table_data %>%
+    rename(
+      Hyb_Case = `Index days`
+    )
+  # join the tables
+  supp_combined_table <- abs_table_mod %>%
+    full_join(hyb_table_mod, by = c("Cause", "Exposure")) %>%
+    mutate(Cause = factor(Cause, levels = c("Respiratory", "COPD", "Cardiovascular", "Psychiatric"))) %>%
+    mutate(Exposure = factor(Exposure, levels = c("Mild", "Moderate", "Severe", "None"))) %>%
+    arrange(Cause, Exposure) %>%
+    # Add "Exposure (PSPS)" rows under each cause
+    group_by(Cause) %>%
+    group_modify(~ {
+      # Get the first row for this cause
+      first_row <- .x[1, ]
+      # Create the "Exposure (PSPS)" row with NA values (not empty strings)
+      exposure_row <- first_row %>%
+        mutate(Exposure = "Exposure (PSPS)",
+               Abs_Case = NA_real_,
+               Hyb_Case = NA_real_)
+      # Combine the exposure row with the original data
+      bind_rows(exposure_row, .x)
+    }) %>%
+    ungroup()
+  
+  # pretty table
+  supp_pretty_exposure_table <- supp_combined_table %>%
   # Add indentation to the Exposure values (but not for "Exposure (PSPS)" rows)
   mutate(Exposure = ifelse(Exposure == "Exposure (PSPS)", 
                            "Exposure (PSPS)", 
@@ -790,27 +916,41 @@ supp_pretty_exposure_table <- supp_combined_table %>%
     ),
     locations = cells_stubhead()
   ) %>%
-  # Style the "Exposure (PSPS)" rows to match the indented rows
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_body(rows = Exposure == "Exposure (PSPS)")
-  )
-
-  # this is something webshot needs to work...
-  options(chromote.headless = "new")
-
-  # save the table as html using cat 
-   supp_pretty_exposure_table %>% 
-    as_raw_html() %>% 
-    cat(file = paste0(out_dir, "supp_exposure_table.html"))
+    # Style the "Exposure (PSPS)" rows to match the indented rows
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = cells_body(rows = Exposure == "Exposure (PSPS)")
+    )
   
-  # save the table as png
-    # doing it this way becuase i couldnt get the dpi high enough with gtsave
-  webshot2::webshot(
-    url = paste0(out_dir, "supp_exposure_table.html"),
-    file = paste0(out_dir, "supp_exposure_table.png"),
-    zoom = 7,         # apparently this is approx 300 DPI
-    selector = "table",
-    expand = c(1,10,1,1)  # add padding around the table
-  )
+  return(supp_pretty_exposure_table)
+}
+
+# Create supplement exposure tables for both lag types
+supp_pretty_exposure_table_same_day <- create_supp_exposure_table(abs_table_same_day, hyb_table_same_day)
+supp_pretty_exposure_table_lag4 <- create_supp_exposure_table(abs_table_lag4, hyb_table_lag4)
+
+# Save same_day supplement exposure table
+options(chromote.headless = "new")
+supp_pretty_exposure_table_same_day %>% 
+  as_raw_html() %>% 
+  cat(file = paste0(out_dir, "supp_exposure_table_same_day.html"))
+webshot2::webshot(
+  url = paste0(out_dir, "supp_exposure_table_same_day.html"),
+  file = paste0(out_dir, "supp_exposure_table_same_day.png"),
+  zoom = 7,
+  selector = "table",
+  expand = c(1,10,1,1)
+)
+
+# Save lag4 supplement exposure table
+supp_pretty_exposure_table_lag4 %>% 
+  as_raw_html() %>% 
+  cat(file = paste0(out_dir, "supp_exposure_table_lag4.html"))
+webshot2::webshot(
+  url = paste0(out_dir, "supp_exposure_table_lag4.html"),
+  file = paste0(out_dir, "supp_exposure_table_lag4.png"),
+  zoom = 7,
+  selector = "table",
+  expand = c(1,10,1,1)
+)
 
