@@ -1,6 +1,6 @@
 #-------------------------------------------------
 # PSPS: Paper number plugging
-# June 2025
+# June 2025 (updated Feb 2026 for lag-specific results)
 #-------------------------------------------------
 
 # setup -------------------------------------------------
@@ -8,8 +8,8 @@ rm(list = ls()) # important in this script to get rid of existing objects!
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
 pacman::p_load(dplyr, readr, sf)
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results/case_crossover_results/")
+# directories
+jan2026_results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/jan_2026_results/")
 exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
 out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/")
 data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
@@ -20,33 +20,60 @@ code_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/code/"
 source(paste0(code_dir, "00_helper_functions.R"))
 
 # load data -------------------------------------------------
-psps_exp_df <- read_csv(paste0(data_dir, 'ca_ZIP_daily_psps_no_washout_wf_classified_2013-2022.csv')) # updated
-psps_exp_summary <- read_csv(paste0(analysis_dir, "daily_psps_binary.csv")) # updated
-wf_exp_df <- read_csv(paste0(exp_dir, "zip_wfpm20132019.csv")) # no updates needed
-results_abs_df <- read_csv(paste0(results_dir, "all_lag0_abs.csv")) # updated
-results_hyb_df <- read_csv(paste0(results_dir, "all_lag0_hyb.csv")) # updated
-cov_matrices <- readRDS("cov_matrices.rds") # updated
-zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>% 
+psps_exp_df <- read_csv(paste0(data_dir, 'ca_ZIP_daily_psps_no_washout_wf_classified_2013-2022.csv'), show_col_types = FALSE)
+psps_exp_summary <- read_csv(paste0(analysis_dir, "daily_psps_binary.csv"), show_col_types = FALSE)
+wf_exp_df <- read_csv(paste0(exp_dir, "zip_wfpm20132019.csv"), show_col_types = FALSE)
+
+# Load results - now with lag_type and age_group columns
+results_abs_df <- read_csv(paste0(jan2026_results_dir, "all_results_abs_jan2026.csv"), show_col_types = FALSE)
+results_hyb_df <- read_csv(paste0(jan2026_results_dir, "all_results_hyb_jan2026.csv"), show_col_types = FALSE)
+cov_matrices <- readRDS(paste0(jan2026_results_dir, "cov_matrices_jan2026.rds"))
+
+zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson"), quiet = TRUE) %>% 
             rename(zip_code = ZIP_CODE) %>%
-            select(c("zip_code", "geometry")) # no update needed 
-ca_zips <- zip_shp$zip_code %>% unique() # no update needed
-combined_exp_df <- read_csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv")) # updated
-zips_in_analysis <- read.csv(paste0(results_dir, "../zipcodes_in_analysis_by_endpoint.csv"))
-# exposure_summary_abs_df <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv")) # updated
-# exposure_summary_hybrid_df <- read.csv(paste0(results_dir, "hybexp_summary_byOOI.csv")) # updated
-# exp_abs_sm_df <- read.csv(paste0(results_dir, "absexp_summary.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
-# exp_hyb_sm_df <- read.csv(paste0(results_dir, "hybexp_summary.csv")) # NEED TO UPDATE, USING OLD ONES FOR NOW
-exp_summary <- read_csv(paste0(results_dir, "../psps_among_casedays.csv"))
-ha_ed_table_df <- read_csv(paste0(results_dir, "../summary\ of\ events\ across\ data\ cleaning\ process_all_years.csv"))
-wf_among_casedays <- read_csv(paste0(results_dir, "../wf_among_casedays.csv"))
+            select(c("zip_code", "geometry"))
+ca_zips <- zip_shp$zip_code %>% unique()
+combined_exp_df <- read_csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv"), show_col_types = FALSE)
+zips_in_analysis <- read.csv(paste0(jan2026_results_dir, "zipcodes_in_analysis_by_endpoint.csv"))
 
+# Load lag-specific exposure summaries
+exp_summary_same_day <- read_csv(paste0(jan2026_results_dir, "psps_among_casedays_same_day.csv"), show_col_types = FALSE)
+exp_summary_lag4 <- read_csv(paste0(jan2026_results_dir, "psps_among_casedays_lag4.csv"), show_col_types = FALSE) %>%
+  rename(
+    severity_customers = severity_customers_lag4,
+    severity_customers_N = severity_customers_lag4_N,
+    severity_hybrid = severity_hybrid_lag4,
+    severity_hybrid_N = severity_hybrid_lag4_N
+  )
 
-# run the process results function to get combined ORs 
-severe_df_abs <- process_results("Severe", results_abs_df, "abs", cov_matrices)
-severe_df_hyb <- process_results("Severe", results_hyb_df, "hyb", cov_matrices)
+# Load lag-specific WF summaries
+wf_among_casedays_same_day <- read_csv(paste0(jan2026_results_dir, "wf_tmax_among_casedays_same_day.csv"), show_col_types = FALSE)
+wf_among_casedays_lag4 <- read_csv(paste0(jan2026_results_dir, "wf_tmax_among_casedays_lag4.csv"), show_col_types = FALSE) %>%
+  rename(
+    wf_pm25_mean = mean_lag0_lag3_mean,
+    wf_pm25_SD = mean_lag0_lag3_SD
+  )
+
+ha_ed_table_df <- read_csv(paste0(jan2026_results_dir, "summary of events across data cleaning process_all_years.csv"), show_col_types = FALSE)
+
+# Filter results for age 20 and older (main analysis)
+results_abs_same_day <- results_abs_df %>% filter(lag_type == "same_day" & age_group == "age 20 and older")
+results_abs_lag4 <- results_abs_df %>% filter(lag_type == "lag4" & age_group == "age 20 and older")
+results_hyb_same_day <- results_hyb_df %>% filter(lag_type == "same_day" & age_group == "age 20 and older")
+results_hyb_lag4 <- results_hyb_df %>% filter(lag_type == "lag4" & age_group == "age 20 and older")
+
+# run the process results function to get combined ORs for both lag types
+severe_df_abs_same_day <- process_results("Severe", results_abs_same_day, "abs", cov_matrices, lag_type = "same_day", age_group = "age 20 and older")
+severe_df_abs_lag4 <- process_results("Severe", results_abs_lag4, "abs", cov_matrices, lag_type = "lag4", age_group = "age 20 and older")
+severe_df_hyb_same_day <- process_results("Severe", results_hyb_same_day, "hyb", cov_matrices, lag_type = "same_day", age_group = "age 20 and older")
+severe_df_hyb_lag4 <- process_results("Severe", results_hyb_lag4, "hyb", cov_matrices, lag_type = "lag4", age_group = "age 20 and older")
 
 
 # create each number to plug as a var -----------------------
+# ============================================================
+# SECTION 1: NUMBERS THAT DON'T CHANGE BY LAG TYPE
+# ============================================================
+
 # we included XXXX PSPS events in this study
 npspsevents <- length(unique(psps_exp_df$psps_event_id))
 
@@ -102,7 +129,7 @@ percentzipcodedayswf <- round((zipcodedayswf / zipdays_tot) * 100, 1)
 zipdaysdualexp <- combined_exp_df %>% 
     filter(wf > 0 & psps_event > 0) %>%
     group_by(zip_code, date) %>%
-    summarise(n_days = n()) %>%
+    summarise(n_days = n(), .groups = "drop") %>%
     ungroup() %>%
     mutate(total_days = sum(n_days, na.rm = TRUE)) %>%
     pull(total_days) %>% unique()
@@ -112,235 +139,9 @@ meanwfpm <- wf_exp_df %>%
   filter(mean_lag05_per10 > 0) %>% 
   summarise(mean_pm = mean(mean_lag05_per10, na.rm = TRUE)) %>% 
   pull(mean_pm)
-  
-# XXX case-days (absolute, all severities)
-casedaysabs <- exp_summary %>% 
-    filter(severity_customers != 'none') %>%
-    mutate(n = sum(severity_customers_N)) %>% 
-    pull(n) %>% unique()
-
-# XXX control-days (absolute, all severities)
-# controldaysabs <- exp_abs_sm_df %>% 
-#     filter(case_indicator == 0 & severity_customers != 'none') %>%
-#     mutate(n = sum(count)) %>% 
-#     pull(n) %>% unique()
-
-# XXX case-days (hybrid, all severities)
-casedayshyb <- exp_summary %>% 
-    filter(severity_hybrid != 'none') %>%
-    mutate(n = sum(severity_hybrid_N)) %>% 
-    pull(n) %>% unique()
-
-# XXX control-days (hybrid, all severities)
-# controldayshyb <- exp_hyb_sm_df %>% 
-#     filter(case_indicator == 0 & severity_hybrid != 'none') %>%
-#     mutate(n = sum(count)) %>% 
-#     pull(n) %>% unique()
-
-# XXXX cardiovascular case-days during a severe outage and XXXX respiratory case-days
-casedaysabssevcvd <- exp_summary %>% 
-    filter(severity_customers == "Severe" & outcome == "adult_cardio") %>% 
-    mutate(n = sum(severity_customers_N)) %>% 
-    pull(n) %>% unique()
-
-casedaysabssevresp <- exp_summary %>%
-    filter(severity_customers == "Severe" & outcome == "adult_resp") %>% 
-    mutate(n = sum(severity_customers_N)) %>% 
-    pull(n) %>% unique()
-
-# greatest number of encounters associated with the XXX exposure level, with XXXX {cause} case-days during a severe outage and XXXX {cause} case-days
- highestencountersexplevel <- exp_summary %>% 
-    filter(severity_customers != "none") %>%
-    group_by(severity_customers) %>% 
-    summarise(n = sum(severity_customers_N)) %>% 
-    arrange(desc(n)) %>% 
-    slice(1) %>% 
-    pull(severity_customers)
-
-respcasedayssev <- exp_summary %>% 
-    filter(severity_customers == highestencountersexplevel & outcome == "adult_resp") %>% 
-    mutate(n = sum(severity_customers_N)) %>% 
-    pull(n) %>% unique()
-
-cvdcasedayssev <- exp_summary %>%
-    filter(severity_customers == highestencountersexplevel & outcome == "adult_cardio") %>% 
-    mutate(n = sum(severity_customers_N)) %>% 
-    pull(n) %>% unique()
-
-psychcasedayssev <- exp_summary %>%
-    filter(severity_customers == highestencountersexplevel & outcome == "adult_psych") %>% 
-    mutate(n = sum(severity_customers_N)) %>% 
-    pull(n) %>% unique()
-
-
-## RESP RESULTS
-# respiratory absolute metric OR: XXX, 95\CI: XXX, XXX
-respabsor <- results_abs_df %>% 
-    filter(Cause == "Respiratory" & Exposure == "severity_customersSevere") %>% 
-    pull(OR)
-respabscilow <- results_abs_df %>%
-    filter(Cause == "Respiratory" & Exposure == "severity_customersSevere") %>% 
-    pull(CI_Lower)
-respabscihigh <- results_abs_df %>%
-    filter(Cause == "Respiratory" & Exposure == "severity_customersSevere") %>% 
-    pull(CI_Upper)
-
-# respiratory hybrid metric OR: XXX, 95\CI: XXX, XXX
-resphybor <- results_hyb_df %>% 
-    filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere") %>% 
-    pull(OR)
-resphybcilow <- results_hyb_df %>%
-    filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere") %>% 
-    pull(CI_Lower)
-resphybcihigh <- results_hyb_df %>%
-    filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere") %>% 
-    pull(CI_Upper)
-    
-# respiratory interaction term absolute metric OR: XXX, 95\CI: XXX, XXX
-respintabsor <- results_abs_df %>% 
-    filter(Cause == "Respiratory" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
-    pull(OR)
-respintabscilow <- results_abs_df %>%
-    filter(Cause == "Respiratory" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
-    pull(CI_Lower)
-respintabscihigh <- results_abs_df %>%
-    filter(Cause == "Respiratory" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
-    pull(CI_Upper)
-
-# respiratory interaction term hybrid metric OR: XXX, 95\CI: XXX, XXX
-respinthybor <- results_hyb_df %>% 
-    filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
-    pull(OR)
-respinthybcilow <- results_hyb_df %>%
-    filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
-    pull(CI_Lower)
-respinthybcihigh <- results_hyb_df %>%
-    filter(Cause == "Respiratory" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
-    pull(CI_Upper)
-
-# respiratory combined effect absolute metric OR: XXX, 95\CI: XXX, XXX
-respcombabsor <- severe_df_abs %>% 
-    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
-    pull(odds_ratio)
-respcombabsperc <- round((respcombabsor - 1) * 100, 0) # convert to percent
-respcombabslow <- severe_df_abs %>% 
-    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
-    pull(lower_ci)
-respcombabshigh <- severe_df_abs %>% 
-    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
-    pull(upper_ci)
-
-# respiratory combined effect hybrid metric OR: XXX, 95\CI: XXX, XXX
-respcombhybor <- severe_df_hyb %>% 
-    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
-    pull(odds_ratio)
-respcombhybperc <- round((respcombhybor - 1) * 100, 0) # convert to percent
-respcombhyblow <- severe_df_hyb %>% 
-    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
-    pull(lower_ci)
-respcombhybhigh <- severe_df_hyb %>% 
-    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
-    pull(upper_ci)
-
-## COPD RESULTS
-# copd severe outage absolute metric OR: XXX, 95\CI: XXX, XXX
-copdabsor <- results_abs_df %>% 
-    filter(Cause == "COPD" & Exposure == "severity_customersSevere") %>% 
-    pull(OR)
-copdabscilow <- results_abs_df %>%
-    filter(Cause == "COPD" & Exposure == "severity_customersSevere") %>% 
-    pull(CI_Lower)
-copdabscihigh <- results_abs_df %>%
-    filter(Cause == "COPD" & Exposure == "severity_customersSevere") %>% 
-    pull(CI_Upper)
-
-# copd severe outage hybrid metric OR: XXX, 95\CI: XXX, XXX
-copdhybor <- results_hyb_df %>% 
-    filter(Cause == "COPD" & Exposure == "severity_hybridSevere") %>% 
-    pull(OR)
-copdhybcilow <- results_hyb_df %>%
-    filter(Cause == "COPD" & Exposure == "severity_hybridSevere") %>% 
-    pull(CI_Lower)
-copdhybcihigh <- results_hyb_df %>%
-    filter(Cause == "COPD" & Exposure == "severity_hybridSevere") %>% 
-    pull(CI_Upper)
-
-# copd interaction term absolute metric OR: XXX, 95\CI: XXX, XXX
-copdintabsor <- results_abs_df %>% 
-    filter(Cause == "COPD" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
-    pull(OR)
-copdintabscilow <- results_abs_df %>%
-    filter(Cause == "COPD" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
-    pull(CI_Lower)
-copdintabscihigh <- results_abs_df %>%
-    filter(Cause == "COPD" & Exposure == "severity_customersSevere.mean_lag05_per10") %>% 
-    pull(CI_Upper)
-
-# copd interaction term hybrid metric OR: XXX, 95\CI: XXX, XXX
-copdinthybor <- results_hyb_df %>% 
-    filter(Cause == "COPD" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
-    pull(OR)
-copdinthybcilow <- results_hyb_df %>%
-    filter(Cause == "COPD" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
-    pull(CI_Lower)
-copdinthybcihigh <- results_hyb_df %>%
-    filter(Cause == "COPD" & Exposure == "severity_hybridSevere.mean_lag05_per10") %>% 
-    pull(CI_Upper)
-
-# copd combined effect absolute metric OR: XXX, 95\CI: XXX, XXX
-copdcombabsor <- severe_df_abs %>% 
-    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
-    pull(odds_ratio)
-copdcombabslow <- severe_df_abs %>% 
-    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
-    pull(lower_ci)
-copdcombabshigh <- severe_df_abs %>% 
-    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
-    pull(upper_ci)
-
-# copd combined effect hybrid metric OR: XXX, 95\CI: XXX, XXX
-copdcombhybor <- severe_df_hyb %>% 
-    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
-    pull(odds_ratio)
-copdcombhyblow <- severe_df_hyb %>% 
-    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
-    pull(lower_ci)
-copdcombhybhigh <- severe_df_hyb %>% 
-    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
-    pull(upper_ci)
-
-# WFS absolute metric OR (resp, also doesnt matter re abs or hyb so just pulling one): XXX, 95\CI: XXX, XXX
-wfsabsor <- results_abs_df %>%
-    filter(Cause == "Respiratory" & Exposure == "mean_lag05_per10") %>% 
-    pull(OR)
-wfsabsperc <- round((wfsabsor - 1) * 100, 0) # convert to percent
-wfsabscilow <- results_abs_df %>%
-    filter(Cause == "Respiratory" & Exposure == "mean_lag05_per10") %>% 
-    pull(CI_Lower)
-wfsabscihigh <- results_abs_df %>%
-    filter(Cause == "Respiratory" & Exposure == "mean_lag05_per10") %>% 
-    pull(CI_Upper)
 
 # Of note, XX\% of outages were over 8 hours, so there was little concern about an overabundance of short outages.
 percentlongoutages <- ((nrow(psps_exp_df %>% filter(duration > 8))/nrow(psps_exp_df)) * 100 )%>% round(1)
-
-# We identified \pspsexpresp respiratory, \pspsexpcopd COPD, \pspsexpcardio cardiovascular, \pspsexppsych psychiatric index days exposed to a PSPS event (mild, moderate, or severe) (table \ref{exposure_table}). 
-pspsexpresp <- exp_summary %>% 
-    filter(severity_customers != "none" & outcome == "adult_resp") %>% 
-    mutate(n = sum(severity_customers_N)) %>% 
-    pull(n) %>% unique()
-pspsexpcopd <- exp_summary %>% 
-    filter(severity_customers != "none" & outcome == "adult_copd") %>% 
-    mutate(n = sum(severity_customers_N)) %>% 
-    pull(n) %>% unique()
-pspsexpcardio <- exp_summary %>% 
-    filter(severity_customers != "none" & outcome == "adult_cardio") %>% 
-    mutate(n = sum(severity_customers_N)) %>% 
-    pull(n) %>% unique()
-pspsexppsych <- exp_summary %>% 
-    filter(severity_customers != "none" & outcome == "adult_psych") %>% 
-    mutate(n = sum(severity_customers_N)) %>% 
-    pull(n) %>% unique()
 
 # number of zip codes in analysis
 nzipcodesinanalysis <- length(unique(zips_in_analysis$ZIP_CODE))
@@ -376,7 +177,7 @@ overalltotal <- ha_ed_table_df %>%
 
 percmissingzip <- round((missingzipcases / overalltotal) * 100, 2)
 
-# The mean daily wildfire \PM concentration across the study period was \meanwfpm{} \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}: 
+# The mean daily wildfire \PM concentration across the study period was \meanwfpm{} 
 # mean wf during psps event, mean wf during no psps event
 meanwfduringpsps <- wf_exp_df %>% 
     left_join(psps_exp_summary, by = c("date", "zip_code")) %>% 
@@ -395,12 +196,437 @@ meanwfduringnopsps <- wf_exp_df %>%
     pull(meanwfduringnopsps) %>% unique()
 
 
+# ============================================================
+# SECTION 2: LAG-SPECIFIC NUMBERS (SAME DAY)
+# ============================================================
 
-# write the numbers to a file -----------------------
+# --- Case days by exposure (SAME DAY) ---
+# XXX case-days (absolute, all severities)
+casedaysabs_same_day <- exp_summary_same_day %>% 
+    filter(severity_customers != 'none') %>%
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+# XXX case-days (hybrid, all severities)
+casedayshyb_same_day <- exp_summary_same_day %>% 
+    filter(severity_hybrid != 'none') %>%
+    mutate(n = sum(severity_hybrid_N)) %>% 
+    pull(n) %>% unique()
+
+# XXXX cardiovascular case-days during a severe outage and XXXX respiratory case-days
+casedaysabssevcvd_same_day <- exp_summary_same_day %>% 
+    filter(severity_customers == "severe" & outcome == "cardio") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+casedaysabssevresp_same_day <- exp_summary_same_day %>%
+    filter(severity_customers == "severe" & outcome == "resp") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+# greatest number of encounters associated with the XXX exposure level
+highestencountersexplevel_same_day <- exp_summary_same_day %>% 
+    filter(severity_customers != "none") %>%
+    group_by(severity_customers) %>% 
+    summarise(n = sum(severity_customers_N)) %>% 
+    arrange(desc(n)) %>% 
+    slice(1) %>% 
+    pull(severity_customers)
+
+respcasedayssev_same_day <- exp_summary_same_day %>% 
+    filter(severity_customers == highestencountersexplevel_same_day & outcome == "resp") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+cvdcasedayssev_same_day <- exp_summary_same_day %>%
+    filter(severity_customers == highestencountersexplevel_same_day & outcome == "cardio") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+psychcasedayssev_same_day <- exp_summary_same_day %>%
+    filter(severity_customers == highestencountersexplevel_same_day & outcome == "psych") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+# PSPS exposed index days by outcome (SAME DAY)
+pspsexpresp_same_day <- exp_summary_same_day %>% 
+    filter(severity_customers != "none" & outcome == "resp") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+pspsexpcopd_same_day <- exp_summary_same_day %>% 
+    filter(severity_customers != "none" & outcome == "copd") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+pspsexpcardio_same_day <- exp_summary_same_day %>% 
+    filter(severity_customers != "none" & outcome == "cardio") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+pspsexppsych_same_day <- exp_summary_same_day %>% 
+    filter(severity_customers != "none" & outcome == "psych") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+# --- RESULTS (SAME DAY) ---
+## RESP RESULTS (SAME DAY)
+# respiratory absolute metric OR
+respabsor_same_day <- results_abs_same_day %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_customerssevere") %>% 
+    pull(OR)
+respabscilow_same_day <- results_abs_same_day %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_customerssevere") %>% 
+    pull(CI_Lower)
+respabscihigh_same_day <- results_abs_same_day %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_customerssevere") %>% 
+    pull(CI_Upper)
+
+# respiratory hybrid metric OR
+resphybor_same_day <- results_hyb_same_day %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_hybridsevere") %>% 
+    pull(OR)
+resphybcilow_same_day <- results_hyb_same_day %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_hybridsevere") %>% 
+    pull(CI_Lower)
+resphybcihigh_same_day <- results_hyb_same_day %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_hybridsevere") %>% 
+    pull(CI_Upper)
+    
+# respiratory interaction term absolute metric OR
+respintabsor_same_day <- results_abs_same_day %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_customerssevere.wf_pm25_per10") %>% 
+    pull(OR)
+respintabscilow_same_day <- results_abs_same_day %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_customerssevere.wf_pm25_per10") %>% 
+    pull(CI_Lower)
+respintabscihigh_same_day <- results_abs_same_day %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_customerssevere.wf_pm25_per10") %>% 
+    pull(CI_Upper)
+
+# respiratory interaction term hybrid metric OR
+respinthybor_same_day <- results_hyb_same_day %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_hybridsevere.wf_pm25_per10") %>% 
+    pull(OR)
+respinthybcilow_same_day <- results_hyb_same_day %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_hybridsevere.wf_pm25_per10") %>% 
+    pull(CI_Lower)
+respinthybcihigh_same_day <- results_hyb_same_day %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_hybridsevere.wf_pm25_per10") %>% 
+    pull(CI_Upper)
+
+# respiratory combined effect absolute metric OR
+respcombabsor_same_day <- severe_df_abs_same_day %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(odds_ratio)
+respcombabsperc_same_day <- round((respcombabsor_same_day - 1) * 100, 0)
+respcombabslow_same_day <- severe_df_abs_same_day %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(lower_ci)
+respcombabshigh_same_day <- severe_df_abs_same_day %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(upper_ci)
+
+# respiratory combined effect hybrid metric OR
+respcombhybor_same_day <- severe_df_hyb_same_day %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(odds_ratio)
+respcombhybperc_same_day <- round((respcombhybor_same_day - 1) * 100, 0)
+respcombhyblow_same_day <- severe_df_hyb_same_day %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(lower_ci)
+respcombhybhigh_same_day <- severe_df_hyb_same_day %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(upper_ci)
+
+## COPD RESULTS (SAME DAY)
+copdabsor_same_day <- results_abs_same_day %>% 
+    filter(Cause == "COPD" & Exposure == "severity_customerssevere") %>% 
+    pull(OR)
+copdabscilow_same_day <- results_abs_same_day %>%
+    filter(Cause == "COPD" & Exposure == "severity_customerssevere") %>% 
+    pull(CI_Lower)
+copdabscihigh_same_day <- results_abs_same_day %>%
+    filter(Cause == "COPD" & Exposure == "severity_customerssevere") %>% 
+    pull(CI_Upper)
+
+copdhybor_same_day <- results_hyb_same_day %>% 
+    filter(Cause == "COPD" & Exposure == "severity_hybridsevere") %>% 
+    pull(OR)
+copdhybcilow_same_day <- results_hyb_same_day %>%
+    filter(Cause == "COPD" & Exposure == "severity_hybridsevere") %>% 
+    pull(CI_Lower)
+copdhybcihigh_same_day <- results_hyb_same_day %>%
+    filter(Cause == "COPD" & Exposure == "severity_hybridsevere") %>% 
+    pull(CI_Upper)
+
+copdintabsor_same_day <- results_abs_same_day %>% 
+    filter(Cause == "COPD" & Exposure == "severity_customerssevere.wf_pm25_per10") %>% 
+    pull(OR)
+copdintabscilow_same_day <- results_abs_same_day %>%
+    filter(Cause == "COPD" & Exposure == "severity_customerssevere.wf_pm25_per10") %>% 
+    pull(CI_Lower)
+copdintabscihigh_same_day <- results_abs_same_day %>%
+    filter(Cause == "COPD" & Exposure == "severity_customerssevere.wf_pm25_per10") %>% 
+    pull(CI_Upper)
+
+copdinthybor_same_day <- results_hyb_same_day %>% 
+    filter(Cause == "COPD" & Exposure == "severity_hybridsevere.wf_pm25_per10") %>% 
+    pull(OR)
+copdinthybcilow_same_day <- results_hyb_same_day %>%
+    filter(Cause == "COPD" & Exposure == "severity_hybridsevere.wf_pm25_per10") %>% 
+    pull(CI_Lower)
+copdinthybcihigh_same_day <- results_hyb_same_day %>%
+    filter(Cause == "COPD" & Exposure == "severity_hybridsevere.wf_pm25_per10") %>% 
+    pull(CI_Upper)
+
+copdcombabsor_same_day <- severe_df_abs_same_day %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(odds_ratio)
+copdcombabslow_same_day <- severe_df_abs_same_day %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(lower_ci)
+copdcombabshigh_same_day <- severe_df_abs_same_day %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(upper_ci)
+
+copdcombhybor_same_day <- severe_df_hyb_same_day %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(odds_ratio)
+copdcombhyblow_same_day <- severe_df_hyb_same_day %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(lower_ci)
+copdcombhybhigh_same_day <- severe_df_hyb_same_day %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(upper_ci)
+
+# WFS absolute metric OR (resp) (SAME DAY)
+wfsabsor_same_day <- results_abs_same_day %>%
+    filter(Cause == "Respiratory" & Exposure == "wf_pm25_per10") %>% 
+    pull(OR)
+wfsabsperc_same_day <- round((wfsabsor_same_day - 1) * 100, 0)
+wfsabscilow_same_day <- results_abs_same_day %>%
+    filter(Cause == "Respiratory" & Exposure == "wf_pm25_per10") %>% 
+    pull(CI_Lower)
+wfsabscihigh_same_day <- results_abs_same_day %>%
+    filter(Cause == "Respiratory" & Exposure == "wf_pm25_per10") %>% 
+    pull(CI_Upper)
+
+
+# ============================================================
+# SECTION 3: LAG-SPECIFIC NUMBERS (4-DAY LAG)
+# ============================================================
+
+# --- Case days by exposure (LAG4) ---
+casedaysabs_lag4 <- exp_summary_lag4 %>% 
+    filter(severity_customers != 'none') %>%
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+casedayshyb_lag4 <- exp_summary_lag4 %>% 
+    filter(severity_hybrid != 'none') %>%
+    mutate(n = sum(severity_hybrid_N)) %>% 
+    pull(n) %>% unique()
+
+casedaysabssevcvd_lag4 <- exp_summary_lag4 %>% 
+    filter(severity_customers == "severe" & outcome == "cardio") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+casedaysabssevresp_lag4 <- exp_summary_lag4 %>%
+    filter(severity_customers == "severe" & outcome == "resp") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+highestencountersexplevel_lag4 <- exp_summary_lag4 %>% 
+    filter(severity_customers != "none") %>%
+    group_by(severity_customers) %>% 
+    summarise(n = sum(severity_customers_N)) %>% 
+    arrange(desc(n)) %>% 
+    slice(1) %>% 
+    pull(severity_customers)
+
+respcasedayssev_lag4 <- exp_summary_lag4 %>% 
+    filter(severity_customers == highestencountersexplevel_lag4 & outcome == "resp") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+cvdcasedayssev_lag4 <- exp_summary_lag4 %>%
+    filter(severity_customers == highestencountersexplevel_lag4 & outcome == "cardio") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+psychcasedayssev_lag4 <- exp_summary_lag4 %>%
+    filter(severity_customers == highestencountersexplevel_lag4 & outcome == "psych") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+# PSPS exposed index days by outcome (LAG4)
+pspsexpresp_lag4 <- exp_summary_lag4 %>% 
+    filter(severity_customers != "none" & outcome == "resp") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+pspsexpcopd_lag4 <- exp_summary_lag4 %>% 
+    filter(severity_customers != "none" & outcome == "copd") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+pspsexpcardio_lag4 <- exp_summary_lag4 %>% 
+    filter(severity_customers != "none" & outcome == "cardio") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+pspsexppsych_lag4 <- exp_summary_lag4 %>% 
+    filter(severity_customers != "none" & outcome == "psych") %>% 
+    mutate(n = sum(severity_customers_N)) %>% 
+    pull(n) %>% unique()
+
+# --- RESULTS (LAG4) ---
+## RESP RESULTS (LAG4)
+respabsor_lag4 <- results_abs_lag4 %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_customers_lag4severe") %>% 
+    pull(OR)
+respabscilow_lag4 <- results_abs_lag4 %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_customers_lag4severe") %>% 
+    pull(CI_Lower)
+respabscihigh_lag4 <- results_abs_lag4 %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_customers_lag4severe") %>% 
+    pull(CI_Upper)
+
+resphybor_lag4 <- results_hyb_lag4 %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_hybrid_lag4severe") %>% 
+    pull(OR)
+resphybcilow_lag4 <- results_hyb_lag4 %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_hybrid_lag4severe") %>% 
+    pull(CI_Lower)
+resphybcihigh_lag4 <- results_hyb_lag4 %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_hybrid_lag4severe") %>% 
+    pull(CI_Upper)
+    
+respintabsor_lag4 <- results_abs_lag4 %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_customers_lag4severe.mean_lag0_lag3_per10") %>% 
+    pull(OR)
+respintabscilow_lag4 <- results_abs_lag4 %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_customers_lag4severe.mean_lag0_lag3_per10") %>% 
+    pull(CI_Lower)
+respintabscihigh_lag4 <- results_abs_lag4 %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_customers_lag4severe.mean_lag0_lag3_per10") %>% 
+    pull(CI_Upper)
+
+respinthybor_lag4 <- results_hyb_lag4 %>% 
+    filter(Cause == "Respiratory" & Exposure == "severity_hybrid_lag4severe.mean_lag0_lag3_per10") %>% 
+    pull(OR)
+respinthybcilow_lag4 <- results_hyb_lag4 %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_hybrid_lag4severe.mean_lag0_lag3_per10") %>% 
+    pull(CI_Lower)
+respinthybcihigh_lag4 <- results_hyb_lag4 %>%
+    filter(Cause == "Respiratory" & Exposure == "severity_hybrid_lag4severe.mean_lag0_lag3_per10") %>% 
+    pull(CI_Upper)
+
+respcombabsor_lag4 <- severe_df_abs_lag4 %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(odds_ratio)
+respcombabsperc_lag4 <- round((respcombabsor_lag4 - 1) * 100, 0)
+respcombabslow_lag4 <- severe_df_abs_lag4 %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(lower_ci)
+respcombabshigh_lag4 <- severe_df_abs_lag4 %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(upper_ci)
+
+respcombhybor_lag4 <- severe_df_hyb_lag4 %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(odds_ratio)
+respcombhybperc_lag4 <- round((respcombhybor_lag4 - 1) * 100, 0)
+respcombhyblow_lag4 <- severe_df_hyb_lag4 %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(lower_ci)
+respcombhybhigh_lag4 <- severe_df_hyb_lag4 %>% 
+    filter(Cause == "Respiratory" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(upper_ci)
+
+## COPD RESULTS (LAG4)
+copdabsor_lag4 <- results_abs_lag4 %>% 
+    filter(Cause == "COPD" & Exposure == "severity_customers_lag4severe") %>% 
+    pull(OR)
+copdabscilow_lag4 <- results_abs_lag4 %>%
+    filter(Cause == "COPD" & Exposure == "severity_customers_lag4severe") %>% 
+    pull(CI_Lower)
+copdabscihigh_lag4 <- results_abs_lag4 %>%
+    filter(Cause == "COPD" & Exposure == "severity_customers_lag4severe") %>% 
+    pull(CI_Upper)
+
+copdhybor_lag4 <- results_hyb_lag4 %>% 
+    filter(Cause == "COPD" & Exposure == "severity_hybrid_lag4severe") %>% 
+    pull(OR)
+copdhybcilow_lag4 <- results_hyb_lag4 %>%
+    filter(Cause == "COPD" & Exposure == "severity_hybrid_lag4severe") %>% 
+    pull(CI_Lower)
+copdhybcihigh_lag4 <- results_hyb_lag4 %>%
+    filter(Cause == "COPD" & Exposure == "severity_hybrid_lag4severe") %>% 
+    pull(CI_Upper)
+
+copdintabsor_lag4 <- results_abs_lag4 %>% 
+    filter(Cause == "COPD" & Exposure == "severity_customers_lag4severe.mean_lag0_lag3_per10") %>% 
+    pull(OR)
+copdintabscilow_lag4 <- results_abs_lag4 %>%
+    filter(Cause == "COPD" & Exposure == "severity_customers_lag4severe.mean_lag0_lag3_per10") %>% 
+    pull(CI_Lower)
+copdintabscihigh_lag4 <- results_abs_lag4 %>%
+    filter(Cause == "COPD" & Exposure == "severity_customers_lag4severe.mean_lag0_lag3_per10") %>% 
+    pull(CI_Upper)
+
+copdinthybor_lag4 <- results_hyb_lag4 %>% 
+    filter(Cause == "COPD" & Exposure == "severity_hybrid_lag4severe.mean_lag0_lag3_per10") %>% 
+    pull(OR)
+copdinthybcilow_lag4 <- results_hyb_lag4 %>%
+    filter(Cause == "COPD" & Exposure == "severity_hybrid_lag4severe.mean_lag0_lag3_per10") %>% 
+    pull(CI_Lower)
+copdinthybcihigh_lag4 <- results_hyb_lag4 %>%
+    filter(Cause == "COPD" & Exposure == "severity_hybrid_lag4severe.mean_lag0_lag3_per10") %>% 
+    pull(CI_Upper)
+
+copdcombabsor_lag4 <- severe_df_abs_lag4 %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(odds_ratio)
+copdcombabslow_lag4 <- severe_df_abs_lag4 %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(lower_ci)
+copdcombabshigh_lag4 <- severe_df_abs_lag4 %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(upper_ci)
+
+copdcombhybor_lag4 <- severe_df_hyb_lag4 %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(odds_ratio)
+copdcombhyblow_lag4 <- severe_df_hyb_lag4 %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(lower_ci)
+copdcombhybhigh_lag4 <- severe_df_hyb_lag4 %>% 
+    filter(Cause == "COPD" & Exposure == "Severe PSPS event * WF smoke (combined)") %>% 
+    pull(upper_ci)
+
+# WFS absolute metric OR (resp) (LAG4)
+wfsabsor_lag4 <- results_abs_lag4 %>%
+    filter(Cause == "Respiratory" & Exposure == "mean_lag0_lag3_per10") %>% 
+    pull(OR)
+wfsabsperc_lag4 <- round((wfsabsor_lag4 - 1) * 100, 0)
+wfsabscilow_lag4 <- results_abs_lag4 %>%
+    filter(Cause == "Respiratory" & Exposure == "mean_lag0_lag3_per10") %>% 
+    pull(CI_Lower)
+wfsabscihigh_lag4 <- results_abs_lag4 %>%
+    filter(Cause == "Respiratory" & Exposure == "mean_lag0_lag3_per10") %>% 
+    pull(CI_Upper)
+
+
+# ============================================================
+# WRITE THE NUMBERS TO A FILE
+# ============================================================
 all_vars <- ls()
 
-# filter out any variables that contain "dir" in their name
+# filter out any variables that contain "dir" or "df" in their name
 all_vars <- all_vars[!grepl("dir", all_vars, ignore.case = TRUE)]
+all_vars <- all_vars[!grepl("_df$", all_vars, ignore.case = TRUE)]
+all_vars <- all_vars[!grepl("^results_", all_vars, ignore.case = TRUE)]
+all_vars <- all_vars[!grepl("^severe_df_", all_vars, ignore.case = TRUE)]
+all_vars <- all_vars[!grepl("^exp_summary", all_vars, ignore.case = TRUE)]
+all_vars <- all_vars[!grepl("_shp$", all_vars, ignore.case = TRUE)]
+all_vars <- all_vars[!grepl("cov_matrices", all_vars, ignore.case = TRUE)]
 
 # function to format all numeric columns with commas and handle decimals appropriately,
 # and to also include character variables
@@ -426,11 +652,20 @@ val_to_tex <- sapply(all_vars, function(var_name) {
       formatted_value <- rounded_value %>% round(1)
     }
     
-    paste0("\\newcommand{\\", var_name, "}{", formatted_value, "}")
+    # Convert underscores to camelCase for LaTeX compatibility
+    # e.g., respabsor_same_day -> respabsorSameDay
+    latex_name <- gsub("_same_day", "SameDay", var_name)
+    latex_name <- gsub("_lag4", "LagFour", latex_name)
+    
+    paste0("\\newcommand{\\", latex_name, "}{", formatted_value, "}")
   }
   # handle character values
   else if (is.character(var_value) && length(var_value) == 1) {
-    paste0("\\newcommand{\\", var_name, "}{", var_value, "}")
+    # Convert underscores to camelCase for LaTeX compatibility
+    latex_name <- gsub("_same_day", "SameDay", var_name)
+    latex_name <- gsub("_lag4", "LagFour", latex_name)
+    
+    paste0("\\newcommand{\\", latex_name, "}{", var_value, "}")
   } else {
     NULL
   }
