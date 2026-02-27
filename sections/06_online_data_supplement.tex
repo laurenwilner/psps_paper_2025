@@ -93,14 +93,21 @@ Psychiatric & 290-293, 295, 296, 298 & F06, F10-F16, F18-F21, F23, F25, F28-F33 
 \end{table}
 
 \begin{table}[htbp]
-    \includegraphics[width=.7\textwidth]{tables_figures/supp_exposure_table.png}
-    \caption{Index days by exposure status. Index days are days when a healthcare encounter for all-cause respiratory, COPD, cardiovascular, or psychiatric endpoints occurred. PSPS event magnitude (mild/moderate/severe) were classified using tertiles for both absolute and relative metrics. For our absolute (primary) metric, mild events were those affecting $\leq$ 47 people, moderate were those where the number of customers without power was $>$ 47 and $\leq$ 468, and severe was defined as events where $>$ 468 customers were without power. For our relative (secondary) metric, magnitude was classified as mild when our relative metric was $\leq$ 1, moderate when 1 $<$ relative metric $\geq$ 145, or severe when our relative metric was $>$ 145. COPD, chronic obstructive pulmonary disease; PSPS, public safety power shutoff}
-    \label{supp_exposure_table}
+    \includegraphics[width=.7\textwidth]{tables_figures/supp_exposure_table_same_day.png}
+    \caption{Index days by same-day exposure status. Index days are days when a healthcare encounter for all-cause respiratory, COPD, cardiovascular, or psychiatric endpoints occurred. PSPS event magnitude (mild/moderate/severe) were classified using tertiles for both absolute and relative metrics. For our absolute (primary) metric, mild events were those affecting $\leq$ 47 people, moderate were those where the number of customers without power was $>$ 47 and $\leq$ 468, and severe was defined as events where $>$ 468 customers were without power. For our relative (secondary) metric, magnitude was classified as mild when our relative metric was $\leq$ 1, moderate when 1 $<$ relative metric $\geq$ 145, or severe when our relative metric was $>$ 145. COPD, chronic obstructive pulmonary disease; PSPS, public safety power shutoff}
+    \label{supp_exposure_table_same_day}
 \end{table}
 
 \begin{table}[htbp]
+    \includegraphics[width=.7\textwidth]{tables_figures/supp_exposure_table_lag4.png}
+    \caption{Index days by lag 0-3 day exposure status. Index days are days when a healthcare encounter for all-cause respiratory, COPD, cardiovascular, or psychiatric endpoints occurred. PSPS event magnitude (mild/moderate/severe) were classified using tertiles for both absolute and relative metrics. For our absolute (primary) metric, mild events were those affecting $\leq$ 47 people, moderate were those where the number of customers without power was $>$ 47 and $\leq$ 468, and severe was defined as events where $>$ 468 customers were without power. For our relative (secondary) metric, magnitude was classified as mild when our relative metric was $\leq$ 1, moderate when 1 $<$ relative metric $\geq$ 145, or severe when our relative metric was $>$ 145. COPD, chronic obstructive pulmonary disease; PSPS, public safety power shutoff}
+    \label{supp_exposure_table_lag4}
+\end{table}
+
+
+\begin{table}[htbp]
     \includegraphics[width=\textwidth]{tables_figures/results_table.png}
-    \caption{Odds ratios and 95\% confidence intervals for the association between zip code-level severe PSPS events and all-cause respiratory-, COPD-, cardiovascular-, and psychiatric-related emergency department visits and hospital admissions in California from 2013 -- 2019. Estimates are from four separate conditional logistic regression models. All models include PSPS event exposure, cumulative 0-4 day lagged wildfire \PM exposure, an interaction term between PSPS event and wildfire \PM exposure, and a spline on mean daily temperature. COPD, chronic obstructive pulmonary disease; PSPS, public safety power shutoff \newline \textit{*Note: The estimate for the interaction effect represents the additional multiplicative effect of joint exposure to wildfire \PM and PSPS event on the outcome of interest. It should not be interpreted as an odds ratio in isolation, but is rather a ratio of odds ratios.}}
+    \caption{Odds ratios and 95\% confidence intervals for the association between zip code-level severe PSPS events and all-cause respiratory-, COPD-, cardiovascular-, and psychiatric-related emergency department visits and hospital admissions in California from 2013 -- 2019. Estimates are from four separate conditional logistic regression models. All models include PSPS event exposure, lag 0-3 day wildfire \PM exposure, an interaction term between PSPS event and wildfire \PM exposure, and a spline on mean daily temperature. COPD, chronic obstructive pulmonary disease; PSPS, public safety power shutoff \newline \textit{*Note: The estimate for the interaction effect represents the additional multiplicative effect of joint exposure to wildfire \PM and PSPS event on the outcome of interest. It should not be interpreted as an odds ratio in isolation, but is rather a ratio of odds ratios.}}
     \label{supp_results_table}
 \end{table}
 
@@ -120,11 +127,25 @@ Psychiatric & 290-293, 295, 296, 298 & F06, F10-F16, F18-F21, F23, F25, F28-F33 
     \label{zctas_included_map}
 \end{figure}
 
+\begin{table}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{tables_figures/wf_by_outcome_lag4.png}
+  \caption{lag 0-3 day mean wildfire \PM concentration on index days by cause of encounter category in California from 2013--2019.}
+  \label{wf_by_outcome_table_lag4}
+\end{table}
+
+
 
 \begin{figure}[htbp]
-    \includegraphics[width=.9\textwidth]{tables_figures/results_fig_supplement.pdf}
-    \caption{Odds ratios and 95\% confidence intervals for the association between zip code-level mild, moderate, and severe PSPS events and all-cause respiratory-, COPD-, cardiovascular-, and psychiatric-related emergency department visits and hospital admissions in California from 2013--2019. Estimates are from eight separate conditional logistic regression models, including one for each health endpoint -- exposure metric combination. All models include PSPS event exposure, cumulative 0-4 day lagged wildfire \PM exposure, an interaction term between PSPS event and wildfire \PM exposure, and a spline on mean daily temperature. The absolute metric reflects the number of individuals exposed to a PSPS event, while the relative metric reflects the severity of the event. COPD, chronic obstructive pulmonary disease. \newline \textit{*Note: The estimate for the interaction effect represents the additional multiplicative effect of joint exposure to wildfire \PM and PSPS event on the outcome of interest. It should not be interpreted as an odds ratio in isolation, but is rather a ratio of odds ratios. PSPS, public safety power shutoff; COPD, chronic obstructive pulmonary disease}}
-    \label{results_fig_supplement}
+    \includegraphics[width=.9\textwidth]{tables_figures/results_fig_supplement_abs.pdf}
+    \caption{Odds ratios and 95\% confidence intervals for the association between zip code-level mild, moderate, and severe PSPS events (absolute metric) and all-cause respiratory-, COPD-, cardiovascular-, and psychiatric-related emergency department visits and hospital admissions in California from 2013--2019. Estimates are from eight separate conditional logistic regression models, including one for each health endpoint -- exposure metric combination. All models include PSPS event exposure, lag 0-3 day wildfire \PM exposure, an interaction term between PSPS event and wildfire \PM exposure, and a spline on mean daily temperature. The absolute metric reflects the number of individuals exposed to a PSPS event, while the relative metric reflects the severity of the event. COPD, chronic obstructive pulmonary disease. \newline \textit{*Note: The estimate for the interaction effect represents the additional multiplicative effect of joint exposure to wildfire \PM and PSPS event on the outcome of interest. It should not be interpreted as an odds ratio in isolation, but is rather a ratio of odds ratios. PSPS, public safety power shutoff; COPD, chronic obstructive pulmonary disease}}
+    \label{results_fig_supplement_abs}
+\end{figure}
+
+\begin{figure}[htbp]
+    \includegraphics[width=.9\textwidth]{tables_figures/results_fig_supplement_hyb.pdf}
+    \caption{Odds ratios and 95\% confidence intervals for the association between zip code-level mild, moderate, and severe PSPS events (relative metric) and all-cause respiratory-, COPD-, cardiovascular-, and psychiatric-related emergency department visits and hospital admissions in California from 2013--2019. Estimates are from eight separate conditional logistic regression models, including one for each health endpoint -- exposure metric combination. All models include PSPS event exposure, lag 0-3 day wildfire \PM exposure, an interaction term between PSPS event and wildfire \PM exposure, and a spline on mean daily temperature. The absolute metric reflects the number of individuals exposed to a PSPS event, while the relative metric reflects the severity of the event. COPD, chronic obstructive pulmonary disease. \newline \textit{*Note: The estimate for the interaction effect represents the additional multiplicative effect of joint exposure to wildfire \PM and PSPS event on the outcome of interest. It should not be interpreted as an odds ratio in isolation, but is rather a ratio of odds ratios. PSPS, public safety power shutoff; COPD, chronic obstructive pulmonary disease}}
+    \label{results_fig_supplement_hyb}
 \end{figure}
 
 
