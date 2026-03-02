@@ -654,6 +654,7 @@ all_vars <- ls()
 
 # filter out any variables that contain "dir" or "df" in their name
 all_vars <- all_vars[!grepl("dir", all_vars, ignore.case = TRUE)]
+all_vars <- all_vars[!grepl("project_root", all_vars, ignore.case = TRUE)]
 all_vars <- all_vars[!grepl("_df$", all_vars, ignore.case = TRUE)]
 all_vars <- all_vars[!grepl("^results_", all_vars, ignore.case = TRUE)]
 all_vars <- all_vars[!grepl("^severe_df_", all_vars, ignore.case = TRUE)]
