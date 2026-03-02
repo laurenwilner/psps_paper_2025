@@ -16,8 +16,8 @@ get_all_covariances <- function(cause, metric, severity, cov_matrices, lag_type 
   metric_lab <- ifelse(metric == "abs", "customers", "hybrid")
   
   # Build covariance matrix name: {cause}_{lag_type}_{age_group}_{metric}_cov
+  # Must match 01_process_results.R naming (only spaces to underscores, hyphens kept e.g. 20-64_years)
   age_clean <- gsub(" ", "_", age_group)
-  age_clean <- gsub("-", "_", age_clean)
   cov_name <- paste0(cause, "_", lag_type, "_", age_clean, "_", metric, "_cov")
   
   # Get the appropriate covariance matrix

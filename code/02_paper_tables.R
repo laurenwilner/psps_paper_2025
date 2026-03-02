@@ -3,30 +3,27 @@
 # March 2025
 #-------------------------------------------------
 
+# Bootstrap: source paths.R (edit path in paths.R when moving machines)
+args0 <- commandArgs(trailingOnly = FALSE)
+file0 <- grep("^--file=", args0, value = TRUE)
+if (length(file0) > 0) {
+  source(file.path(dirname(normalizePath(sub("^--file=", "", file0))), "paths.R"))
+} else {
+  source(file.path(path.expand("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025"), "code", "paths.R"))
+}
+
 # setup -------------------------------------------------
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
-pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown, readxl, gt, readr)
+pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown, readxl, readr, webshot2)
 
 pal <- met.brewer(name = "Hokusai2", n=2)
 
 # load functions -------------------------------------------------
-source(paste0(code_dir, "00_helper_functions.R"))
-
-# results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/Results\ -\ June\ 2025/")
-# exposure_summary_abs_by_ooi <- read.csv(paste0(results_dir, "absexp_summary_byOOI.csv")) %>% 
-#     mutate(severity_customers = ifelse(severity_customers == "none", "None", severity_customers))
-# exposure_summary_hybrid_by_ooi <- read.csv(paste0(results_dir, "hybexp_summary_byOOI.csv")) %>% 
-#     mutate(severity_hybrid = ifelse(severity_hybrid == "none", "None", severity_hybrid))
-# table1s_df <- read_excel(paste0(results_dir, "PSPSTable1_demo_V3.xlsx"), sheet = "Sheet2")
-
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/oct_2025_results")
-jan2026_results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/jan_2026_results/")
-out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
-code_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/code/")
+source(file.path(code_dir, "00_helper_functions.R"))
 
 # Load data - using jan_2026_results for lag-specific data
-exp_summary_same_day <- read_csv(paste0(jan2026_results_dir, "psps_among_casedays_same_day.csv"), show_col_types = FALSE)
-exp_summary_lag4 <- read_csv(paste0(jan2026_results_dir, "psps_among_casedays_lag4.csv"), show_col_types = FALSE)
+exp_summary_same_day <- read_csv(file.path(jan2026_results_dir, "psps_among_casedays_same_day.csv"), show_col_types = FALSE)
+exp_summary_lag4 <- read_csv(file.path(jan2026_results_dir, "psps_among_casedays_lag4.csv"), show_col_types = FALSE)
 
 # Standardize column names for lag4 data (it uses _lag4 suffix)
 exp_summary_lag4 <- exp_summary_lag4 %>%
@@ -36,8 +33,8 @@ exp_summary_lag4 <- exp_summary_lag4 %>%
     severity_hybrid = severity_hybrid_lag4,
     severity_hybrid_N = severity_hybrid_lag4_N
   )
-wf_among_casedays_same_day <- read_csv(paste0(jan2026_results_dir, "wf_tmax_among_casedays_same_day.csv"), show_col_types = FALSE)
-wf_among_casedays_lag4 <- read_csv(paste0(jan2026_results_dir, "wf_tmax_among_casedays_lag4.csv"), show_col_types = FALSE)
+wf_among_casedays_same_day <- read_csv(file.path(jan2026_results_dir, "wf_tmax_among_casedays_same_day.csv"), show_col_types = FALSE)
+wf_among_casedays_lag4 <- read_csv(file.path(jan2026_results_dir, "wf_tmax_among_casedays_lag4.csv"), show_col_types = FALSE)
 
 # Standardize column names for lag4 WF data (it uses mean_lag0_lag3_mean instead of wf_pm25_mean)
 wf_among_casedays_lag4 <- wf_among_casedays_lag4 %>%
@@ -47,8 +44,8 @@ wf_among_casedays_lag4 <- wf_among_casedays_lag4 %>%
   )
 
 # Load data that hasn't changed (copied to jan_2026_results)
-ha_ed_table_df <- read_csv(paste0(jan2026_results_dir, "summary\ of\ events\ across\ data\ cleaning\ process_all_years.csv"), show_col_types = FALSE)
-table1s_df_updated <- read_csv(paste0(jan2026_results_dir, "final\ dataset\ events\ by\ subgroup_all_years.csv"), show_col_types = FALSE) %>% 
+ha_ed_table_df <- read_csv(file.path(jan2026_results_dir, "summary of events across data cleaning process_all_years.csv"), show_col_types = FALSE)
+table1s_df_updated <- read_csv(file.path(jan2026_results_dir, "final dataset events by subgroup_all_years.csv"), show_col_types = FALSE) %>% 
     mutate(out = paste0(format(events, big.mark = ","), " (", proportion, "%)")) %>% 
     # remake race categories 
     mutate(category = ifelse(category == "female", "Female", category),
@@ -288,26 +285,26 @@ create_exposure_table <- function(abs_table_data, lag_label) {
 pretty_exposure_table_same_day <- create_exposure_table(abs_table_same_day, "Same day")
 pretty_exposure_table_lag4 <- create_exposure_table(abs_table_lag4, "4-day lag")
 
-# Save same_day exposure table
+# Save same_day exposure table (PNG for color; PDF does not render correctly)
 options(chromote.headless = "new")
 pretty_exposure_table_same_day %>% 
   as_raw_html() %>% 
-  cat(file = paste0(out_dir, "exposure_table_same_day.html"))
+  cat(file = file.path(out_dir, "exposure_table_same_day.html"))
 webshot2::webshot(
-  url = paste0(out_dir, "exposure_table_same_day.html"),
-  file = paste0(out_dir, "exposure_table_same_day.png"),
+  url = file.path(out_dir, "exposure_table_same_day.html"),
+  file = file.path(out_dir, "exposure_table_same_day.png"),
   zoom = 7,
   selector = "table",
   expand = c(1, 10, 1, 1)
 )
 
-# Save lag4 exposure table
+# Save lag4 exposure table (PNG for color)
 pretty_exposure_table_lag4 %>% 
   as_raw_html() %>% 
-  cat(file = paste0(out_dir, "exposure_table_lag4.html"))
+  cat(file = file.path(out_dir, "exposure_table_lag4.html"))
 webshot2::webshot(
-  url = paste0(out_dir, "exposure_table_lag4.html"),
-  file = paste0(out_dir, "exposure_table_lag4.png"),
+  url = file.path(out_dir, "exposure_table_lag4.html"),
+  file = file.path(out_dir, "exposure_table_lag4.png"),
   zoom = 7,
   selector = "table",
   expand = c(1, 10, 1, 1)
@@ -393,15 +390,14 @@ pretty_ha_ed_table <- ha_ed_table %>%
   # save the table as html using cat 
    pretty_ha_ed_table %>% 
     as_raw_html() %>% 
-    cat(file = paste0(out_dir, "ha_ed_table.html"))
+    cat(file = file.path(out_dir, "ha_ed_table.html"))
   
-  # save the table as png
-    # doing it this way becuase i couldnt get the dpi high enough with gtsave
+  # save the table as png (PDF does not show color correctly)
   webshot2::webshot(
-    url = paste0(out_dir, "ha_ed_table.html"),
-    file = paste0(out_dir, "ha_ed_table.png"),
-    zoom = 7,         # apparently this is approx 300 DPI
-    selector = "table"  # only capture the table
+    url = file.path(out_dir, "ha_ed_table.html"),
+    file = file.path(out_dir, "ha_ed_table.png"),
+    zoom = 7,
+    selector = "table"
   )
 
 
@@ -410,7 +406,7 @@ pretty_ha_ed_table <- ha_ed_table %>%
 create_wf_by_outcome_table <- function(wf_data) {
   # Order: resp, copd, cardio, psych
   pretty_wf_by_outcome <- data.frame(
-    row_name = "Mean (SD) wildfire PM₂.₅, μg/m³",
+    row_name = "Mean (SD) wildfire PM\u2082.\u2085, \u03BCg/m\u00B3",
     Respiratory = paste0(round(wf_data$wf_pm25_mean[wf_data$outcome == "resp"], 2), " (", round(wf_data$wf_pm25_SD[wf_data$outcome == "resp"], 2), ")"),
     COPD = paste0(round(wf_data$wf_pm25_mean[wf_data$outcome == "copd"], 2), " (", round(wf_data$wf_pm25_SD[wf_data$outcome == "copd"], 2), ")"),
     Cardiovascular = paste0(round(wf_data$wf_pm25_mean[wf_data$outcome == "cardio"], 2), " (", round(wf_data$wf_pm25_SD[wf_data$outcome == "cardio"], 2), ")"),
@@ -469,16 +465,16 @@ pretty_wf_by_outcome_lag4 <- create_wf_by_outcome_table(wf_among_casedays_lag4)
 # Save same_day WF table
 pretty_wf_by_outcome_same_day %>% 
   as_raw_html() %>% 
-  cat(file = paste0(out_dir, "wf_by_outcome_same_day.html"))
+  cat(file = file.path(out_dir, "wf_by_outcome_same_day.html"))
 pretty_wf_by_outcome_same_day %>% 
-  gtsave(filename = "wf_by_outcome_same_day.png", path = out_dir)
+  gt::gtsave(filename = "wf_by_outcome_same_day.png", path = out_dir)
 
 # Save lag4 WF table
 pretty_wf_by_outcome_lag4 %>% 
   as_raw_html() %>% 
-  cat(file = paste0(out_dir, "wf_by_outcome_lag4.html"))
+  cat(file = file.path(out_dir, "wf_by_outcome_lag4.html"))
 pretty_wf_by_outcome_lag4 %>% 
-  gtsave(filename = "wf_by_outcome_lag4.png", path = out_dir)
+  gt::gtsave(filename = "wf_by_outcome_lag4.png", path = out_dir)
 
 
 
@@ -487,9 +483,8 @@ pretty_wf_by_outcome_lag4 %>%
 # Updated to include both same_day and lag4
 
 # Load data and covariance matrices
-jan2026_results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/jan_2026_results/")
-cov_matrices <- readRDS(paste0(jan2026_results_dir, "cov_matrices_jan2026.rds"))
-all_results_abs <- read.csv(paste0(jan2026_results_dir, "all_results_abs_jan2026.csv"))
+cov_matrices <- readRDS(file.path(jan2026_results_dir, "cov_matrices_jan2026.rds"))
+all_results_abs <- read.csv(file.path(jan2026_results_dir, "all_results_abs_jan2026.csv"))
 
 # Filter for age 20 and older
 all_results_abs <- all_results_abs %>%
@@ -602,15 +597,14 @@ pretty_severe_df_abs <- severe_df_abs %>%
   # save the table as html using cat 
    pretty_severe_df_abs %>% 
     as_raw_html() %>% 
-    cat(file = paste0(out_dir, "results_table.html"))
+    cat(file = file.path(out_dir, "results_table.html"))
   
-  # save the table as png
-    # doing it this way becuase i couldnt get the dpi high enough with gtsave
+  # save the table as png (PDF does not show color correctly)
   webshot2::webshot(
-    url = paste0(out_dir, "results_table.html"),
-    file = paste0(out_dir, "results_table.png"),
-    zoom = 7,         # apparently this is approx 300 DPI
-    selector = "table"  # only capture the table
+    url = file.path(out_dir, "results_table.html"),
+    file = file.path(out_dir, "results_table.png"),
+    zoom = 7,
+    selector = "table"
   )
 
 
@@ -766,15 +760,14 @@ pretty_traditional_table1 <- create_traditional_table1_updated(table1s_df_update
   # save the table as html using cat 
    pretty_traditional_table1 %>% 
     as_raw_html() %>% 
-    cat(file = paste0(out_dir, "traditional_table1.html"))
+    cat(file = file.path(out_dir, "traditional_table1.html"))
   
-  # save the table as png
-    # doing it this way becuase i couldnt get the dpi high enough with gtsave
+  # save the table as png (PDF does not show color correctly)
   webshot2::webshot(
-    url = paste0(out_dir, "traditional_table1.html"),
-    file = paste0(out_dir, "traditional_table1.png"),
-    zoom = 7,         # apparently this is approx 300 DPI
-    selector = "table"  # only capture the table
+    url = file.path(out_dir, "traditional_table1.html"),
+    file = file.path(out_dir, "traditional_table1.png"),
+    zoom = 7,
+    selector = "table"
   )
 
 
@@ -933,10 +926,10 @@ supp_pretty_exposure_table_lag4 <- create_supp_exposure_table(abs_table_lag4, hy
 options(chromote.headless = "new")
 supp_pretty_exposure_table_same_day %>% 
   as_raw_html() %>% 
-  cat(file = paste0(out_dir, "supp_exposure_table_same_day.html"))
+  cat(file = file.path(out_dir, "supp_exposure_table_same_day.html"))
 webshot2::webshot(
-  url = paste0(out_dir, "supp_exposure_table_same_day.html"),
-  file = paste0(out_dir, "supp_exposure_table_same_day.png"),
+  url = file.path(out_dir, "supp_exposure_table_same_day.html"),
+  file = file.path(out_dir, "supp_exposure_table_same_day.png"),
   zoom = 7,
   selector = "table",
   expand = c(1,10,1,1)
@@ -945,10 +938,10 @@ webshot2::webshot(
 # Save lag4 supplement exposure table
 supp_pretty_exposure_table_lag4 %>% 
   as_raw_html() %>% 
-  cat(file = paste0(out_dir, "supp_exposure_table_lag4.html"))
+  cat(file = file.path(out_dir, "supp_exposure_table_lag4.html"))
 webshot2::webshot(
-  url = paste0(out_dir, "supp_exposure_table_lag4.html"),
-  file = paste0(out_dir, "supp_exposure_table_lag4.png"),
+  url = file.path(out_dir, "supp_exposure_table_lag4.html"),
+  file = file.path(out_dir, "supp_exposure_table_lag4.png"),
   zoom = 7,
   selector = "table",
   expand = c(1,10,1,1)

@@ -3,12 +3,21 @@
 # New results with lag and age group metadata
 #-------------------------------------------------
 
+# Bootstrap: source paths.R (edit path in paths.R when moving machines)
+args0 <- commandArgs(trailingOnly = FALSE)
+file0 <- grep("^--file=", args0, value = TRUE)
+if (length(file0) > 0) {
+  source(file.path(dirname(normalizePath(sub("^--file=", "", file0))), "paths.R"))
+} else {
+  source(file.path(path.expand("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025"), "code", "paths.R"))
+}
+
 # setup -------------------------------------------------
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
 pacman::p_load(tidyverse, ggforce, MetBrewer)
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/jan_2026_results/case_crossover_results")
-plots_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/jan_2026_results/plots/")
+# Use case crossover dir for result files; plots_dir from paths.R
+results_dir <- results_data_dir
 
 # Create plots directory if it doesn't exist
 if (!dir.exists(plots_dir)) {
@@ -139,7 +148,7 @@ for(cause_name in unique(results$cause)) {
   
   # Save individual plots
   cause_file <- tolower(gsub(" ", "_", cause_name))
-  ggsave(paste0(plots_dir, "results_jan2026_", cause_file, ".pdf"), p3, height = 10, width = 15)
+  ggsave(file.path(plots_dir, paste0("results_jan2026_", cause_file, ".pdf")), p3, height = 10, width = 15)
 }
 
 # Print summary of what was processed
@@ -206,7 +215,7 @@ for(cause_name in unique(results_1week$cause)) {
   
   # Save individual plots
   cause_file <- tolower(gsub(" ", "_", cause_name))
-  ggsave(paste0(plots_dir, "results_jan2026_1week_", cause_file, ".pdf"), p_1week, height = 8, width = 15)
+  ggsave(file.path(plots_dir, paste0("results_jan2026_1week_", cause_file, ".pdf")), p_1week, height = 8, width = 15)
 }
 
 # Print summary of 1week files processed
