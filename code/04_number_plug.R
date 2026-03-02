@@ -686,10 +686,11 @@ val_to_tex <- sapply(all_vars, function(var_name) {
       formatted_value <- rounded_value %>% round(1)
     }
     
-    # Convert underscores to camelCase for LaTeX compatibility
-    # e.g., respabsor_same_day -> respabsorSameDay
+    # Convert underscores for LaTeX compatibility (no underscores in command names)
+    # e.g., respabsor_same_day -> respabsorSameDay, zipdays_tot -> zipdaystot
     latex_name <- gsub("_same_day", "SameDay", var_name)
     latex_name <- gsub("_lag4", "LagFour", latex_name)
+    latex_name <- gsub("_tot", "tot", latex_name)
     
     paste0("\\newcommand{\\", latex_name, "}{", formatted_value, "}")
   }
