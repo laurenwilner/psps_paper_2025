@@ -28,7 +28,7 @@ During the 7-year study period, there were \zipdays{} zip code-days with PSPS ev
 
 We examined our secondary exposure, wildfire \PM, independent from and concurrent with PSPS events. The mean daily wildfire \PM concentration across the study period was \meanwfpm{} \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}. Among index days, the mean wildfire \PM during a PSPS event was \meanwfduringpsps{}\SI[per-mode=symbol]{}{\micro\gram\per\cubic\metre}, while the mean wildfire \PM on non-PSPS days was \meanwfduringnopsps{}\SI[per-mode=symbol]{}{\micro\gram\per\cubic\metre}. The average wildfire \PM concentration during index days among all four cause categories was generally similar (table \ref{wf_by_outcome_table_same_day}). There were \zipcodedayswf{} (\percentzipcodedayswf\%) zip code-days where there was any wildfire \PM from 2013 -- 2019 and \zipdaysdualexp{} zip code-days with any wildfire \PM and a PSPS event (figure \ref{map_violin}). 
 
-We identified \pspsexpresp{} respiratory, \pspsexpcopd{} COPD, \pspsexpcardio{} cardiovascular, \pspsexppsych{} psychiatric index days exposed to a same-day PSPS event (mild, moderate, or severe) (table \ref{exposure_table_same_day}, lagged values in \ref{supp_exposure_table_lag4}). 
+We identified \pspsexprespSameDay{} respiratory, \pspsexpcopdSameDay{} COPD, \pspsexpcardioSameDay{} cardiovascular, \pspsexppsychSameDay{} psychiatric index days exposed to a same-day PSPS event (mild, moderate, or severe) (table \ref{exposure_table_same_day}, lagged values in \ref{supp_exposure_table_lag4}). 
 
 \begin{figure}[htbp]
     \centering
@@ -63,8 +63,10 @@ When we isolated COPD encounters, we saw stronger associations. We estimated tha
 
 For COPD encounters alone, compared to those exposed to neither a severe magnitude PSPS event nor wildfire \PM, exposure to co-occurring PSPS event and \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher wildfire \PM was associated with higher odds of emergency department visits or hospital admissions (same-day OR = \copdcombabsorSameDay{}, 95\% CI: \copdcombabslowSameDay{}, \copdcombabshighSameDay{}; lag 0-3 day OR = \copdcombabsor{}, 95\% CI: \copdcombabslow{}, \copdcombabshigh{} figure \ref{results_fig}). There was potential evidence of multiplicative interaction between severe PSPS events and wildfire \PM exposure (\copdintabsorLagFour \phantom{ } [95\% CI: \copdintabscilowLagFour{}, \copdintabscihighLagFour{}]). 
 
+Respiratory effects were consistent across all age strata, however, evidence of multiplicative interaction was present for those ages 20-64 years, but not in older adults (figures \ref{results_fig_20_64_abs}, \ref{results_fig_20_64_hyb}, \ref{results_fig_65_plus_abs}, and \ref{results_fig_65_plus_hyb}). When isolating COPD, the effect of severe PSPS event, as well as the joint effect of severe PSPS event and wildfire \PM, were stronger in adults ages 65 years and older (figures \ref{results_fig_20_64_abs}, \ref{results_fig_20_64_hyb}, \ref{results_fig_65_plus_abs}, and \ref{results_fig_65_plus_hyb}).
+
 \subsection{Cardiovascular morbidity and psychiatric disorders}
-We did not observe an association between mild, moderate, or severe magnitude PSPS events alone, wildfire \PM exposure alone, or co-occurring PSPS events and wildfire \PM exposure and cardiovascular-related or psychiatric disorder-related emergency department visits or hospitalizations (figures \ref{results_fig} and \ref{zctas_included_map}).   
+We did not observe an association between mild, moderate, or severe magnitude PSPS events alone, wildfire \PM exposure alone, or co-occurring PSPS events and wildfire \PM exposure and cardiovascular-related or psychiatric disorder-related emergency department visits or hospitalizations (figures \ref{results_fig} and \ref{zctas_included_map}). This was consistent in age-stratified models as well ((figures \ref{results_fig_20_64_abs}, \ref{results_fig_20_64_hyb}, \ref{results_fig_65_plus_abs}, and \ref{results_fig_65_plus_hyb}).
 
 \subsection{Secondary analysis}
 In a secondary analysis, we assessed a relative metric of exposure to PSPS events (tables \ref{supp_exposure_table_same_day} and \ref{supp_exposure_table_lag4}) and results were similar to the absolute exposure metric (figures \ref{results_fig_supplement_abs} and \ref{results_fig_supplement_hyb}). We also examined mild and moderate magnitude PSPS events, and neither them nor their interaction with wildfire \PM exposure, were associated with any type of emergency department visits or hospital admission (figure \ref{zctas_included_map}).
@@ -78,6 +80,8 @@ In a secondary analysis, we assessed a relative metric of exposure to PSPS event
 \end{figure}
 
 \subsection{Sensitivity analysis}
-In a sensitivity analysis using a lag 0-6 day PSPS duration metric, we did not observe any association between PSPS duration and any healthcare encounters. We found modest evidence of multiplicative interaction between PSPS duration and wildfire \PM for respiratory- and COPD-related encounters (respiratory OR = XXX, 95\% CI: [YY, ZZ]; COPD OR = XXX, 95\% CI: [YY, ZZ]) (figure \ref{supp_duration_fig}). 
+In a sensitivity analysis using a lag 0-6 day PSPS duration metric, we did not observe any association between PSPS duration and any healthcare encounters. In a sensitivity analysis using a lag 0-6 day PSPS duration metric, we did not observe any association between PSPS duration and any healthcare encounters. We found modest evidence of multiplicative interaction between PSPS duration and wildfire \PM for respiratory- and COPD-related encounters for those under 65 years of age (respiratory OR = \respintorOneWk{}, 95\% CI: [\respintcilowOneWk{}, \respintcihighOneWk{}]; COPD OR = \copdintorOneWk{}, 95\% CI: [\copdintcilowOneWk{}, \copdintcihighOneWk{}]) (figures \ref{1week_duration_fig}, 
+\ref{1week_duration_fig_young}). Results were null for older adults (figure \ref{1week_duration_fig_old}).
+
 
 \end{document}
