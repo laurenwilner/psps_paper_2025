@@ -3,15 +3,20 @@
 # New results with lag and age group metadata
 #-------------------------------------------------
 
+# Bootstrap: source paths.R (edit path in paths.R when moving machines)
+args0 <- commandArgs(trailingOnly = FALSE)
+file0 <- grep("^--file=", args0, value = TRUE)
+if (length(file0) > 0) {
+  source(file.path(dirname(normalizePath(sub("^--file=", "", file0))), "paths.R"))
+} else {
+  source(file.path(path.expand("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025"), "code", "paths.R"))
+}
+
 # setup -------------------------------------------------
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
 pacman::p_load(tidyverse)
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/jan_2026_results/case_crossover_results")
-exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
-out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
-data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
-analysis_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_ca_analysis/data/")
+results_dir <- results_data_dir
 
 # Function to parse file name and extract metadata
 parse_filename <- function(filename) {
@@ -144,30 +149,24 @@ all_results_hyb <- all_results_hyb %>%
   mutate(across(c("OR", "CI_Lower", "CI_Upper"), as.numeric))
 
 # Save covariance matrices
+results_parent <- dirname(results_dir)
 if(length(cov_matrices_list) > 0) {
-  saveRDS(cov_matrices_list, file = paste0(results_dir, "/../cov_matrices_jan2026.rds"))
+  saveRDS(cov_matrices_list, file = file.path(results_parent, "cov_matrices_jan2026.rds"))
 }
-
-# Save combined results files
-# Option 1: Save all together with metadata columns
-write.csv(all_results_abs, paste0(results_dir, "/../all_results_abs_jan2026.csv"), row.names = FALSE)
-write.csv(all_results_hyb, paste0(results_dir, "/../all_results_hyb_jan2026.csv"), row.names = FALSE)
-
-# Option 2: Also save separate files by lag_type and age_group for easier access
+write.csv(all_results_abs, file.path(results_parent, "all_results_abs_jan2026.csv"), row.names = FALSE)
+write.csv(all_results_hyb, file.path(results_parent, "all_results_hyb_jan2026.csv"), row.names = FALSE)
 for(lag in unique(all_results_abs$lag_type)) {
   for(age in unique(all_results_abs$age_group)) {
     age_clean <- gsub(" ", "_", age)
     age_clean <- gsub("-", "_", age_clean)
-    
     all_results_abs %>%
       filter(lag_type == lag, age_group == age) %>%
       select(-lag_type, -age_group, -cause_code) %>%
-      write.csv(paste0(results_dir, "/../all_", lag, "_", age_clean, "_abs.csv"), row.names = FALSE)
-    
+      write.csv(file.path(results_parent, paste0("all_", lag, "_", age_clean, "_abs.csv")), row.names = FALSE)
     all_results_hyb %>%
       filter(lag_type == lag, age_group == age) %>%
       select(-lag_type, -age_group, -cause_code) %>%
-      write.csv(paste0(results_dir, "/../all_", lag, "_", age_clean, "_hyb.csv"), row.names = FALSE)
+      write.csv(file.path(results_parent, paste0("all_", lag, "_", age_clean, "_hyb.csv")), row.names = FALSE)
   }
 }
 

@@ -3,33 +3,32 @@
 # March 2025
 #-------------------------------------------------
 
+# Bootstrap: source paths.R (edit path in paths.R when moving machines)
+args0 <- commandArgs(trailingOnly = FALSE)
+file0 <- grep("^--file=", args0, value = TRUE)
+if (length(file0) > 0) {
+  source(file.path(dirname(normalizePath(sub("^--file=", "", file0))), "paths.R"))
+} else {
+  source(file.path(path.expand("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025"), "code", "paths.R"))
+}
+
 # setup -------------------------------------------------
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
 pacman::p_load(ggforce, MetBrewer, dplyr, tidyr, knitr, gt, magick, pagedown, sf, tigris, patchwork, stringr, scales, ggplot2)
 pal <- c( '#6f9969', '#efc86e',"#0f7ba2")
 crs <- "EPSG:3310" # California Albers Equal Area Conic projection
 
-results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/jan_2026_results/")
-results_data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/jan_2026_results/case_crossover_results/")
-exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
-out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/tables_figures/")
-data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
-code_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/code/")
-
 # load functions -------------------------------------------------
-source(paste0(code_dir, "00_helper_functions.R"))
+source(file.path(code_dir, "00_helper_functions.R"))
 
-# Helper function to load and prepare data for plotting
-# metric_type: "abs" or "hyb"
-# age_group: "age 20 and older" (for all ages)
-# Helper function to load and prepare data for plotting
-# This loads the processed results and calls process_results() for each lag_type
+# Helper to load processed results and prepare for plotting (calls process_results for each lag_type)
+# metric_type: "abs" or "hyb"; age_group: e.g. "age 20 and older"
 load_and_prepare_data <- function(metric_type = "abs", age_group = "age 20 and older", severity_level, cov_matrices) {
   # Load the combined results file
   if (metric_type == "abs") {
-    all_data <- read.csv(paste0(results_dir, "all_results_abs_jan2026.csv"))
+    all_data <- read.csv(file.path(results_dir, "all_results_abs_jan2026.csv"))
   } else {
-    all_data <- read.csv(paste0(results_dir, "all_results_hyb_jan2026.csv"))
+    all_data <- read.csv(file.path(results_dir, "all_results_hyb_jan2026.csv"))
   }
   
   # Filter by age group
@@ -69,6 +68,10 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
                                 show_severity = TRUE, 
                                 show_legend = TRUE) {
   
+  # Define label constants (avoids Unicode parsing issues)
+  wf_pm_label <- "WF PM\u2082.\u2085 (per 10 \u03BCg/m\u00B3)"
+  exp_levels <- c("PSPS", wf_pm_label, "Multiplicative interaction*", "Joint effect")
+  
   # Check which datasets are provided
   datasets_provided <- c(!is.null(data_same_day), !is.null(data_lag4))
   
@@ -77,14 +80,14 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
     data_same_day_processed <- data_same_day %>%
       mutate(
         Exposure = case_when(
-          Exposure == "WF smoke" ~ "WF PM₂.₅ (per 10 μg/m³)",
+          Exposure == "WF smoke" ~ wf_pm_label,
           grepl("combined", Exposure) ~ "Joint effect",
           grepl("interaction only", Exposure) ~ "Multiplicative interaction*",
           TRUE ~ "PSPS"
         ),
         lag_type = "Same day"
       ) %>%
-      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WF PM₂.₅ (per 10 μg/m³)", "Multiplicative interaction*", "Joint effect")))
+      mutate(Exposure = factor(Exposure, levels = exp_levels))
   }
   
   # Process lag4 data if provided
@@ -92,14 +95,14 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
     data_lag4_processed <- data_lag4 %>%
       mutate(
         Exposure = case_when(
-          Exposure == "WF smoke" ~ "WF PM₂.₅ (per 10 μg/m³)",
+          Exposure == "WF smoke" ~ wf_pm_label,
           grepl("combined", Exposure) ~ "Joint effect",
           grepl("interaction only", Exposure) ~ "Multiplicative interaction*",
           TRUE ~ "PSPS"
         ),
         lag_type = "4-day lag"
       ) %>%
-      mutate(Exposure = factor(Exposure, levels = c("PSPS", "WF PM₂.₅ (per 10 μg/m³)", "Multiplicative interaction*", "Joint effect")))
+      mutate(Exposure = factor(Exposure, levels = exp_levels))
   }
   
   # Combine the datasets based on what's provided
@@ -148,12 +151,17 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
     stop("At least one dataset (data_same_day or data_lag4) must be provided")
   }
   
-  # color mapping
-  exposure_colors <- c(
-    "WF PM₂.₅ (per 10 μg/m³)" = pal[3],           # blue
-    "PSPS" = pal[2],          # yellow  
-    "Multiplicative interaction*" = pal[1],    # green
-    "Joint effect" = "#013220"    
+  # color mapping (use variable for Unicode string)
+  exposure_colors <- setNames(
+    c(pal[3], pal[2], pal[1], "#013220"),
+    c(wf_pm_label, "PSPS", "Multiplicative interaction*", "Joint effect")
+  )
+  
+  # Define labels for axes and legends
+  wf_expr_label <- expression("WF PM"["2.5"]*" (per 10 "*mu*"g/m"^3*")")
+  exposure_labels <- setNames(
+    c("PSPS", wf_expr_label, "Multiplicative interaction*", "Joint effect"),
+    c("PSPS", wf_pm_label, "Multiplicative interaction*", "Joint effect")
   )
   
   
@@ -168,15 +176,8 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
                     width = 0.3,
                     position = position_dodge(width = 0.6)) +
       geom_hline(yintercept = 1, linetype = "dashed") + 
-      scale_color_manual(values = exposure_colors, name = NULL,
-                         labels = c("PSPS" = "PSPS",
-                                   "WF PM₂.₅ (per 10 μg/m³)" = expression("WF PM"[2.5]*" (per 10 μg/m³)"),
-                                   "Multiplicative interaction*" = "Multiplicative interaction*",
-                                   "Joint effect" = "Joint effect")) +
-      scale_x_discrete(labels = c("PSPS" = "PSPS",
-                                 "WF PM₂.₅ (per 10 μg/m³)" = expression("WF PM"[2.5]*" (per 10 μg/m³)"),
-                                 "Multiplicative interaction*" = "Multiplicative interaction*",
-                                 "Joint effect" = "Joint effect")) +
+      scale_color_manual(values = exposure_colors, name = NULL, labels = exposure_labels) +
+      scale_x_discrete(labels = exposure_labels) +
       alpha_scale +
       shape_scale +
       labs(
@@ -206,15 +207,8 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
                     width = 0.3,
                     position = position_dodge(width = 0.6)) +
       geom_hline(yintercept = 1, linetype = "dashed") + 
-      scale_color_manual(values = exposure_colors, name = NULL,
-                         labels = c("PSPS" = "PSPS",
-                                   "WF PM₂.₅ (per 10 μg/m³)" = expression("WF PM"[2.5]*" (per 10 μg/m³)"),
-                                   "Multiplicative interaction*" = "Multiplicative interaction*",
-                                   "Joint effect" = "Joint effect")) +
-      scale_x_discrete(labels = c("PSPS" = "PSPS",
-                                 "WF PM₂.₅ (per 10 μg/m³)" = expression("WF PM"[2.5]*" (per 10 μg/m³)"),
-                                 "Multiplicative interaction*" = "Multiplicative interaction*",
-                                 "Joint effect" = "Joint effect")) +
+      scale_color_manual(values = exposure_colors, name = NULL, labels = exposure_labels) +
+      scale_x_discrete(labels = exposure_labels) +
       labs(
         x = "",
         y = if(show_severity) substitute(atop(bold(sev), "Odds Ratio"), list(sev = severity)) else "Odds Ratio"
@@ -247,9 +241,112 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
   return(p)
 }
 
+#-------------------------------------------------
+# 1-week duration sensitivity analysis figures
+#-------------------------------------------------
+
+# Helper to load 1-week duration results for a given age group
+# (Single set of results - no abs/hyb split; file has duplicate rows so we take first 7)
+load_1week_results <- function(age_group, results_dir = results_data_dir) {
+  causes <- c(resp = "Respiratory", copd = "COPD", cardio = "Cardiovascular", psych = "Psychiatric")
+  exposures_keep <- c(
+    "outage_hours_lag7_per8",
+    "mean_lag0_lag6_per10",
+    "outage_hours_lag7_per8:mean_lag0_lag6_per10"
+  )
+  
+  all_data <- list()
+  for (i in seq_along(causes)) {
+    cause_code <- names(causes)[i]
+    cause_display <- causes[i]
+    f <- file.path(results_dir, paste0("results_", cause_code, "_1week_duration_", age_group, ".csv"))
+    if (!file.exists(f)) next
+    df <- read.csv(f)
+    df <- df[1:7, ] %>%  # First 7 rows only (one set of results)
+      filter(Exposure %in% exposures_keep) %>%
+      mutate(
+        Cause = cause_display,
+        odds_ratio = as.numeric(OR),
+        lower_ci = as.numeric(CI_Lower),
+        upper_ci = as.numeric(CI_Upper)
+      ) %>%
+      select(Exposure, odds_ratio, lower_ci, upper_ci, Cause)
+    all_data[[length(all_data) + 1]] <- df
+  }
+  
+  if (length(all_data) == 0) return(NULL)
+  bind_rows(all_data)
+}
+
+# Plotting function for 1-week duration results - single line with circles
+create_results_fig_1week <- function(data, 
+                                    show_disease_labels = TRUE, 
+                                    show_legend = TRUE) {
+  
+  wf_pm_label <- "WF PM\u2082.\u2085 (per 10 \u03BCg/m\u00B3)"
+  exp_levels <- c("PSPS (per 8 hr)", wf_pm_label, "Multiplicative interaction*")
+  
+  plot_data <- data %>%
+    mutate(
+      Exposure = case_when(
+        Exposure == "outage_hours_lag7_per8" ~ "PSPS (per 8 hr)",
+        Exposure == "mean_lag0_lag6_per10" ~ wf_pm_label,
+        Exposure == "outage_hours_lag7_per8:mean_lag0_lag6_per10" ~ "Multiplicative interaction*",
+        TRUE ~ Exposure
+      ),
+      Exposure = factor(Exposure, levels = exp_levels),
+      Cause = case_when(
+        Cause == "Respiratory" ~ "All-cause respiratory",
+        TRUE ~ Cause
+      ),
+      Cause = factor(Cause, levels = c("All-cause respiratory", "COPD", "Cardiovascular", "Psychiatric"))
+    )
+  
+  exposure_colors <- setNames(
+    c(pal[2], pal[3], pal[1]),
+    exp_levels
+  )
+  
+  wf_expr_label <- expression("WF PM"["2.5"]*" (per 10 "*mu*"g/m"^3*")")
+  exposure_labels <- setNames(
+    c("PSPS (per 8 hr)", wf_expr_label, "Multiplicative interaction*"),
+    exp_levels
+  )
+  
+  p <- ggplot(plot_data, aes(x = Exposure, y = odds_ratio, ymin = lower_ci, ymax = upper_ci)) +
+    geom_point(aes(color = Exposure), size = 3, shape = 16) +
+    geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci, color = Exposure), width = 0.3) +
+    geom_hline(yintercept = 1, linetype = "dashed") +
+    scale_color_manual(values = exposure_colors, name = NULL, labels = exposure_labels) +
+    scale_x_discrete(labels = exposure_labels) +
+    labs(x = "", y = "Odds Ratio") +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      axis.title.y = element_text(size = 16),
+      legend.position = "bottom",
+      legend.box = "vertical",
+      legend.spacing.y = unit(0.3, "cm"),
+      strip.text = element_text(size = 16),
+      axis.text = element_text(size = 14),
+      legend.text = element_text(size = 14)
+    ) +
+    scale_y_log10(breaks = c(0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 3.0)) +
+    facet_wrap(~Cause, nrow = 1)
+  
+  if (!show_disease_labels) {
+    p <- p + theme(strip.text = element_blank())
+  }
+  if (!show_legend) {
+    p <- p + theme(legend.position = "none")
+  }
+  
+  return(p)
+}
+
 # read in model results and covariance matrices ---------------------------------
 # these were processed and created in the 01_process_results.R script
-cov_matrices <- readRDS(paste0(results_dir, "cov_matrices_jan2026.rds"))
+cov_matrices <- readRDS(file.path(results_dir, "cov_matrices_jan2026.rds"))
 
 # Set parameters for main analysis
 metric_type_main <- "abs"  # or "hyb" for relative
@@ -257,15 +354,15 @@ age_group_main <- "age 20 and older"  # "all ages"
 
 
 # # read in exp data -------------------------------------------------
-og_psps_dataset <- read.csv(paste0(data_dir, "ca_ZIP_daily_psps_no_washout_wf_classified_2013-2022.csv"))
+og_psps_dataset <- read.csv(file.path(data_dir, "ca_ZIP_daily_psps_no_washout_wf_classified_2013-2022.csv"))
 
 # read in exposure dataset for fig2
 # we need the number of zip-days for PSPS exp, WF exp, and dual exp
-exp_data <- read.csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv"))
+exp_data <- read.csv(file.path(exp_dir, "zip_daily_psps_wf_exposure.csv"))
 
 # read in map data -------------------------------------------------
 # load data -------------------------------------------------
-zips_all <- read.csv(paste0(results_dir, "/zipcodes_in_analysis_by_endpoint.csv"))
+zips_all <- read.csv(file.path(results_dir, "zipcodes_in_analysis_by_endpoint.csv"))
 zips <- zips_all$ZIP_CODE
 
 ca_shp <- st_read(paste0("~/Desktop/Desktop/epidemiology_PhD/01_data/raw/census_tiger/tl_2024_us_state.shp")) %>% 
@@ -282,7 +379,7 @@ ca_shp <- st_read(paste0("~/Desktop/Desktop/epidemiology_PhD/01_data/raw/census_
 #     st_intersection(ca_shp) %>%
 #     select(zcta, geometry) %>% 
 #     mutate(fill_flag = zcta %in% zctas)
-zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson")) %>% 
+zip_shp <- st_read(file.path(exp_dir, "ca_zip.geojson")) %>% 
             rename(zip_code = ZIP_CODE) %>%
             select(c("zip_code", "geometry")) %>% 
     st_transform(crs = 3310) %>% 
@@ -354,9 +451,9 @@ for (i in seq_along(exposure_types)) {
     ) +
     theme_minimal() +
     labs(title = switch(exp_type,
-                      "WF smoke only" = expression("B. Wildfire "~PM[2.5]~"only"),
+                      "WF smoke only" = expression("B. Wildfire "~PM["2.5"]~"only"),
                       "PSPS event only" = "A. PSPS event only", 
-                      "WF smoke + PSPS event" = expression("C. Wildfire "~PM[2.5]~"+ PSPS event"))) +
+                      "WF smoke + PSPS event" = expression("C. Wildfire "~PM["2.5"]~"+ PSPS event"))) +
     theme(
       axis.text.x = element_blank(),
       axis.text.y = element_blank(),
@@ -444,7 +541,7 @@ seasonality_plot <- ggplot(monthly_summary, aes(x = month, y = n_events, fill = 
             vjust = -0.5, size = 6, inherit.aes = FALSE) + 
   scale_fill_manual(
     values = c("n_psps_only" = pal[2], "n_coexposure" = pal[3]),
-    labels = c("PSPS only", expression("PSPS + WF PM"[2.5]*" co-exposure"))
+    labels = c("PSPS only", expression("PSPS + WF PM"["2.5"]*" co-exposure"))
   ) +
   theme_minimal() +
   theme(
@@ -497,7 +594,7 @@ seasonality_plot_wf <- ggplot(monthly_summary_wf, aes(x = month, y = mean_wf, fi
             vjust = -0.5, size = 6, inherit.aes = FALSE) + 
   scale_fill_manual(
     values = c("wf_only" = pal[3], "wf_with_psps" = pal[2]),
-    labels = c(expression("WF PM"[2.5]*" only"), expression("WF PM"[2.5]*" + PSPS co-exposure"))
+    labels = c(expression("WF PM"["2.5"]*" only"), expression("WF PM"["2.5"]*" + PSPS co-exposure"))
   ) +
   theme_minimal() +
   theme(
@@ -511,7 +608,7 @@ seasonality_plot_wf <- ggplot(monthly_summary_wf, aes(x = month, y = mean_wf, fi
     legend.title = element_blank(),
     legend.text = element_text(size = 14)
   ) +
-  labs(x = "", y = expression("Mean wildfire PM"[2.5]* " (μg/m³)")) +
+  labs(x = "", y = expression("Mean wildfire PM"["2.5"]* " ("*mu*"g/m"^3*")")) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)), breaks = scales::pretty_breaks(n = 6))
 
 
@@ -544,7 +641,7 @@ results_fig <- create_results_fig_combined(severe_data$same_day,
 
 # write out numbers for table 
 if (!is.null(severe_data$same_day)) {
-  write.csv(severe_data$same_day, paste0(results_dir, "severe_df_same_day_", metric_type_main, ".csv"), row.names = FALSE)
+  write.csv(severe_data$same_day, file.path(results_dir, paste0("severe_df_same_day_", metric_type_main, ".csv")), row.names = FALSE)
 }
 
 # make results figure for supplement -------------------------------------------
@@ -605,6 +702,97 @@ sev_hyb <- create_results_fig_combined(severe_data_hyb$same_day, severe_data_hyb
 results_fig_supplement_hyb <- mild_hyb / mod_hyb / sev_hyb
 
 ########################
+### AGE-STRATIFIED RESULTS FIGS ###
+########################
+# Create supplemental results figures for age-stratified analyses
+
+# --- 20-64 years age group ---
+age_group_20_64 <- "20-64 years"
+
+# Process data for 20-64 absolute metric
+mild_data_abs_20_64 <- load_and_prepare_data(metric_type = "abs", age_group = age_group_20_64, severity_level = "Mild", cov_matrices = cov_matrices)
+moderate_data_abs_20_64 <- load_and_prepare_data(metric_type = "abs", age_group = age_group_20_64, severity_level = "Moderate", cov_matrices = cov_matrices)
+severe_data_abs_20_64 <- load_and_prepare_data(metric_type = "abs", age_group = age_group_20_64, severity_level = "Severe", cov_matrices = cov_matrices)
+
+# Process data for 20-64 relative metric
+mild_data_hyb_20_64 <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_20_64, severity_level = "Mild", cov_matrices = cov_matrices)
+moderate_data_hyb_20_64 <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_20_64, severity_level = "Moderate", cov_matrices = cov_matrices)
+severe_data_hyb_20_64 <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_20_64, severity_level = "Severe", cov_matrices = cov_matrices)
+
+# Create 20-64 absolute metric plots
+mild_abs_20_64 <- create_results_fig_combined(mild_data_abs_20_64$same_day, mild_data_abs_20_64$lag4, "Mild", 
+                                              show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
+mod_abs_20_64 <- create_results_fig_combined(moderate_data_abs_20_64$same_day, moderate_data_abs_20_64$lag4, "Moderate", 
+                                             show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
+sev_abs_20_64 <- create_results_fig_combined(severe_data_abs_20_64$same_day, severe_data_abs_20_64$lag4, "Severe", 
+                                             show_disease_labels = FALSE, show_severity = TRUE, show_legend = TRUE)
+
+results_fig_20_64_abs <- mild_abs_20_64 / mod_abs_20_64 / sev_abs_20_64
+
+# Create 20-64 relative metric plots
+mild_hyb_20_64 <- create_results_fig_combined(mild_data_hyb_20_64$same_day, mild_data_hyb_20_64$lag4, "Mild", 
+                                              show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
+mod_hyb_20_64 <- create_results_fig_combined(moderate_data_hyb_20_64$same_day, moderate_data_hyb_20_64$lag4, "Moderate", 
+                                             show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
+sev_hyb_20_64 <- create_results_fig_combined(severe_data_hyb_20_64$same_day, severe_data_hyb_20_64$lag4, "Severe", 
+                                             show_disease_labels = FALSE, show_severity = TRUE, show_legend = TRUE)
+
+results_fig_20_64_hyb <- mild_hyb_20_64 / mod_hyb_20_64 / sev_hyb_20_64
+
+# --- 65 and older age group ---
+age_group_65_plus <- "65 and older"
+
+# Process data for 65+ absolute metric
+mild_data_abs_65_plus <- load_and_prepare_data(metric_type = "abs", age_group = age_group_65_plus, severity_level = "Mild", cov_matrices = cov_matrices)
+moderate_data_abs_65_plus <- load_and_prepare_data(metric_type = "abs", age_group = age_group_65_plus, severity_level = "Moderate", cov_matrices = cov_matrices)
+severe_data_abs_65_plus <- load_and_prepare_data(metric_type = "abs", age_group = age_group_65_plus, severity_level = "Severe", cov_matrices = cov_matrices)
+
+# Process data for 65+ relative metric
+mild_data_hyb_65_plus <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_65_plus, severity_level = "Mild", cov_matrices = cov_matrices)
+moderate_data_hyb_65_plus <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_65_plus, severity_level = "Moderate", cov_matrices = cov_matrices)
+severe_data_hyb_65_plus <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_65_plus, severity_level = "Severe", cov_matrices = cov_matrices)
+
+# Create 65+ absolute metric plots
+mild_abs_65_plus <- create_results_fig_combined(mild_data_abs_65_plus$same_day, mild_data_abs_65_plus$lag4, "Mild", 
+                                                show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
+mod_abs_65_plus <- create_results_fig_combined(moderate_data_abs_65_plus$same_day, moderate_data_abs_65_plus$lag4, "Moderate", 
+                                               show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
+sev_abs_65_plus <- create_results_fig_combined(severe_data_abs_65_plus$same_day, severe_data_abs_65_plus$lag4, "Severe", 
+                                               show_disease_labels = FALSE, show_severity = TRUE, show_legend = TRUE)
+
+results_fig_65_plus_abs <- mild_abs_65_plus / mod_abs_65_plus / sev_abs_65_plus
+
+# Create 65+ relative metric plots
+mild_hyb_65_plus <- create_results_fig_combined(mild_data_hyb_65_plus$same_day, mild_data_hyb_65_plus$lag4, "Mild", 
+                                                show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
+mod_hyb_65_plus <- create_results_fig_combined(moderate_data_hyb_65_plus$same_day, moderate_data_hyb_65_plus$lag4, "Moderate", 
+                                               show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
+sev_hyb_65_plus <- create_results_fig_combined(severe_data_hyb_65_plus$same_day, severe_data_hyb_65_plus$lag4, "Severe", 
+                                               show_disease_labels = FALSE, show_severity = TRUE, show_legend = TRUE)
+
+results_fig_65_plus_hyb <- mild_hyb_65_plus / mod_hyb_65_plus / sev_hyb_65_plus
+
+
+########################
+### 1-WEEK DURATION SENSITIVITY FIGS ###
+########################
+
+# Create 1-week duration figures: one per age group, single line with circles
+results_fig_1week <- create_results_fig_1week(
+  load_1week_results("age 20 and older"),
+  show_disease_labels = TRUE, show_legend = TRUE
+)
+results_fig_1week_20_64 <- create_results_fig_1week(
+  load_1week_results("20-64 years"),
+  show_disease_labels = TRUE, show_legend = TRUE
+)
+results_fig_1week_65_plus <- create_results_fig_1week(
+  load_1week_results("65 and older"),
+  show_disease_labels = TRUE, show_legend = TRUE
+)
+
+
+########################
 ### Duration for Joan ###
 ########################
 # This plot is just a plot of PSPS durations for Joan 
@@ -629,23 +817,25 @@ duration_hist <- og_psps_dataset %>%
 ########################
 ### SAVE ALL FIGURES ###
 ########################
-ggsave(paste0(out_dir, "zips_included_map.pdf"), zips_included_map, width = 8, height = 10, dpi = 100)
-ggsave(paste0(out_dir, "map_violin_panel1.pdf"), map_violin_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "map_violin_panel2.pdf"), map_violin_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "map_violin_panel3.pdf"), map_violin_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "results_fig.pdf"), results_fig, width = 10, height = 10, dpi = 100, device = cairo_pdf)
-ggsave(paste0(out_dir, "results_fig_supplement_abs.pdf"), results_fig_supplement_abs, width = 10, height = 13, dpi = 100, device = cairo_pdf)
-ggsave(paste0(out_dir, "results_fig_supplement_hyb.pdf"), results_fig_supplement_hyb, width = 10, height = 13, dpi = 100, device = cairo_pdf)
-ggsave(paste0(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
-ggsave(paste0(out_dir, "seasonality_plot.pdf"), seasonality_plot_combined, width = 15, height = 11, dpi = 100, device = cairo_pdf)
+ggsave(file.path(out_dir, "zips_included_map.pdf"), zips_included_map, width = 8, height = 10, dpi = 100)
+ggsave(file.path(out_dir, "map_violin_panel1.pdf"), map_violin_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(file.path(out_dir, "map_violin_panel2.pdf"), map_violin_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(file.path(out_dir, "map_violin_panel3.pdf"), map_violin_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
+ggsave(file.path(out_dir, "results_fig.pdf"), results_fig, width = 10, height = 10, dpi = 100, device = cairo_pdf)
+ggsave(file.path(out_dir, "results_fig_supplement_abs.pdf"), results_fig_supplement_abs, width = 10, height = 13, dpi = 100, device = cairo_pdf)
+ggsave(file.path(out_dir, "results_fig_supplement_hyb.pdf"), results_fig_supplement_hyb, width = 10, height = 13, dpi = 100, device = cairo_pdf)
+ggsave(file.path(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
+ggsave(file.path(out_dir, "seasonality_plot.pdf"), seasonality_plot_combined, width = 15, height = 11, dpi = 100, device = cairo_pdf)
 
-ggsave(paste0(out_dir, "zips_included_map.png"), zips_included_map, width = 8, height = 10, dpi = 100)
-ggsave(paste0(out_dir, "map_violin_panel1.png"), map_violin_panel1, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "map_violin_panel2.png"), map_violin_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "map_violin_panel3.png"), map_violin_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
-ggsave(paste0(out_dir, "results_fig.png"), results_fig, width = 10, height = 10, dpi = 100)
-ggsave(paste0(out_dir, "results_fig_supplement_abs.png"), results_fig_supplement_abs, width = 10, height = 15, dpi = 100)
-ggsave(paste0(out_dir, "results_fig_supplement_hyb.png"), results_fig_supplement_hyb, width = 10, height = 15, dpi = 100)
-ggsave(paste0(out_dir, "seasonality_plot.png"), seasonality_plot_combined, width = 15, height = 11, dpi = 100)
+# Save age-stratified figures
+if (!dir.exists(age_strat_out_dir)) dir.create(age_strat_out_dir, recursive = TRUE)
+if (!dir.exists(oneweek_out_dir)) dir.create(oneweek_out_dir, recursive = TRUE)
+ggsave(file.path(age_strat_out_dir, "results_fig_20_64_abs.pdf"), results_fig_20_64_abs, width = 10, height = 13, dpi = 100, device = cairo_pdf)
+ggsave(file.path(age_strat_out_dir, "results_fig_20_64_hyb.pdf"), results_fig_20_64_hyb, width = 10, height = 13, dpi = 100, device = cairo_pdf)
+ggsave(file.path(age_strat_out_dir, "results_fig_65_plus_abs.pdf"), results_fig_65_plus_abs, width = 10, height = 13, dpi = 100, device = cairo_pdf)
+ggsave(file.path(age_strat_out_dir, "results_fig_65_plus_hyb.pdf"), results_fig_65_plus_hyb, width = 10, height = 13, dpi = 100, device = cairo_pdf)
 
-# NOTE: by saving to PDFs, we get around the DPI issue with PNGs! Doing that for now, unless it is an issue for the journal. 
+# Save 1-week duration figures (one per age group, abs + hyb combined)
+ggsave(file.path(oneweek_out_dir, "results_fig_1week.pdf"), results_fig_1week, width = 10, height = 6, dpi = 100, device = cairo_pdf)
+ggsave(file.path(oneweek_out_dir, "results_fig_1week_20_64.pdf"), results_fig_1week_20_64, width = 10, height = 6, dpi = 100, device = cairo_pdf)
+ggsave(file.path(oneweek_out_dir, "results_fig_1week_65_plus.pdf"), results_fig_1week_65_plus, width = 10, height = 6, dpi = 100, device = cairo_pdf)

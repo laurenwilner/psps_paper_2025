@@ -8,37 +8,40 @@ rm(list = ls()) # important in this script to get rid of existing objects!
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
 pacman::p_load(dplyr, readr, sf)
 
-# directories
-jan2026_results_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/results/jan_2026_results/")
-exp_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/exposure_data/")
-out_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/")
-data_dir <- ("~/Desktop/Desktop/epidemiology_PhD/01_data/clean/")
-analysis_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_ca_analysis/data/")
-code_dir <- ("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025/code/")
+# Bootstrap: source paths.R (edit path in paths.R when moving machines)
+args0 <- commandArgs(trailingOnly = FALSE)
+file0 <- grep("^--file=", args0, value = TRUE)
+if (length(file0) > 0) {
+  source(file.path(dirname(normalizePath(sub("^--file=", "", file0))), "paths.R"))
+} else {
+  source(file.path(path.expand("~/Desktop/Desktop/epidemiology_PhD/00_repos/psps_paper_2025"), "code", "paths.R"))
+}
+
+# analysis-values.tex goes to project root
+out_dir <- project_root
 
 # load functions -------------------------------------------------
-source(paste0(code_dir, "00_helper_functions.R"))
+source(file.path(code_dir, "00_helper_functions.R"))
 
 # load data -------------------------------------------------
-psps_exp_df <- read_csv(paste0(data_dir, 'ca_ZIP_daily_psps_no_washout_wf_classified_2013-2022.csv'), show_col_types = FALSE)
-psps_exp_summary <- read_csv(paste0(analysis_dir, "daily_psps_binary.csv"), show_col_types = FALSE)
-wf_exp_df <- read_csv(paste0(exp_dir, "zip_wfpm20132019.csv"), show_col_types = FALSE)
+psps_exp_df <- read_csv(file.path(data_dir, "ca_ZIP_daily_psps_no_washout_wf_classified_2013-2022.csv"), show_col_types = FALSE)
+wf_exp_df <- read_csv(file.path(exp_dir, "zip_wfpm20132019.csv"), show_col_types = FALSE)
 
 # Load results - now with lag_type and age_group columns
-results_abs_df <- read_csv(paste0(jan2026_results_dir, "all_results_abs_jan2026.csv"), show_col_types = FALSE)
-results_hyb_df <- read_csv(paste0(jan2026_results_dir, "all_results_hyb_jan2026.csv"), show_col_types = FALSE)
-cov_matrices <- readRDS(paste0(jan2026_results_dir, "cov_matrices_jan2026.rds"))
+results_abs_df <- read_csv(file.path(jan2026_results_dir, "all_results_abs_jan2026.csv"), show_col_types = FALSE)
+results_hyb_df <- read_csv(file.path(jan2026_results_dir, "all_results_hyb_jan2026.csv"), show_col_types = FALSE)
+cov_matrices <- readRDS(file.path(jan2026_results_dir, "cov_matrices_jan2026.rds"))
 
-zip_shp <- st_read(paste0(exp_dir, "ca_zip.geojson"), quiet = TRUE) %>% 
+zip_shp <- st_read(file.path(exp_dir, "ca_zip.geojson"), quiet = TRUE) %>% 
             rename(zip_code = ZIP_CODE) %>%
             select(c("zip_code", "geometry"))
 ca_zips <- zip_shp$zip_code %>% unique()
-combined_exp_df <- read_csv(paste0(exp_dir, "zip_daily_psps_wf_exposure.csv"), show_col_types = FALSE)
-zips_in_analysis <- read.csv(paste0(jan2026_results_dir, "zipcodes_in_analysis_by_endpoint.csv"))
+combined_exp_df <- read_csv(file.path(exp_dir, "zip_daily_psps_wf_exposure.csv"), show_col_types = FALSE)
+zips_in_analysis <- read.csv(file.path(jan2026_results_dir, "zipcodes_in_analysis_by_endpoint.csv"))
 
 # Load lag-specific exposure summaries
-exp_summary_same_day <- read_csv(paste0(jan2026_results_dir, "psps_among_casedays_same_day.csv"), show_col_types = FALSE)
-exp_summary_lag4 <- read_csv(paste0(jan2026_results_dir, "psps_among_casedays_lag4.csv"), show_col_types = FALSE) %>%
+exp_summary_same_day <- read_csv(file.path(jan2026_results_dir, "psps_among_casedays_same_day.csv"), show_col_types = FALSE)
+exp_summary_lag4 <- read_csv(file.path(jan2026_results_dir, "psps_among_casedays_lag4.csv"), show_col_types = FALSE) %>%
   rename(
     severity_customers = severity_customers_lag4,
     severity_customers_N = severity_customers_lag4_N,
@@ -46,15 +49,7 @@ exp_summary_lag4 <- read_csv(paste0(jan2026_results_dir, "psps_among_casedays_la
     severity_hybrid_N = severity_hybrid_lag4_N
   )
 
-# Load lag-specific WF summaries
-wf_among_casedays_same_day <- read_csv(paste0(jan2026_results_dir, "wf_tmax_among_casedays_same_day.csv"), show_col_types = FALSE)
-wf_among_casedays_lag4 <- read_csv(paste0(jan2026_results_dir, "wf_tmax_among_casedays_lag4.csv"), show_col_types = FALSE) %>%
-  rename(
-    wf_pm25_mean = mean_lag0_lag3_mean,
-    wf_pm25_SD = mean_lag0_lag3_SD
-  )
-
-ha_ed_table_df <- read_csv(paste0(jan2026_results_dir, "summary of events across data cleaning process_all_years.csv"), show_col_types = FALSE)
+ha_ed_table_df <- read_csv(file.path(jan2026_results_dir, "summary of events across data cleaning process_all_years.csv"), show_col_types = FALSE)
 
 # Filter results for age 20 and older (main analysis)
 results_abs_same_day <- results_abs_df %>% filter(lag_type == "same_day" & age_group == "age 20 and older")
@@ -81,10 +76,16 @@ npspsevents <- length(unique(psps_exp_df$psps_event_id))
 medianduration <- median(psps_exp_df$duration, na.rm = TRUE) %>% round(0)
 
 # XXXX zip code -days in our 7-year study period that experienced PSPS events
-zipdays <- psps_exp_summary %>% group_by(zip_code) %>% summarise(n_days = n()) %>% pull(n_days) %>% sum()
+zipdays <- combined_exp_df %>% 
+  filter(psps_event == 1) %>% 
+  group_by(zip_code) %>% 
+  summarise(n_days = n()) %>% 
+  pull(n_days) %>% sum()
 
 # each zip code experienced, on average, XXXX events
-zipevents <- psps_exp_summary %>% group_by(zip_code) %>% 
+zipevents <- combined_exp_df %>% 
+  filter(psps_event == 1) %>%
+  group_by(zip_code) %>% 
   summarise(n_events = n()) %>% 
   summarise(mean_events = mean(n_events, na.rm = TRUE)) %>% 
   pull(mean_events) %>% round(0)
@@ -107,7 +108,8 @@ mostcommonsevhyb <- hyb_severity_df[1,]$severity_hybrid %>% tolower()
 secondmostcommonsevhyb <- hyb_severity_df[2,]$severity_hybrid %>% tolower()
 
 # XXXX of the YYYY zip codes in California experienced at least one PSPS event
-zipcodeswithevents <- psps_exp_summary %>% 
+zipcodeswithevents <- combined_exp_df %>% 
+  filter(psps_event == 1) %>%
   group_by(zip_code) %>% 
   summarise(n_events = n()) %>% 
   filter(n_events > 0) %>% 
@@ -179,21 +181,15 @@ percmissingzip <- round((missingzipcases / overalltotal) * 100, 2)
 
 # The mean daily wildfire \PM concentration across the study period was \meanwfpm{} 
 # mean wf during psps event, mean wf during no psps event
-meanwfduringpsps <- wf_exp_df %>% 
-    left_join(psps_exp_summary, by = c("date", "zip_code")) %>% 
-    mutate(wf = ifelse(is.na(wf), 0, wf)) %>% 
-    select(c("psps_abs", "mean_lag05_per10", "date", "zip_code")) %>% 
-    filter(psps_abs == 1) %>% 
-    mutate(meanwfduringpsps = mean(mean_lag05_per10, na.rm = TRUE)) %>% 
-    pull(meanwfduringpsps) %>% unique()
+meanwfduringpsps <- combined_exp_df %>% 
+    filter(psps_event == 1) %>% 
+    summarise(meanwf = mean(wf, na.rm = TRUE)) %>% 
+    pull(meanwf)
 
-meanwfduringnopsps <- wf_exp_df %>% 
-    left_join(psps_exp_summary, by = c("date", "zip_code")) %>% 
-    mutate(wf = ifelse(is.na(wf), 0, wf)) %>% 
-    select(c("psps_abs", "mean_lag05_per10", "date", "zip_code")) %>% 
-    filter(is.na(psps_abs)) %>% 
-    mutate(meanwfduringnopsps = mean(mean_lag05_per10, na.rm = TRUE)) %>% 
-    pull(meanwfduringnopsps) %>% unique()
+meanwfduringnopsps <- combined_exp_df %>% 
+    filter(psps_event == 0) %>% 
+    summarise(meanwf = mean(wf, na.rm = TRUE)) %>% 
+    pull(meanwf)
 
 
 # ============================================================
@@ -615,6 +611,43 @@ wfsabscihigh_lag4 <- results_abs_lag4 %>%
 
 
 # ============================================================
+# SECTION 4: 1-WEEK DURATION SENSITIVITY ANALYSIS
+# ============================================================
+
+# Load 1-week duration results
+results_resp_1week <- read_csv(file.path(jan2026_results_dir, "case_crossover_results", "results_resp_1week_duration_age 20 and older.csv"), show_col_types = FALSE)
+results_copd_1week <- read_csv(file.path(jan2026_results_dir, "case_crossover_results", "results_copd_1week_duration_age 20 and older.csv"), show_col_types = FALSE)
+
+# Respiratory 1-week duration interaction term
+respintorOneWk <- results_resp_1week %>%
+    filter(Exposure == "outage_hours_lag7_per8:mean_lag0_lag6_per10") %>%
+    slice(1) %>%
+    pull(OR)
+respintcilowOneWk <- results_resp_1week %>%
+    filter(Exposure == "outage_hours_lag7_per8:mean_lag0_lag6_per10") %>%
+    slice(1) %>%
+    pull(CI_Lower)
+respintcihighOneWk <- results_resp_1week %>%
+    filter(Exposure == "outage_hours_lag7_per8:mean_lag0_lag6_per10") %>%
+    slice(1) %>%
+    pull(CI_Upper)
+
+# COPD 1-week duration interaction term
+copdintorOneWk <- results_copd_1week %>%
+    filter(Exposure == "outage_hours_lag7_per8:mean_lag0_lag6_per10") %>%
+    slice(1) %>%
+    pull(OR)
+copdintcilowOneWk <- results_copd_1week %>%
+    filter(Exposure == "outage_hours_lag7_per8:mean_lag0_lag6_per10") %>%
+    slice(1) %>%
+    pull(CI_Lower)
+copdintcihighOneWk <- results_copd_1week %>%
+    filter(Exposure == "outage_hours_lag7_per8:mean_lag0_lag6_per10") %>%
+    slice(1) %>%
+    pull(CI_Upper)
+
+
+# ============================================================
 # WRITE THE NUMBERS TO A FILE
 # ============================================================
 all_vars <- ls()
@@ -672,5 +705,5 @@ val_to_tex <- sapply(all_vars, function(var_name) {
 })
 
 values <- val_to_tex[!sapply(val_to_tex, is.null)]
-write_lines(values, "analysis-values.tex")
+write_lines(values, file.path(out_dir, "analysis-values.tex"))
 
