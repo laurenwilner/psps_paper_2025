@@ -2,7 +2,7 @@
 \graphicspath{{\subfix{../tables_figures/}}}
 
 \begin{document}
-\input{analysis-values.tex}
+% \input{analysis-values.tex}
 
 \section{Results}
 
@@ -45,6 +45,8 @@ We identified \pspsexprespSameDay{} respiratory, \pspsexpcopdSameDay{} COPD, \ps
 \subsection{Respiratory morbidity}
 We found that days with severe magnitude PSPS events and no wildfire smoke were associated with an elevated same-day odds of a respiratory emergency department visit or hospital admission (absolute: OR = \respabsorSameDay{}, 95\% CI: \respabscilowSameDay{}, \respabscihighSameDay{}) (figure \ref{results_fig}).
 
+A \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} increase in 5-day average wildfire \PM, when no PSPS events occurred on the index day, was associated with a \wfsabspercSameDay\% (95\% CI: \wfsabscilowSameDay, \wfsabscihighSameDay) higher odds of a respiratory emergency department visit or hospital admission (figure \ref{results_fig}).
+
 \begin{wraptable}{r}{0.45\textwidth}
   \centering
   \includegraphics[width=0.4\textwidth]{tables_figures/exposure_table_same_day.png}
@@ -52,8 +54,6 @@ We found that days with severe magnitude PSPS events and no wildfire smoke were 
   \vspace{-2em}
   \label{exposure_table_same_day}
 \end{wraptable}
-
-A \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} increase in 5-day average wildfire \PM, when no PSPS events occurred on the index day, was associated with a \wfsabspercSameDay\% (95\% CI: \wfsabscilowSameDay, \wfsabscihighSameDay) higher odds of a respiratory emergency department visit or hospital admission (figure \ref{results_fig}).
 
 Considering the joint effects, compared to no PSPS event and no wildfire \PM exposure, we estimated that a severe PSPS event co-occurring with \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher wildfire \PM was associated with higher odds of a respiratory emergency department visit or hospital admission (\respcombabspercSameDay\% [95\% CI: \respcombabslowSameDay{}, \respcombabshighSameDay{}]) (figure \ref{results_fig}). We found evidence of multiplicative interaction between severe PSPS events and wildfire \PM on respiratory emergency department visits or hospital admissions (\respintabsorSameDay [95\% CI: \respintabscilowSameDay{}, \respintabscihighSameDay{}]) (figure \ref{results_fig}). 
 
