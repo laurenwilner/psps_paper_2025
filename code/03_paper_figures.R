@@ -63,10 +63,10 @@ load_and_prepare_data <- function(metric_type = "abs", age_group = "age 20 and o
 
 # plotting function for results figs 
 # Now takes same_day and lag4 data instead of abs/hyb
-create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, severity, 
+create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
                                 show_disease_labels = TRUE, 
-                                show_severity = TRUE, 
-                                show_legend = TRUE) {
+                                show_legend = TRUE,
+                                panel_label = NULL) {
   
   # Define label constants (avoids Unicode parsing issues)
   wf_pm_label <- "WF PM\u2082.\u2085 (per 10 \u03BCg/m\u00B3)"
@@ -100,7 +100,7 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
           grepl("interaction only", Exposure) ~ "Multiplicative interaction*",
           TRUE ~ "PSPS"
         ),
-        lag_type = "4-day lag"
+        lag_type = "lag\u2080\u208B\u2083"
       ) %>%
       mutate(Exposure = factor(Exposure, levels = exp_levels))
   }
@@ -109,7 +109,7 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
   if (all(datasets_provided)) {
     # Both datasets provided
     combined_data <- bind_rows(data_same_day_processed, data_lag4_processed) %>%
-      mutate(lag_type = factor(lag_type, levels = c("Same day", "4-day lag")),
+      mutate(lag_type = factor(lag_type, levels = c("Same day", "lag\u2080\u208B\u2083")),
              Cause = case_when(
                Cause == "Respiratory" ~ "All-cause respiratory",
                TRUE ~ Cause
@@ -117,12 +117,12 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
              Cause = factor(Cause, levels = c("All-cause respiratory", "COPD", "Cardiovascular", "Psychiatric")))
     
     # Set up scales for both types (matching supplemental style)
-    alpha_scale <- scale_alpha_manual(values = c("Same day" = 1.0, "4-day lag" = 0.6), 
+    alpha_scale <- scale_alpha_manual(values = c("Same day" = 1.0, "lag\u2080\u208B\u2083" = 0.6), 
                                      name = "", 
-                                     labels = c("Same day", "4-day lag"))
-    shape_scale <- scale_shape_manual(values = c("Same day" = 16, "4-day lag" = 17),
+                                     labels = list("Same day", expression(lag["0-3"])))
+    shape_scale <- scale_shape_manual(values = c("Same day" = 16, "lag\u2080\u208B\u2083" = 17),
                                      name = "",
-                                     labels = c("Same day", "4-day lag"))
+                                     labels = list("Same day", expression(lag["0-3"])))
   } else if (datasets_provided[1]) {
     # Only same_day data provided
     combined_data <- data_same_day_processed %>%
@@ -182,7 +182,7 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
       shape_scale +
       labs(
         x = "",
-        y = if(show_severity) substitute(atop(bold(sev), "Odds Ratio"), list(sev = severity)) else "Odds Ratio"
+        y = if (!is.null(panel_label)) substitute(atop(bold(lbl), "Odds Ratio"), list(lbl = panel_label)) else "Odds Ratio"
       ) +
       theme_minimal() +
       theme(
@@ -195,7 +195,7 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
         axis.text = element_text(size = 14),
         legend.text = element_text(size = 14)
       ) + 
-      scale_y_log10(breaks = c(0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 3.0)) +
+      scale_y_log10(breaks = c(0.75, 1.0, 1.25, 1.5, 2.0, 3.0)) +
       facet_wrap(~Cause, nrow = 1)
   } else {
     # Single dataset - no alpha or shape
@@ -211,7 +211,7 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
       scale_x_discrete(labels = exposure_labels) +
       labs(
         x = "",
-        y = if(show_severity) substitute(atop(bold(sev), "Odds Ratio"), list(sev = severity)) else "Odds Ratio"
+        y = if (!is.null(panel_label)) substitute(atop(bold(lbl), "Odds Ratio"), list(lbl = panel_label)) else "Odds Ratio"
       ) +
       theme_minimal() +
       theme(
@@ -224,10 +224,10 @@ create_results_fig_combined <- function(data_same_day = NULL, data_lag4 = NULL, 
         axis.text = element_text(size = 14),
         legend.text = element_text(size = 14)
       ) + 
-      scale_y_log10(breaks = c(0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 3.0)) +
+      scale_y_log10(breaks = c(0.75, 1.0, 1.25, 1.5, 2.0, 3.0)) +
       facet_wrap(~Cause, nrow = 1)
   }
-  
+
   # remove disease labels if show_disease_labels is FALSE
   if (!show_disease_labels) {
     p <- p + theme(strip.text = element_blank())
@@ -634,20 +634,12 @@ severe_data <- load_and_prepare_data(metric_type = metric_type_main,
 
 # make results figure -------------------------------------------
 # Main results: severe only, showing same_day and lag4
-results_fig <- create_results_fig_combined(severe_data$same_day, 
-                                           severe_data$lag4, 
-                                           "Severe", 
-                                           show_severity = FALSE)
+results_fig <- create_results_fig_combined(severe_data$same_day, severe_data$lag4)
 
 # write out numbers for table 
 if (!is.null(severe_data$same_day)) {
   write.csv(severe_data$same_day, file.path(results_dir, paste0("severe_df_same_day_", metric_type_main, ".csv")), row.names = FALSE)
 }
-
-# make results figure for supplement -------------------------------------------
-# results_fig_supplement <- create_results_fig_combined(severe_df_abs, severe_df_hyb, "severe", show_severity = FALSE)
-
-
 
 ##########################################
 ### Map of ZCTAS included in analysis ###
@@ -666,111 +658,45 @@ zips_included_map <- ggplot() +
   theme(plot.title = element_text(hjust = 0.5))
 
 ########################
-### SUPP RESULTS FIG ###
+### AGE-STRATIFIED SUPP RESULTS FIGS ###
 ########################
-# Separate plots for absolute and relative metrics
-# Each plot shows same_day and lag4, with mild/mod/severe stacked
+# Three panels = three age groups (all, 20-64, 65+); one file per severity x metric combo
+# Files: supp_results_fig_mild_abs, supp_results_fig_mild_hyb, supp_results_fig_mod_abs, etc.
 
-# Process data for absolute metric
-mild_data_abs <- load_and_prepare_data(metric_type = "abs", age_group = age_group_main, severity_level = "Mild", cov_matrices = cov_matrices)
-moderate_data_abs <- load_and_prepare_data(metric_type = "abs", age_group = age_group_main, severity_level = "Moderate", cov_matrices = cov_matrices)
-severe_data_abs <- load_and_prepare_data(metric_type = "abs", age_group = age_group_main, severity_level = "Severe", cov_matrices = cov_matrices)
+age_groups <- list(
+  all = list(id = "age 20 and older", label = "All ages (20+)"),
+  young = list(id = "20-64 years", label = "20-64 years"),
+  old = list(id = "65 and older", label = "65 and older")
+)
 
-# Process data for relative metric
-mild_data_hyb <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_main, severity_level = "Mild", cov_matrices = cov_matrices)
-moderate_data_hyb <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_main, severity_level = "Moderate", cov_matrices = cov_matrices)
-severe_data_hyb <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_main, severity_level = "Severe", cov_matrices = cov_matrices)
+severity_metric_combos <- list(
+  list(severity = "Mild", metric = "abs", file = "supp_results_fig_mild_abs"),
+  list(severity = "Mild", metric = "hyb", file = "supp_results_fig_mild_hyb"),
+  list(severity = "Moderate", metric = "abs", file = "supp_results_fig_mod_abs"),
+  list(severity = "Moderate", metric = "hyb", file = "supp_results_fig_mod_hyb"),
+  list(severity = "Severe", metric = "abs", file = "supp_results_fig_sev_abs"),
+  list(severity = "Severe", metric = "hyb", file = "supp_results_fig_sev_hyb")
+)
 
-# Create absolute metric plots (mild/mod/severe stacked)
-mild_abs <- create_results_fig_combined(mild_data_abs$same_day, mild_data_abs$lag4, "Mild", 
-                                        show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
-mod_abs <- create_results_fig_combined(moderate_data_abs$same_day, moderate_data_abs$lag4, "Moderate", 
-                                       show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
-sev_abs <- create_results_fig_combined(severe_data_abs$same_day, severe_data_abs$lag4, "Severe", 
-                                       show_disease_labels = FALSE, show_severity = TRUE, show_legend = TRUE)
-
-results_fig_supplement_abs <- mild_abs / mod_abs / sev_abs
-
-# Create relative metric plots (mild/mod/severe stacked)
-mild_hyb <- create_results_fig_combined(mild_data_hyb$same_day, mild_data_hyb$lag4, "Mild", 
-                                        show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
-mod_hyb <- create_results_fig_combined(moderate_data_hyb$same_day, moderate_data_hyb$lag4, "Moderate", 
-                                       show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
-sev_hyb <- create_results_fig_combined(severe_data_hyb$same_day, severe_data_hyb$lag4, "Severe", 
-                                       show_disease_labels = FALSE, show_severity = TRUE, show_legend = TRUE)
-
-results_fig_supplement_hyb <- mild_hyb / mod_hyb / sev_hyb
-
-########################
-### AGE-STRATIFIED RESULTS FIGS ###
-########################
-# Create supplemental results figures for age-stratified analyses
-
-# --- 20-64 years age group ---
-age_group_20_64 <- "20-64 years"
-
-# Process data for 20-64 absolute metric
-mild_data_abs_20_64 <- load_and_prepare_data(metric_type = "abs", age_group = age_group_20_64, severity_level = "Mild", cov_matrices = cov_matrices)
-moderate_data_abs_20_64 <- load_and_prepare_data(metric_type = "abs", age_group = age_group_20_64, severity_level = "Moderate", cov_matrices = cov_matrices)
-severe_data_abs_20_64 <- load_and_prepare_data(metric_type = "abs", age_group = age_group_20_64, severity_level = "Severe", cov_matrices = cov_matrices)
-
-# Process data for 20-64 relative metric
-mild_data_hyb_20_64 <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_20_64, severity_level = "Mild", cov_matrices = cov_matrices)
-moderate_data_hyb_20_64 <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_20_64, severity_level = "Moderate", cov_matrices = cov_matrices)
-severe_data_hyb_20_64 <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_20_64, severity_level = "Severe", cov_matrices = cov_matrices)
-
-# Create 20-64 absolute metric plots
-mild_abs_20_64 <- create_results_fig_combined(mild_data_abs_20_64$same_day, mild_data_abs_20_64$lag4, "Mild", 
-                                              show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
-mod_abs_20_64 <- create_results_fig_combined(moderate_data_abs_20_64$same_day, moderate_data_abs_20_64$lag4, "Moderate", 
-                                             show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
-sev_abs_20_64 <- create_results_fig_combined(severe_data_abs_20_64$same_day, severe_data_abs_20_64$lag4, "Severe", 
-                                             show_disease_labels = FALSE, show_severity = TRUE, show_legend = TRUE)
-
-results_fig_20_64_abs <- mild_abs_20_64 / mod_abs_20_64 / sev_abs_20_64
-
-# Create 20-64 relative metric plots
-mild_hyb_20_64 <- create_results_fig_combined(mild_data_hyb_20_64$same_day, mild_data_hyb_20_64$lag4, "Mild", 
-                                              show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
-mod_hyb_20_64 <- create_results_fig_combined(moderate_data_hyb_20_64$same_day, moderate_data_hyb_20_64$lag4, "Moderate", 
-                                             show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
-sev_hyb_20_64 <- create_results_fig_combined(severe_data_hyb_20_64$same_day, severe_data_hyb_20_64$lag4, "Severe", 
-                                             show_disease_labels = FALSE, show_severity = TRUE, show_legend = TRUE)
-
-results_fig_20_64_hyb <- mild_hyb_20_64 / mod_hyb_20_64 / sev_hyb_20_64
-
-# --- 65 and older age group ---
-age_group_65_plus <- "65 and older"
-
-# Process data for 65+ absolute metric
-mild_data_abs_65_plus <- load_and_prepare_data(metric_type = "abs", age_group = age_group_65_plus, severity_level = "Mild", cov_matrices = cov_matrices)
-moderate_data_abs_65_plus <- load_and_prepare_data(metric_type = "abs", age_group = age_group_65_plus, severity_level = "Moderate", cov_matrices = cov_matrices)
-severe_data_abs_65_plus <- load_and_prepare_data(metric_type = "abs", age_group = age_group_65_plus, severity_level = "Severe", cov_matrices = cov_matrices)
-
-# Process data for 65+ relative metric
-mild_data_hyb_65_plus <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_65_plus, severity_level = "Mild", cov_matrices = cov_matrices)
-moderate_data_hyb_65_plus <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_65_plus, severity_level = "Moderate", cov_matrices = cov_matrices)
-severe_data_hyb_65_plus <- load_and_prepare_data(metric_type = "hyb", age_group = age_group_65_plus, severity_level = "Severe", cov_matrices = cov_matrices)
-
-# Create 65+ absolute metric plots
-mild_abs_65_plus <- create_results_fig_combined(mild_data_abs_65_plus$same_day, mild_data_abs_65_plus$lag4, "Mild", 
-                                                show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
-mod_abs_65_plus <- create_results_fig_combined(moderate_data_abs_65_plus$same_day, moderate_data_abs_65_plus$lag4, "Moderate", 
-                                               show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
-sev_abs_65_plus <- create_results_fig_combined(severe_data_abs_65_plus$same_day, severe_data_abs_65_plus$lag4, "Severe", 
-                                               show_disease_labels = FALSE, show_severity = TRUE, show_legend = TRUE)
-
-results_fig_65_plus_abs <- mild_abs_65_plus / mod_abs_65_plus / sev_abs_65_plus
-
-# Create 65+ relative metric plots
-mild_hyb_65_plus <- create_results_fig_combined(mild_data_hyb_65_plus$same_day, mild_data_hyb_65_plus$lag4, "Mild", 
-                                                show_disease_labels = TRUE, show_severity = TRUE, show_legend = FALSE)
-mod_hyb_65_plus <- create_results_fig_combined(moderate_data_hyb_65_plus$same_day, moderate_data_hyb_65_plus$lag4, "Moderate", 
-                                               show_disease_labels = FALSE, show_severity = TRUE, show_legend = FALSE)
-sev_hyb_65_plus <- create_results_fig_combined(severe_data_hyb_65_plus$same_day, severe_data_hyb_65_plus$lag4, "Severe", 
-                                               show_disease_labels = FALSE, show_severity = TRUE, show_legend = TRUE)
-
-results_fig_65_plus_hyb <- mild_hyb_65_plus / mod_hyb_65_plus / sev_hyb_65_plus
+supp_results_figs <- lapply(severity_metric_combos, function(sm) {
+  plots <- lapply(seq_along(age_groups), function(i) {
+    ag <- age_groups[[i]]
+    data_list <- load_and_prepare_data(
+      metric_type = sm$metric,
+      age_group = ag$id,
+      severity_level = sm$severity,
+      cov_matrices = cov_matrices
+    )
+    create_results_fig_combined(
+      data_list$same_day, data_list$lag4,
+      show_disease_labels = (i == 1),
+      show_legend = (i == length(age_groups)),
+      panel_label = ag$label
+    )
+  })
+  combined <- plots[[1]] / plots[[2]] / plots[[3]]
+  list(fig = combined, file = sm$file)
+})
 
 
 ########################
@@ -822,18 +748,16 @@ ggsave(file.path(out_dir, "map_violin_panel1.pdf"), map_violin_panel1, width = 5
 ggsave(file.path(out_dir, "map_violin_panel2.pdf"), map_violin_panel2, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(file.path(out_dir, "map_violin_panel3.pdf"), map_violin_panel3, width = 5, height = 10, dpi = 100, bg="transparent")
 ggsave(file.path(out_dir, "results_fig.pdf"), results_fig, width = 10, height = 10, dpi = 100, device = cairo_pdf)
-ggsave(file.path(out_dir, "results_fig_supplement_abs.pdf"), results_fig_supplement_abs, width = 10, height = 13, dpi = 100, device = cairo_pdf)
-ggsave(file.path(out_dir, "results_fig_supplement_hyb.pdf"), results_fig_supplement_hyb, width = 10, height = 13, dpi = 100, device = cairo_pdf)
 ggsave(file.path(out_dir, "duration_hist.pdf"), duration_hist, width = 15, height = 7, dpi = 100)
 ggsave(file.path(out_dir, "seasonality_plot.pdf"), seasonality_plot_combined, width = 15, height = 11, dpi = 100, device = cairo_pdf)
 
-# Save age-stratified figures
-if (!dir.exists(age_strat_out_dir)) dir.create(age_strat_out_dir, recursive = TRUE)
+# Save age-stratified supp results figures (3 panels = age groups, 6 files)
+for (i in seq_along(supp_results_figs)) {
+  ggsave(file.path(out_dir, paste0(supp_results_figs[[i]]$file, ".pdf")),
+         supp_results_figs[[i]]$fig, width = 10, height = 13, dpi = 100, device = cairo_pdf)
+}
+
 if (!dir.exists(oneweek_out_dir)) dir.create(oneweek_out_dir, recursive = TRUE)
-ggsave(file.path(age_strat_out_dir, "results_fig_20_64_abs.pdf"), results_fig_20_64_abs, width = 10, height = 13, dpi = 100, device = cairo_pdf)
-ggsave(file.path(age_strat_out_dir, "results_fig_20_64_hyb.pdf"), results_fig_20_64_hyb, width = 10, height = 13, dpi = 100, device = cairo_pdf)
-ggsave(file.path(age_strat_out_dir, "results_fig_65_plus_abs.pdf"), results_fig_65_plus_abs, width = 10, height = 13, dpi = 100, device = cairo_pdf)
-ggsave(file.path(age_strat_out_dir, "results_fig_65_plus_hyb.pdf"), results_fig_65_plus_hyb, width = 10, height = 13, dpi = 100, device = cairo_pdf)
 
 # Save 1-week duration figures (one per age group, abs + hyb combined)
 ggsave(file.path(oneweek_out_dir, "results_fig_1week.pdf"), results_fig_1week, width = 10, height = 6, dpi = 100, device = cairo_pdf)
