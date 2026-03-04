@@ -35,5 +35,4 @@ exp_dir            <- file.path(project_root, "exposure_data")
 jan2026_results_dir <- results_dir
 results_data_dir    <- case_crossover_dir
 plots_dir           <- file.path(results_dir, "plots")
-age_strat_out_dir   <- file.path(out_dir, "age_stratified")
 oneweek_out_dir     <- file.path(out_dir, "1week_duration")

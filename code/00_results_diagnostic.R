@@ -53,7 +53,7 @@ parse_filename <- function(filename) {
   # Create simplified labels
   lag_label <- case_when(
     lag_type == "same_day" ~ "Same day",
-    lag_type == "lag4" ~ "4-day lag",
+    lag_type == "lag4" ~ "lag\u2080\u208B\u2083",
     TRUE ~ lag_type
   )
   
