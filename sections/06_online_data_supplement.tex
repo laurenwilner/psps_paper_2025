@@ -49,17 +49,17 @@ where: $p_{ij} = P(Y_{ij} = 1 | X_{ij}, C_{ij})$ for a case $(j = 1)$ or a contr
 \begin{itemize}
 \item $\alpha_i$: stratum-specific intercept that accounts for the baseline risk of the health outcome in each stratum, or matched set in this case. 
 \item $\beta_1$: log odds ratio for emergency department visit or hospital admission associated with exposure to a PSPS event (binary indicator), assuming no wildfire PM$_{2.5}$ exposure and adjusted for temperature
-\item $\beta_2$: log odds ratio for emergency department visit or hospital admission per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher 5-day average wildfire PM$_{2.5}$ concentration, assuming no PSPS event exposure and adjusted for temperature
+\item $\beta_2$: log odds ratio for emergency department visit or hospital admission per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher wildfire PM$_{2.5}$ concentration, assuming no PSPS event exposure and adjusted for temperature
 \item $\beta_3$: log odds ratio for the multiplicative interaction between PSPS event exposure and wildfire \PM (per \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre}). This is the additional effect of \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher wildfire \PM in the presence of a PSPS event. 
 \item $f(\mathrm{Temp_{max}})$: natural cubic spline with 3 degrees of freedom for daily maximum temperature.
 \end{itemize}
 
 \vspace{1em}
 
-The joint effect of a PSPS event and \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher \PM exposure was calculated as: $\beta_1 + \beta_2 + \beta_3$. 
+PSPS event exposure and wildfire \PM exposure represent either same-day or \text{lag}$_{0\text{-}3}$, for each of the two main analyses -- the timing of the two exposures is always parameterized consistently. The joint effect of a PSPS event and \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher \PM exposure was calculated as: $\beta_1 + \beta_2 + \beta_3$. 
 
-\subsection{Sensitivity analysis using outage durations.}
-While we omitted duration from our primary analysis, longer PSPS events are likely to have greater health impacts. To assess this, we conducted a sensitivity analysis where we used number of hours without power in the prior week, irrespective of the number of affected households, as our primary PSPS exposure.
+\subsection{Secondary analysis using outage durations.}
+While we omitted duration from our primary analysis, longer PSPS events are likely to have greater health impacts. To assess this, we conducted a secondary analysis where we used number of hours without power in the prior week, irrespective of the number of affected households, as our primary PSPS exposure.
 
 To calculate daily PSPS outage duration by zip code, we expanded each PSPS event to hourly intervals based on its start and end times. We rounded the start time down and the end time up to the nearest hour. We then de-duplicated overlapping hours across events within the same zip code to avoid double-counting hours when multiple PSPS events affected the same zip code during the same hour. Finally, we aggregated the unique outage hours to the daily level in order to generate the number of hours out per zip code-day (maximum 24 hours per day due to no double-counting hours). We then summed the number of hours without power in the week prior to index or referent day and used this as the PSPS exposure in our models.
 
@@ -177,7 +177,7 @@ Psychiatric & 290-293, 295, 296, 298 & F06, F10-F16, F18-F21, F23, F25, F28-F33 
 
 
 
-%%%% sensitivity analysis: 1 week duration
+%%%% secondary analysis: 1 week duration
 
 \begin{figure}[htbp]
     \includegraphics[width=.9\textwidth]{tables_figures/1week_duration/results_fig_1week.pdf}
