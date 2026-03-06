@@ -281,7 +281,8 @@ load_1week_results <- function(age_group, results_dir = results_data_dir) {
 # Plotting function for 1-week duration results - single line with circles
 create_results_fig_1week <- function(data, 
                                     show_disease_labels = TRUE, 
-                                    show_legend = TRUE) {
+                                    show_legend = TRUE,
+                                    panel_label = NULL) {
   
   wf_pm_label <- "WF PM\u2082.\u2085 (per 10 \u03BCg/m\u00B3)"
   exp_levels <- c("PSPS (per 8 hr)", wf_pm_label, "Multiplicative interaction*")
@@ -319,19 +320,27 @@ create_results_fig_1week <- function(data,
     geom_hline(yintercept = 1, linetype = "dashed") +
     scale_color_manual(values = exposure_colors, name = NULL, labels = exposure_labels) +
     scale_x_discrete(labels = exposure_labels) +
-    labs(x = "", y = "Odds Ratio") +
+    labs(
+      x = "",
+      y = if (!is.null(panel_label)) substitute(atop(bold(lbl), "Odds Ratio"), list(lbl = panel_label)) else "Odds Ratio"
+    ) +
     theme_minimal() +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1),
       axis.title.y = element_text(size = 16),
+      axis.text.y = element_text(size = 14),
       legend.position = "bottom",
       legend.box = "vertical",
       legend.spacing.y = unit(0.3, "cm"),
       strip.text = element_text(size = 16),
       axis.text = element_text(size = 14),
-      legend.text = element_text(size = 14)
+      legend.text = element_text(size = 14),
+      panel.grid.major.y = element_line(linewidth = 0.3, color = "gray85")
     ) +
-    scale_y_log10(breaks = c(0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 3.0)) +
+    # scale_y_log10(
+    #   breaks = c(0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 3.0),
+    #   limits = c(0.78, 2.2)
+    # ) +
     facet_wrap(~Cause, nrow = 1)
   
   if (!show_disease_labels) {
@@ -703,19 +712,23 @@ supp_results_figs <- lapply(severity_metric_combos, function(sm) {
 ### 1-WEEK DURATION SENSITIVITY FIGS ###
 ########################
 
-# Create 1-week duration figures: one per age group, single line with circles
-results_fig_1week <- create_results_fig_1week(
-  load_1week_results("age 20 and older"),
-  show_disease_labels = TRUE, show_legend = TRUE
+# Create 1-week duration figure: three panels (one per age group), like supp results figs
+age_groups_1week <- list(
+  list(id = "age 20 and older", label = "All ages (20+)"),
+  list(id = "20-64 years", label = "20-64 years"),
+  list(id = "65 and older", label = "65 and older")
 )
-results_fig_1week_20_64 <- create_results_fig_1week(
-  load_1week_results("20-64 years"),
-  show_disease_labels = TRUE, show_legend = TRUE
-)
-results_fig_1week_65_plus <- create_results_fig_1week(
-  load_1week_results("65 and older"),
-  show_disease_labels = TRUE, show_legend = TRUE
-)
+results_fig_1week_plots <- lapply(seq_along(age_groups_1week), function(i) {
+  ag <- age_groups_1week[[i]]
+  create_results_fig_1week(
+    load_1week_results(ag$id),
+    show_disease_labels = (i == 1),
+    show_legend = (i == length(age_groups_1week)),
+    panel_label = ag$label
+  )
+})
+results_fig_1week <- (results_fig_1week_plots[[1]] / results_fig_1week_plots[[2]] / results_fig_1week_plots[[3]]) +
+  plot_layout(axes = "collect_y") 
 
 
 ########################
@@ -757,9 +770,5 @@ for (i in seq_along(supp_results_figs)) {
          supp_results_figs[[i]]$fig, width = 10, height = 13, dpi = 100, device = cairo_pdf)
 }
 
-if (!dir.exists(oneweek_out_dir)) dir.create(oneweek_out_dir, recursive = TRUE)
-
-# Save 1-week duration figures (one per age group, abs + hyb combined)
-ggsave(file.path(oneweek_out_dir, "results_fig_1week.pdf"), results_fig_1week, width = 10, height = 6, dpi = 100, device = cairo_pdf)
-ggsave(file.path(oneweek_out_dir, "results_fig_1week_20_64.pdf"), results_fig_1week_20_64, width = 10, height = 6, dpi = 100, device = cairo_pdf)
-ggsave(file.path(oneweek_out_dir, "results_fig_1week_65_plus.pdf"), results_fig_1week_65_plus, width = 10, height = 6, dpi = 100, device = cairo_pdf)
+# Save 1-week duration figure (3 panels = age groups)
+ggsave(file.path(out_dir, "results_fig_1week.pdf"), results_fig_1week, width = 10, height = 13, dpi = 100, device = cairo_pdf)
