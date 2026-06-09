@@ -1,6 +1,6 @@
 #-------------------------------------------------
-# PSPS: Process analytic results - January 2026
-# New results with lag and age group metadata
+# PSPS: Diagnostic plots for analytic results
+# Set results_batch to "jun_2026" or "jan_2026" before running
 #-------------------------------------------------
 
 # Bootstrap: source paths.R (edit path in paths.R when moving machines)
@@ -16,8 +16,20 @@ if (length(file0) > 0) {
 if (!requireNamespace('pacman', quietly = TRUE)){install.packages('pacman')}
 pacman::p_load(tidyverse, ggforce, MetBrewer)
 
-# Use case crossover dir for result files; plots_dir from paths.R
-results_dir <- results_data_dir
+# Which results batch to diagnose (edit before running)
+results_batch <- "jun_2026"
+
+if (results_batch == "jun_2026") {
+  results_dir <- file.path(project_root, "results", "jun_2026_results")
+  plots_dir <- file.path(results_dir, "plots")
+  plot_prefix <- "results_jun2026"
+  linear_psps <- TRUE
+} else {
+  results_dir <- results_data_dir
+  plots_dir <- file.path(dirname(results_data_dir), "plots")
+  plot_prefix <- "results_jan2026"
+  linear_psps <- FALSE
+}
 
 # Create plots directory if it doesn't exist
 if (!dir.exists(plots_dir)) {
@@ -108,47 +120,69 @@ for(f in files){
 
 # Filter out spline terms (ns() terms)
 results <- results %>%
-  filter(!grepl("^ns\\(|^ns\\.", exposure, ignore.case = TRUE)) %>%
-  # Add alpha column: 1.0 for severe variables, 0.3 for others
-  mutate(alpha_val = ifelse(grepl("severe", exposure, ignore.case = TRUE), 1.0, 0.3))
+  filter(!grepl("^ns\\(|^ns\\.", exposure, ignore.case = TRUE))
+
+if (linear_psps) {
+  # June linear PSPS: model ORs are per 1 customer; rescale to per 1,000 customers
+  psps_per_n_customers <- 1000L
+  rescale_or <- function(x, n) exp(log(x) * n)
+
+  results <- results %>%
+    mutate(
+      psps_term = grepl("total_customers_impacted", exposure),
+      or = ifelse(psps_term, rescale_or(or, psps_per_n_customers), or),
+      ci_lower = ifelse(psps_term, rescale_or(ci_lower, psps_per_n_customers), ci_lower),
+      ci_upper = ifelse(psps_term, rescale_or(ci_upper, psps_per_n_customers), ci_upper),
+      exposure = ifelse(
+        psps_term,
+        gsub("total_customers_impacted", "total_customers_impacted_per1000", exposure),
+        exposure
+      ),
+      alpha_val = ifelse(grepl(":", exposure), 0.3, 1.0)
+    )
+  cat("Rescaled PSPS terms to per", psps_per_n_customers, "customers (OR^n on log scale)\n")
+} else {
+  # January severity PSPS: highlight severe levels
+  results <- results %>%
+    mutate(alpha_val = ifelse(grepl("severe", exposure, ignore.case = TRUE), 1.0, 0.3))
+}
 
 # make plots for each combination --------------------------------
-# Create individual plots for each cause, faceted by temporality and age
+# One panel per cause; same-day and lag4 overlaid, colored by lag; facet by age only if needed
 for(cause_name in unique(results$cause)) {
   plot_data <- results %>%
     filter(cause == cause_name) %>%
-    # Create temporality variable and clean exposure names for stacking
     mutate(
-      temporality = ifelse(lag_type == "lag4", "lag4", "same_day"),
-      # Remove "_lag4" or "lag4" from exposure names so they stack with same_day versions
-      # This makes severity_customers_lag4mild -> severity_customersmild to match same_day
-      # Handle both underscore and no-underscore cases
+      # Align lag4 exposure names with same-day counterparts on the x-axis
       exposure_clean = gsub("_lag4", "", exposure),
-      exposure_clean = gsub("lag4", "", exposure_clean)
+      exposure_clean = gsub("lag4", "", exposure_clean),
+      exposure_clean = gsub("mean_lag0_lag3_per10", "wf_pm25_per10", exposure_clean)
     )
-  
+
   p3 <- plot_data %>%
-    ggplot(aes(x = exposure_clean, y = or, color = age_label)) + 
-    geom_point(aes(alpha = alpha_val), size = 2.5) + 
-    geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper, color = age_label, alpha = alpha_val), 
-                  width = 0.5, linewidth = 0.8) + 
-    geom_hline(yintercept = 1, linetype = "dashed") + 
-    theme_minimal() + 
-    theme(legend.position = "bottom") + 
-    labs(x = "Variable", y = "Odds Ratio", 
-         color = "Age Group",
-         title = paste("Results for", cause_name)) + 
-    facet_grid(temporality ~ age_label, scales = "free_x", drop = TRUE) + 
-    theme(axis.text.x = element_text(angle = 90, hjust = .5, vjust = 0.5),   
+    ggplot(aes(x = exposure_clean, y = or, color = lag_label)) +
+    geom_point(aes(alpha = alpha_val), size = 2.5, position = position_dodge(width = 0.5)) +
+    geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper, alpha = alpha_val),
+                  width = 0.5, linewidth = 0.8, position = position_dodge(width = 0.5)) +
+    geom_hline(yintercept = 1, linetype = "dashed") +
+    theme_minimal() +
+    labs(x = "Variable", y = "Odds Ratio",
+         color = "Exposure lag",
+         title = paste("Results for", cause_name)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = .5, vjust = 0.5),
           legend.position = "bottom",
           plot.title = element_text(hjust = 0.5)) +
-    scale_color_met_d("Hokusai3") + 
+    scale_color_met_d("Hokusai3") +
     scale_alpha_identity(guide = "none") +
     scale_y_continuous()
-  
+
+  if (length(unique(plot_data$age_label)) > 1) {
+    p3 <- p3 + facet_wrap(~age_label, scales = "free_x")
+  }
+
   # Save individual plots
   cause_file <- tolower(gsub(" ", "_", cause_name))
-  ggsave(file.path(plots_dir, paste0("results_jan2026_", cause_file, ".pdf")), p3, height = 10, width = 15)
+  ggsave(file.path(plots_dir, paste0(plot_prefix, "_", cause_file, ".pdf")), p3, height = 10, width = 15)
 }
 
 # Print summary of what was processed
@@ -188,9 +222,11 @@ for(f in files_1week){
   results_1week <- rbind(results_1week, df)
 }
 
-# Filter out spline terms
-results_1week <- results_1week %>%
-  filter(!grepl("^ns\\(|^ns\\.", exposure, ignore.case = TRUE))
+# Filter out spline terms (skip if no 1week files)
+if (nrow(results_1week) > 0) {
+  results_1week <- results_1week %>%
+    filter(!grepl("^ns\\(|^ns\\.", exposure, ignore.case = TRUE))
+}
 
 # Create plots for 1week_duration - one per cause, faceted by age only
 for(cause_name in unique(results_1week$cause)) {
@@ -215,10 +251,12 @@ for(cause_name in unique(results_1week$cause)) {
   
   # Save individual plots
   cause_file <- tolower(gsub(" ", "_", cause_name))
-  ggsave(file.path(plots_dir, paste0("results_jan2026_1week_", cause_file, ".pdf")), p_1week, height = 8, width = 15)
+  ggsave(file.path(plots_dir, paste0(plot_prefix, "_1week_", cause_file, ".pdf")), p_1week, height = 8, width = 15)
 }
 
 # Print summary of 1week files processed
 cat("\nProcessed", length(files_1week), "1week_duration result files\n")
-cat("Causes:", paste(unique(results_1week$cause), collapse = ", "), "\n")
-cat("Age groups:", paste(unique(results_1week$age_label), collapse = ", "), "\n")
+if (nrow(results_1week) > 0) {
+  cat("Causes:", paste(unique(results_1week$cause), collapse = ", "), "\n")
+  cat("Age groups:", paste(unique(results_1week$age_label), collapse = ", "), "\n")
+}

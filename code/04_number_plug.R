@@ -98,6 +98,18 @@ abs_severity_df <- psps_exp_df %>%
 mostcommonsevabs <- abs_severity_df[1,]$severity_customers %>% tolower()
 secondmostcommonsevabs <- abs_severity_df[2,]$severity_customers %>% tolower()
 
+# mean number of customers impacted for a severe zip code-event (absolute metric, study period)
+meansevcustomers <- psps_exp_df %>%
+  filter(
+    outage_start >= as.POSIXct("2013-01-01", tz = "UTC"),
+    outage_start < as.POSIXct("2020-01-01", tz = "UTC"),
+    severity_customers == "Severe",
+    total_customers_impacted > 0
+  ) %>%
+  summarise(mean_cust = mean(total_customers_impacted, na.rm = TRUE)) %>%
+  pull(mean_cust) %>%
+  round(0)
+
 # XXXX {severity level} was most common according to our relative metric
 hyb_severity_df <- psps_exp_df %>% 
   group_by(severity_hybrid) %>% 
