@@ -33,6 +33,7 @@ exp_dir            <- file.path(project_root, "exposure_data")
 
 # ---- Aliases and subdirs (use these for consistency) ----
 jan2026_results_dir <- results_dir
+jun2026_results_dir <- file.path(project_root, "results", "jun_2026_results")
 results_data_dir    <- case_crossover_dir
 plots_dir           <- file.path(results_dir, "plots")
 oneweek_out_dir     <- file.path(out_dir, "1week_duration")

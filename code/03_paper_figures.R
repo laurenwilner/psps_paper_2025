@@ -353,6 +353,154 @@ create_results_fig_1week <- function(data,
   return(p)
 }
 
+#-------------------------------------------------
+# Continuous PSPS exposure sensitivity analysis figures (June 2026 results)
+#-------------------------------------------------
+
+load_continuous_psps_results <- function(lag_type, results_dir = jun2026_results_dir) {
+  causes <- c(resp = "Respiratory", copd = "COPD", cardio = "Cardiovascular", psych = "Psychiatric")
+  psps_per_n_customers <- 1000L
+  rescale_or <- function(x, n) exp(log(x) * n)
+
+  if (lag_type == "same_day") {
+    lag_suffix <- "same_day"
+    psps_exp <- "total_customers_impacted"
+    wf_exp <- "wf_pm25_per10"
+    int_exp <- "total_customers_impacted:wf_pm25_per10"
+  } else if (lag_type == "lag4") {
+    lag_suffix <- "lag4"
+    psps_exp <- "total_customers_impacted_lag4"
+    wf_exp <- "mean_lag0_lag3_per10"
+    int_exp <- "total_customers_impacted_lag4:mean_lag0_lag3_per10"
+  } else {
+    stop("lag_type must be 'same_day' or 'lag4'")
+  }
+
+  exposures_keep <- c(psps_exp, wf_exp, int_exp)
+  all_data <- list()
+
+  for (i in seq_along(causes)) {
+    cause_code <- names(causes)[i]
+    cause_display <- causes[i]
+    f <- file.path(results_dir, paste0("results_", cause_code, "_", lag_suffix, "_linear_age 20 and older.csv"))
+    if (!file.exists(f)) next
+    df <- read.csv(f) %>%
+      filter(Exposure %in% exposures_keep) %>%
+      mutate(
+        Cause = cause_display,
+        odds_ratio = as.numeric(OR),
+        lower_ci = as.numeric(CI_Lower),
+        upper_ci = as.numeric(CI_Upper),
+        psps_term = grepl("total_customers_impacted", Exposure),
+        odds_ratio = ifelse(psps_term, rescale_or(odds_ratio, psps_per_n_customers), odds_ratio),
+        lower_ci = ifelse(psps_term, rescale_or(lower_ci, psps_per_n_customers), lower_ci),
+        upper_ci = ifelse(psps_term, rescale_or(upper_ci, psps_per_n_customers), upper_ci)
+      ) %>%
+      select(Exposure, odds_ratio, lower_ci, upper_ci, Cause)
+    all_data[[length(all_data) + 1]] <- df
+  }
+
+  if (length(all_data) == 0) return(NULL)
+  bind_rows(all_data)
+}
+
+create_results_fig_continuous_psps <- function(data_same_day = NULL,
+                                               data_lag4 = NULL,
+                                               show_disease_labels = TRUE,
+                                               show_legend = TRUE) {
+  wf_pm_label <- "WF PM\u2082.\u2085 (per 10 \u03BCg/m\u00B3)"
+  psps_label <- "PSPS (per 1,000 customers)"
+  exp_levels <- c(psps_label, wf_pm_label, "Multiplicative interaction*")
+
+  relabel_exposure <- function(df, lag_label) {
+    df %>%
+      mutate(
+        Exposure = case_when(
+          grepl("total_customers_impacted", Exposure) & grepl(":", Exposure) ~ "Multiplicative interaction*",
+          grepl("total_customers_impacted", Exposure) ~ psps_label,
+          TRUE ~ wf_pm_label
+        ),
+        Exposure = factor(Exposure, levels = exp_levels),
+        lag_type = lag_label
+      )
+  }
+
+  datasets_provided <- c(!is.null(data_same_day), !is.null(data_lag4))
+  if (!any(datasets_provided)) stop("At least one dataset must be provided")
+
+  combined_data <- bind_rows(
+    if (datasets_provided[1]) relabel_exposure(data_same_day, "Same day") else NULL,
+    if (datasets_provided[2]) relabel_exposure(data_lag4, "lag\u2080\u208B\u2083") else NULL
+  ) %>%
+    mutate(
+      lag_type = if (all(datasets_provided)) {
+        factor(lag_type, levels = c("Same day", "lag\u2080\u208B\u2083"))
+      } else {
+        lag_type
+      },
+      Cause = case_when(
+        Cause == "Respiratory" ~ "All-cause respiratory",
+        TRUE ~ Cause
+      ),
+      Cause = factor(Cause, levels = c("All-cause respiratory", "COPD", "Cardiovascular", "Psychiatric"))
+    )
+
+  exposure_colors <- setNames(
+    c(pal[2], pal[3], pal[1]),
+    exp_levels
+  )
+  wf_expr_label <- expression("WF PM"["2.5"]*" (per 10 "*mu*"g/m"^3*")")
+  exposure_labels <- setNames(
+    c("PSPS (per 1,000 customers)", wf_expr_label, "Multiplicative interaction*"),
+    exp_levels
+  )
+
+  p <- ggplot(combined_data, aes(x = Exposure, y = odds_ratio, ymin = lower_ci, ymax = upper_ci))
+
+  if (all(datasets_provided)) {
+    p <- p +
+      geom_point(aes(color = Exposure, alpha = lag_type, shape = lag_type),
+                 position = position_dodge(width = 0.6), size = 3) +
+      geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci, color = Exposure, alpha = lag_type),
+                    width = 0.3, position = position_dodge(width = 0.6)) +
+      scale_alpha_manual(values = c("Same day" = 1.0, "lag\u2080\u208B\u2083" = 0.6),
+                         name = "",
+                         labels = list("Same day", expression(lag["0-3"]))) +
+      scale_shape_manual(values = c("Same day" = 16, "lag\u2080\u208B\u2083" = 17),
+                         name = "",
+                         labels = list("Same day", expression(lag["0-3"])))
+  } else {
+    p <- p +
+      geom_point(aes(color = Exposure), position = position_dodge(width = 0.6), size = 3) +
+      geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci, color = Exposure),
+                    width = 0.3, position = position_dodge(width = 0.6))
+  }
+
+  p <- p +
+    geom_hline(yintercept = 1, linetype = "dashed") +
+    scale_color_manual(values = exposure_colors, name = NULL, labels = exposure_labels) +
+    scale_x_discrete(labels = exposure_labels) +
+    labs(x = "", y = "Odds Ratio") +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      axis.title.y = element_text(size = 16),
+      legend.position = "bottom",
+      legend.box = "vertical",
+      legend.spacing.y = unit(0.3, "cm"),
+      strip.text = element_text(size = 16),
+      axis.text = element_text(size = 14),
+      legend.text = element_text(size = 14),
+      panel.grid.major.y = element_line(linewidth = 0.3, color = "gray85")
+    ) +
+    facet_wrap(~Cause, nrow = 1)
+
+  if (!show_disease_labels) p <- p + theme(strip.text = element_blank())
+  if (!show_legend) p <- p + theme(legend.position = "none")
+
+  p
+}
+
 # read in model results and covariance matrices ---------------------------------
 # these were processed and created in the 01_process_results.R script
 cov_matrices <- readRDS(file.path(results_dir, "cov_matrices_jan2026.rds"))
@@ -732,6 +880,18 @@ results_fig_1week <- (results_fig_1week_plots[[1]] / results_fig_1week_plots[[2]
 
 
 ########################
+### CONTINUOUS PSPS EXPOSURE SENSITIVITY FIG ###
+########################
+
+continuous_psps_same_day <- load_continuous_psps_results("same_day")
+continuous_psps_lag4 <- load_continuous_psps_results("lag4")
+results_fig_continuous_psps <- create_results_fig_continuous_psps(
+  continuous_psps_same_day,
+  continuous_psps_lag4
+)
+
+
+########################
 ### Duration for Joan ###
 ########################
 # This plot is just a plot of PSPS durations for Joan 
@@ -772,3 +932,6 @@ for (i in seq_along(supp_results_figs)) {
 
 # Save 1-week duration figure (3 panels = age groups)
 ggsave(file.path(out_dir, "results_fig_1week.pdf"), results_fig_1week, width = 10, height = 13, dpi = 100, device = cairo_pdf)
+
+# Save continuous PSPS exposure sensitivity figure (all ages 20+, absolute metric only)
+ggsave(file.path(out_dir, "supp_results_fig_continuous_psps.pdf"), results_fig_continuous_psps, width = 10, height = 10, dpi = 100, device = cairo_pdf)

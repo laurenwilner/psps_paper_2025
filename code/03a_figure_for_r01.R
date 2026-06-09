@@ -59,15 +59,16 @@ plot_data <- data_list$same_day %>%
     Cause = "All-cause respiratory"
   )
 
-# OKeeffe1 palette - PSPS (second lightest red), WF PM (darkest red), Joint effect (second darkest blue)
+# OKeeffe1 palette - Power outage / PSPS (second lightest red), WF PM (darkest red), Joint effect (second darkest blue)
 pal_ok <- MetBrewer::met.brewer("OKeeffe1")
 exposure_colors <- setNames(
   c(pal_ok[4], pal_ok[1], pal_ok[10]),
   c("PSPS", wf_pm_label, "Joint effect")
 )
 wf_expr_label <- expression("WF PM"["2.5"])
+# Plot labels: two-line "Power outage" for first exposure (data level remains PSPS)
 exposure_labels <- setNames(
-  c("PSPS", wf_expr_label, "Joint effect"),
+  c("Power\noutage", wf_expr_label, "Joint effect"),
   c("PSPS", wf_pm_label, "Joint effect")
 )
 

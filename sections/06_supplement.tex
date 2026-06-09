@@ -58,6 +58,9 @@ where: $p_{ij} = P(Y_{ij} = 1 | X_{ij}, C_{ij})$ for a case $(j = 1)$ or a contr
 
 PSPS event exposure and wildfire \PM exposure represent either same-day or \text{lag}$_{0\text{-}3}$, for each of the two main analyses -- the timing of the two exposures is always parameterized consistently. The joint effect of a PSPS event and \SI[per-mode=symbol]{10}{\micro\gram\per\cubic\metre} higher \PM exposure was calculated as: $\beta_1 + \beta_2 + \beta_3$. 
 
+\subsection{Sensitivity analysis using continuous PSPS exposure.}
+As a sensitivity analysis, we parameterized the absolute PSPS exposure metric as a continuous linear term for the number of customers impacted per zip code-day, rather than categorizing exposure into mild, moderate, and severe tertiles. All other model specifications were the same as in the primary analysis, including wildfire \PM exposure, the interaction between PSPS and wildfire \PM exposure, and adjustment for maximum temperature. Odds ratios for the PSPS term are presented per 1,000 additional customers impacted. This analysis was conducted for all individuals ages 20 years and older using the absolute metric only.
+
 \subsection{Secondary analysis using outage durations.}
 While we omitted duration from our primary analysis, longer PSPS events are likely to have greater health impacts. To assess this, we conducted a secondary analysis where we used number of hours without power in the prior week, irrespective of the number of affected households, as our primary PSPS exposure.
 
@@ -177,6 +180,14 @@ Psychiatric & 290-293, 295, 296, 298 & F06, F10-F16, F18-F21, F23, F25, F28-F33 
 \end{figure}
 
 
+
+%%%% sensitivity analysis: continuous PSPS exposure
+
+\begin{figure}[htbp]
+    \includegraphics[width=.9\textwidth]{tables_figures/supp_results_fig_continuous_psps.pdf}
+    \caption{Odds ratios and 95\% confidence intervals for the association between zip code-level continuous PSPS exposure (absolute metric) and all-cause respiratory-, COPD-, cardiovascular-, and psychiatric-related emergency department visits and hospital admissions in California from 2013--2019 for individuals ages 20 years and older. Estimates are from four separate conditional logistic regression models -- one for each health endpoint. All models include PSPS exposure parameterized as a linear term for the number of customers impacted (per 1,000 customers), same-day or \text{lag}$_{0\text{-}3}$ day wildfire \PM exposure, an interaction term between PSPS and wildfire \PM exposure, and a spline on mean daily temperature. Filled circles represent same-day exposure; open triangles represent \text{lag}$_{0\text{-}3}$ exposure. \newline \textit{*Note: The estimate for the interaction effect represents the additional multiplicative effect of joint exposure to wildfire \PM and PSPS on the outcome of interest. It should not be interpreted as an odds ratio in isolation, but is rather a ratio of odds ratios. PSPS, public safety power shutoff; COPD, chronic obstructive pulmonary disease}}
+    \label{continuous_psps_fig}
+\end{figure}
 
 %%%% secondary analysis: 1 week duration
 
